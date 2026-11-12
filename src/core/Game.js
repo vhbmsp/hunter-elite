@@ -84,7 +84,7 @@ export class Game {
     this.hud.setTimer(this.timeLeft);
   }
 
-  /** Place the camera on a stand and yaw it to that stand's facing (north = +Z). */
+  /** Place the camera on a stand and yaw it to that stand's facing (north = -Z). */
   applyStandFacing(index) {
     const stand = STANDS[index];
     if (!stand) return;

@@ -48,15 +48,16 @@ export const TERRAIN = {
   dryHeight: 12,
 };
 
-// World north is +Z (east = +X, south = -Z, west = -X). Compass heading and
+// World north is -Z (east = +X, south = +Z, west = -X). Compass heading and
 // stand switch facings all use that axis. Camera yaw (YXZ rotation.y):
-//   Math.PI looks +Z (N), -π/2 looks +X (E), 0 looks -Z (S), π/2 looks -X (W).
-export const NORTH_AXIS = '+Z';
+//   0 looks -Z (N), -π/2 looks +X (E), π looks +Z (S), π/2 looks -X (W).
+// Facing north, screen-left is west and screen-right is east.
+export const NORTH_AXIS = '-Z';
 
 export const FACING_YAW = {
-  north: Math.PI,
+  north: 0,
   east: -Math.PI / 2,
-  south: 0,
+  south: Math.PI,
   west: Math.PI / 2,
 };
 
@@ -65,15 +66,15 @@ export const FACING_YAW = {
 // label is painted on a foot-level signboard facing the other stands.
 // facing: compass heading applied to the camera when the player switches here.
 //
-// From Tower S looking north (+Z), the camera's local +X (screen-right) is world
-// -X, so Tower A sits east of S (left of view) and Tower D west of S (right).
+// From Tower S looking north (-Z): Tower A is west (left of view), Tower D east (right).
+// Spaced so aiming at A reads west and aiming at D reads east on the compass.
 export const STANDS = [
-  { key: 'KeyA', label: 'Tower A', position: [74, -27], facing: 'east' },
-  { key: 'KeyS', label: 'Tower S', position: [22, -73], facing: 'north' },
-  { key: 'KeyD', label: 'Tower D', position: [0, 5], facing: 'west' },
+  { key: 'KeyA', label: 'Tower A', position: [-20, 55], facing: 'east' },
+  { key: 'KeyS', label: 'Tower S', position: [22, 90], facing: 'north' },
+  { key: 'KeyD', label: 'Tower D', position: [64, 55], facing: 'west' },
 ];
 
-// Player spawn: Tower S, facing north (+Z).
+// Player spawn: Tower S, facing north (-Z).
 export const DEFAULT_STAND_INDEX = 1;
 
 export const STAND = {
@@ -364,7 +365,7 @@ export const LOOT = {
   swayFrequency: 0.45,
   // Parachute squash after touchdown (s).
   collapseTime: 0.6,
-  // Spawn ring around the stand. The camera starts facing +Z (north), and
+  // Spawn ring around the stand. The camera starts facing -Z (north), and
   // spawnArc (radians) is centered on that direction so crates fall in view.
   minDistance: 24,
   maxDistance: 48,

@@ -278,7 +278,7 @@ export class Hud {
   }
 
   /**
-   * headingRad: 0 = north (+Z), increasing toward east (+X).
+   * headingRad: 0 = north (-Z), increasing toward east (+X).
    * Rotates the dial so the look direction stays under the top notch.
    */
   setCompass(headingRad) {
