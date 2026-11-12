@@ -87,10 +87,10 @@ for bear) are listed in [`public/models/CREDITS.md`](public/models/CREDITS.md).
   A neck hit scores as a body shot; the skull stays a head shot. Sizes come
   from the rig. The Ultimate-pack animals use `Back`, `Torso3`, `Neck3` and
   `Head`. The boar overrides those names. Foxes use the same neck chain.
-- Ducks fly a circle in a V, 11 m above the ground, on the Gobkit idle clip
-  (the file has no flap). A hit plays `dead` and the bird falls. Their hitbox
-  is one small sphere (the neck already sits inside it), and `T` toggles it
-  with the others.
+- Ducks fly a closer, slower circle in a V (~8.5 m up) on the Gobkit idle clip
+  plus a procedural wing flap on the Hand bones (no CC0 fly clip was available).
+  A hit plays `dead` and the bird falls. Their hitbox is one forgiving sphere,
+  and `T` toggles it with the others.
 
 To swap a model, drop a GLB into `public/models/animals/` and point the species
 entry in `src/config.js` at it. A different rig can name its own spine and head

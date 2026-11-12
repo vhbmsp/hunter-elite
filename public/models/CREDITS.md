@@ -42,11 +42,11 @@ Clips used: Idle, Idle_Eating, Walk, Run, Death. The rig is smaller than the Ult
 
 Source: <https://gobkit.com/freebies/animal/Duck.glb> (Gobkit free animal pack). License: CC0-1.0.
 
-No CC0 duck with a flap or fly clip turned up in the Quaternius packs, the trebeljahr showcase, or Gobkit's named clips. This duck is still a licensed animated duck: idle, attack, dead, and walk. The flock glides on `idle` and plays `dead` when shot. There is no fly clip, so nothing was invented to fake wing beats.
+Still no free animated duck with a clear CC0 fly/flap clip. Checked again: Gobkit birds (Duck, Goose, Quail, Chick, Bat, Eagle, Pigeon, … — all idle/attack/dead/walk only), Quaternius / trebeljahr showcase, Kenney, Poly Pizza Ducky, Pixor mallard (CC0, waddle only, no wing bones or death clip), Sketchfab CC0 ducks, OpenGameArt's flap bird (generic bird `.blend`, not a duck), and paid fly-flap packs. The Gobkit duck stays: idle, attack, dead, walk. The flock plays `idle` in the air, adds a procedural wing beat on the `LeftHand` / `RightHand` bones (idle barely moves them), and plays `dead` when shot.
 
 | File | Upstream model | Game type | Notes |
 | --- | --- | --- | --- |
-| `animals/duck.glb` | `Duck` | duck | CC0. Scaled from a hundreds-of-units source file to about 0.42 m tall |
+| `animals/duck.glb` | `Duck` | duck | CC0. Scaled from a hundreds-of-units source file to about 0.55 m tall; hit sphere 0.28 m |
 
 ## Scenery
 

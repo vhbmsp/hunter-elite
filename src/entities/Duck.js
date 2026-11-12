@@ -76,7 +76,11 @@ export class Duck {
     this.grounded = false;
     this.timeSinceDeath = 0;
     this.fallSpeed = 0;
+    this.flapPhase = Math.random() * Math.PI * 2;
     this.velocity = new THREE.Vector3();
+    // Gobkit wings are the Hand bones; idle barely moves them, so we flap after the mixer.
+    this.leftWing = this.model.getObjectByName('LeftHand');
+    this.rightWing = this.model.getObjectByName('RightHand');
     this.play(DUCKS.flyClip);
   }
 
@@ -111,6 +115,7 @@ export class Duck {
     if (this.alive) this.fly(flockTime);
     else this.fall(delta);
     this.mixer.update(delta);
+    if (this.alive) this.flapWings(flockTime);
   }
 
   fly(flockTime) {
@@ -123,9 +128,17 @@ export class Duck {
     const z = pose.z + rightZ * right - pose.forwardZ * back;
     const y = this.world.getHeightAt(x, z) + pose.altitude;
     this.root.position.set(x, y, z);
-    this.root.rotation.x = 0;
+    this.root.rotation.x = DUCKS.flyPitch;
     this.root.rotation.y = pose.yaw;
     this.velocity.set(pose.forwardX * DUCKS.speed, 0, pose.forwardZ * DUCKS.speed);
+  }
+
+  /** Additive wing beat on LeftHand / RightHand after the idle clip writes those bones. */
+  flapWings(flockTime) {
+    if (!this.leftWing || !this.rightWing) return;
+    const beat = Math.sin(flockTime * DUCKS.flapHz * Math.PI * 2 + this.flapPhase) * DUCKS.flapAmp;
+    this.leftWing.rotation.x += beat;
+    this.rightWing.rotation.x -= beat;
   }
 
   fall(delta) {
