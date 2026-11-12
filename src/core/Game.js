@@ -1,4 +1,4 @@
-import { STANDS } from '../config.js';
+import { DEFAULT_STAND_INDEX, FACING_YAW, STANDS } from '../config.js';
 import { Sfx } from '../audio/Sfx.js';
 import { AnimalManager } from '../entities/AnimalManager.js';
 import { LootManager } from '../entities/LootManager.js';
@@ -45,8 +45,7 @@ export class Game {
 
     this.world = new World(this.scene);
     this.player = new Player(this.renderer.domElement);
-    this.player.place(this.world.eyePosition, this.world.lookTarget());
-    this.hud.setStand(1);
+    this.applyStandFacing(DEFAULT_STAND_INDEX);
     // The muzzle flash is parented to the camera, so the camera has to live in the scene.
     this.scene.add(this.player.camera);
     this.scope = new Scope(this.player.camera, this.hud);
@@ -56,6 +55,7 @@ export class Game {
     this.rifle = new Rifle(this.player.camera, this.animals, this.world, this.impacts, this.sfx, this.loot);
     this.rifle.onChange = () => this.syncAmmo();
     this.syncAmmo();
+    this.syncCompass();
 
     this.loop = new GameLoop(this.renderer, this.scene, this.player.camera)
       .add(this.world)
@@ -72,6 +72,7 @@ export class Game {
   }
 
   update(delta) {
+    this.syncCompass();
     if (this.mode !== 'mission') return;
     this.timeLeft -= delta;
     if (this.timeLeft <= 0) {
@@ -81,6 +82,20 @@ export class Game {
       return;
     }
     this.hud.setTimer(this.timeLeft);
+  }
+
+  /** Place the camera on a stand and yaw it to that stand's facing (north = +Z). */
+  applyStandFacing(index) {
+    const stand = STANDS[index];
+    if (!stand) return;
+    this.world.activeIndex = index;
+    this.player.place(this.world.eyePosition, FACING_YAW[stand.facing]);
+    this.hud.setStand(stand.label);
+    this.syncCompass();
+  }
+
+  syncCompass() {
+    this.hud.setCompass(this.player.getHeading());
   }
 
   async load() {
@@ -174,9 +189,7 @@ export class Game {
 
   switchStand(index) {
     if (!this.world.stands[index]) return;
-    this.world.activeIndex = index;
-    this.player.place(this.world.eyePosition, this.world.lookTarget());
-    this.hud.setStand(index + 1);
+    this.applyStandFacing(index);
   }
 
   shoot() {

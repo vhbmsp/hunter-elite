@@ -48,14 +48,33 @@ export const TERRAIN = {
   dryHeight: 12,
 };
 
+// World north is +Z (east = +X, south = -Z, west = -X). Compass heading and
+// stand switch facings all use that axis. Camera yaw (YXZ rotation.y):
+//   Math.PI looks +Z (N), -π/2 looks +X (E), 0 looks -Z (S), π/2 looks -X (W).
+export const NORTH_AXIS = '+Z';
+
+export const FACING_YAW = {
+  north: Math.PI,
+  east: -Math.PI / 2,
+  south: 0,
+  west: Math.PI / 2,
+};
+
 // Elevated wooden hunting stands. Ground x/z only; y comes from getHeightAt.
 // Keys select them in order: A, S, D. Each site sees the other two and the valley.
 // label is painted on a foot-level signboard facing the other stands.
+// facing: compass heading applied to the camera when the player switches here.
+//
+// From Tower S looking north (+Z), the camera's local +X (screen-right) is world
+// -X, so Tower A sits east of S (left of view) and Tower D west of S (right).
 export const STANDS = [
-  { key: 'KeyA', label: 'Tower A', position: [0, 5] },
-  { key: 'KeyS', label: 'Tower S', position: [22, -73] },
-  { key: 'KeyD', label: 'Tower D', position: [74, -27] },
+  { key: 'KeyA', label: 'Tower A', position: [74, -27], facing: 'east' },
+  { key: 'KeyS', label: 'Tower S', position: [22, -73], facing: 'north' },
+  { key: 'KeyD', label: 'Tower D', position: [0, 5], facing: 'west' },
 ];
+
+// Player spawn: Tower S, facing north (+Z).
+export const DEFAULT_STAND_INDEX = 1;
 
 export const STAND = {
   enabled: true,
@@ -99,9 +118,11 @@ export const LIGHTS = {
 };
 
 export const PLAYER = {
-  // Ground x/z of stand 1 (A). y is derived from the terrain + stand + eye height.
-  position: [STANDS[0].position[0], 0, STANDS[0].position[1]],
+  // Ground x/z of the default stand (Tower S). y is derived from terrain + stand + eye.
+  position: [STANDS[DEFAULT_STAND_INDEX].position[0], 0, STANDS[DEFAULT_STAND_INDEX].position[1]],
   eyeHeight: 1.6,
+  // Slight downward pitch (rad) when a stand facing is applied.
+  defaultPitch: -0.12,
   near: 0.1,
   far: 1000,
 };
@@ -343,8 +364,8 @@ export const LOOT = {
   swayFrequency: 0.45,
   // Parachute squash after touchdown (s).
   collapseTime: 0.6,
-  // Spawn ring around the stand. The camera starts facing -Z, and spawnArc
-  // (radians) is centered on that direction so crates fall in view.
+  // Spawn ring around the stand. The camera starts facing +Z (north), and
+  // spawnArc (radians) is centered on that direction so crates fall in view.
   minDistance: 24,
   maxDistance: 48,
   spawnArc: 2.2,

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PLAYER, STAND, STANDS } from '../config.js';
+import { DEFAULT_STAND_INDEX, PLAYER, STAND, STANDS } from '../config.js';
 import { createEnvironment } from './environment.js';
 import { Grass } from './grass.js';
 import { createStand } from './stand.js';
@@ -51,7 +51,7 @@ export class World {
         eye: new THREE.Vector3(x, groundY + this.standHeight + PLAYER.eyeHeight, z),
       };
     });
-    this.activeIndex = 0;
+    this.activeIndex = DEFAULT_STAND_INDEX;
   }
 
   /** Builds glTF-based scenery once models are loaded. */

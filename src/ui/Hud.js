@@ -11,6 +11,11 @@ import {
   speciesLabel,
 } from '../missions.js';
 
+function compassCardinal(deg) {
+  const wedge = ((deg + 45) % 360) / 90;
+  return ['N', 'E', 'S', 'W'][Math.floor(wedge)];
+}
+
 export class Hud {
   constructor(handlers = {}, root = document) {
     this.handlers = handlers;
@@ -24,6 +29,9 @@ export class Hud {
       distance: $('distance'),
       zoom: $('zoom'),
       stand: $('stand'),
+      compass: $('compass'),
+      compassDial: $('compass-dial'),
+      compassLabel: $('compass-label'),
       crosshair: $('crosshair'),
       scope: $('scope'),
       instructions: $('instructions'),
@@ -49,6 +57,7 @@ export class Hud {
       menuButton: $('results-menu'),
       resultsFree: $('results-free'),
     };
+    this._compassDeg = null;
     this.instructionsText = this.el.instructions.textContent;
     this.renderMissions();
     this.bindOverlay();
@@ -264,8 +273,21 @@ export class Hud {
     this.el.zoom.textContent = `Zoom: ${zoom.toFixed(1)}x`;
   }
 
-  setStand(number) {
-    this.el.stand.textContent = `Stand: ${number}`;
+  setStand(label) {
+    this.el.stand.textContent = label;
+  }
+
+  /**
+   * headingRad: 0 = north (+Z), increasing toward east (+X).
+   * Rotates the dial so the look direction stays under the top notch.
+   */
+  setCompass(headingRad) {
+    const deg = ((headingRad * 180) / Math.PI + 360) % 360;
+    const rounded = Math.round(deg);
+    if (rounded === this._compassDeg) return;
+    this._compassDeg = rounded;
+    this.el.compassDial.style.transform = `rotate(${-deg}deg)`;
+    this.el.compassLabel.textContent = compassCardinal(deg);
   }
 
   setScoped(scoped) {
