@@ -64,10 +64,13 @@ export const FACING_YAW = {
 // Keys select them in order: A, S, D. Each site sees the other two and the valley.
 // label is painted on a foot-level signboard facing the other stands.
 // facing: compass heading applied to the camera when the player switches here.
+//
+// From Tower S looking north (+Z), the camera's local +X (screen-right) is world
+// -X, so Tower A sits east of S (left of view) and Tower D west of S (right).
 export const STANDS = [
-  { key: 'KeyA', label: 'Tower A', position: [0, 5], facing: 'east' },
+  { key: 'KeyA', label: 'Tower A', position: [74, -27], facing: 'east' },
   { key: 'KeyS', label: 'Tower S', position: [22, -73], facing: 'north' },
-  { key: 'KeyD', label: 'Tower D', position: [74, -27], facing: 'west' },
+  { key: 'KeyD', label: 'Tower D', position: [0, 5], facing: 'west' },
 ];
 
 // Player spawn: Tower S, facing north (+Z).

@@ -28,7 +28,7 @@ Opening `index.html` directly from disk no longer works; use the dev server or a
 - Esc: release the pointer
 - M: leave a mission or free play and return to the mission list
 
-You start on Tower S facing north. A, S, and D move the camera to that stand immediately and set the look yaw to the stand's facing (A → east, S → north, D → west). They do not fire or reload. Pointer lock, scope zoom, and shooting keep working after a switch. The HUD shows the active tower name. A compass dial in the top-right tracks camera look yaw live (N/E/S/W).
+You start on Tower S facing north. From that view Tower A is on the left and Tower D on the right. A, S, and D move the camera to that stand immediately and set the look yaw to the stand's facing (A → east, S → north, D → west). They do not fire or reload. Pointer lock, scope zoom, and shooting keep working after a switch. The HUD shows the active tower name. A compass dial in the top-right tracks camera look yaw live (N/E/S/W).
 
 **World north is +Z** (east = +X, south = −Z, west = −X). See `NORTH_AXIS` / `FACING_YAW` in `src/config.js`.
 
