@@ -20,14 +20,33 @@ export class World {
     this.stands = STANDS.map((stand, index) => {
       const [x, z] = stand.position;
       const groundY = this.heightfield.getHeightAt(x, z);
+      // Aim the foot sign at the midpoint of the other stands for cross-tower reads.
+      let faceX = 0;
+      let faceZ = 0;
+      let faceCount = 0;
+      STANDS.forEach((other, otherIndex) => {
+        if (otherIndex === index) return;
+        faceX += other.position[0];
+        faceZ += other.position[1];
+        faceCount += 1;
+      });
+      if (faceCount > 0) {
+        faceX /= faceCount;
+        faceZ /= faceCount;
+      }
       if (STAND.enabled) {
-        const mesh = createStand(x, groundY, z);
+        const mesh = createStand(x, groundY, z, {
+          label: stand.label,
+          faceX,
+          faceZ,
+        });
         mesh.name = `stand-${index + 1}`;
         scene.add(mesh);
       }
       return {
         index,
         key: stand.key,
+        label: stand.label,
         groundY,
         eye: new THREE.Vector3(x, groundY + this.standHeight + PLAYER.eyeHeight, z),
       };

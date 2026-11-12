@@ -50,10 +50,11 @@ export const TERRAIN = {
 
 // Elevated wooden hunting stands. Ground x/z only; y comes from getHeightAt.
 // Keys select them in order: A, S, D. Each site sees the other two and the valley.
+// label is painted on a foot-level signboard facing the other stands.
 export const STANDS = [
-  { key: 'KeyA', position: [0, 5] },
-  { key: 'KeyS', position: [22, -73] },
-  { key: 'KeyD', position: [74, -27] },
+  { key: 'KeyA', label: 'Tower A', position: [0, 5] },
+  { key: 'KeyS', label: 'Tower S', position: [22, -73] },
+  { key: 'KeyD', label: 'Tower D', position: [74, -27] },
 ];
 
 export const STAND = {
@@ -65,6 +66,19 @@ export const STAND = {
   // Switch aim blends from the other stands' eye midpoint down toward the ground
   // so the other towers and the valley share the frame.
   aimDrop: 0.15,
+  // Foot signboard: wood board with canvas text, parked on the outward leg.
+  // Sized to stay readable from the other stands (~70–80 m) under scope.
+  sign: {
+    width: 1.7,
+    height: 0.8,
+    thickness: 0.06,
+    // Board center height above the stand's ground anchor (m).
+    boardY: 0.85,
+    // Extra push past the chosen leg along the facing direction (m).
+    outward: 0.32,
+    woodColor: 0x6e4a24,
+    textColor: '#f3e6c8',
+  },
 };
 
 export const LIGHTS = {
