@@ -24,6 +24,8 @@ export class Animal {
   constructor(species, position, world) {
     this.species = species;
     this.type = species.name;
+    this.premium = Boolean(species.premium);
+    this.scoreMultiplier = species.scoreMultiplier ?? 1;
     this.world = world;
 
     // root: ground position + heading. YXZ so yaw applies before the slope pitch.

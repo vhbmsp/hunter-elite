@@ -90,7 +90,8 @@ export const SCOPE = {
 };
 
 export const WEAPON = {
-  // Score = (baseScore + (distanceBonusCap - min(distance, distanceBonusCap))) * zone multiplier.
+  // Score = (baseScore + (distanceBonusCap - min(distance, distanceBonusCap)))
+  //          * zone multiplier * species scoreMultiplier (1, or 5 for Premium).
   baseScore: 80,
   distanceBonusCap: 100,
   zoneMultiplier: { body: 1, head: 1.5 },
@@ -139,8 +140,8 @@ export const ANIMAL_CLIPS = {
 };
 
 export const ANIMALS = {
-  // Six species, three of each, spread around the stand.
-  count: 18,
+  // Four ground species, four of each. Premium boar uses its own spawn count.
+  count: 16,
   minSpawnDistance: 30,
   spawnDistanceRange: 120,
   // Animals stop approaching once this close to the player.
@@ -164,11 +165,6 @@ export const ANIMALS = {
   // height: standing height to the top of the head/ears (m). Speeds in m/s.
   // walkClipSpeed/runClipSpeed: ground speed at which the clip plays at timeScale 1.
   types: [
-    // Substitute: no CC0 animated rabbit was obtainable; a Shiba Inu scaled to hare size stands in.
-    {
-      name: 'rabbit', model: model('animals/shiba-inu.glb'), height: 0.45,
-      walkSpeed: 0.8, runSpeed: 7, walkClipSpeed: 0.7, runClipSpeed: 4.5,
-    },
     {
       name: 'deer', model: model('animals/deer.glb'), height: 1.55,
       walkSpeed: 1.4, runSpeed: 11, walkClipSpeed: 1.3, runClipSpeed: 9,
@@ -191,11 +187,12 @@ export const ANIMALS = {
       name: 'fox', model: model('animals/fox.glb'), height: 0.6,
       walkSpeed: 1.1, runSpeed: 8, walkClipSpeed: 0.9, runClipSpeed: 5,
     },
-    // Substitute: no CC0 animated wild boar. A Quaternius farm pig, scaled to a
-    // large boar, uses the same loader. Its rig is Head/Neck/Body and its run
-    // clip is Run. The snout points along the head bone's +Y axis.
+    // Premium. Substitute: no CC0 animated wild boar. A Quaternius farm pig, scaled
+    // to a large boar. Only two spawn. scoreMultiplier stacks with the head-shot
+    // multiplier (body ×5, head ×7.5 versus the distance term).
     {
-      name: 'boar', model: model('animals/pig.glb'), height: 1.05,
+      name: 'boar', premium: true, label: 'Premium', scoreMultiplier: 5, spawns: 2,
+      model: model('animals/pig.glb'), height: 1.05,
       walkSpeed: 1.0, runSpeed: 8, walkClipSpeed: 0.85, runClipSpeed: 4.5,
       bones: { neck: 'Neck', rump: 'Body', chest: 'Neck' },
       clips: { idle: ['Idle', 'Idle_Eating'], run: 'Run' },
@@ -205,6 +202,32 @@ export const ANIMALS = {
       // Rounder than the deer the default ellipsoid was tuned on.
       bodyFit: { width: 1.5, height: 2.4, length: 1.25, drop: 0.2 },
     },
+  ],
+};
+
+// Flying flock. The Gobkit duck has no flap clip (idle, attack, dead, walk),
+// so the birds glide on idle and play dead as they fall.
+export const DUCKS = {
+  model: model('animals/duck.glb'),
+  // Standing height (m). The source file is hundreds of units tall.
+  height: 0.42,
+  count: 6,
+  // Circle around the map centre. radius in m, speed in m/s, altitude above the ground.
+  radius: 46,
+  speed: 11,
+  altitude: 11,
+  hitRadius: 0.18,
+  gravity: 18,
+  flyClip: 'idle',
+  deathClip: 'dead',
+  // V formation, metres to the right and behind the leader.
+  slots: [
+    { right: 0, back: 0 },
+    { right: -2.4, back: 2.2 },
+    { right: 2.4, back: 2.2 },
+    { right: -4.6, back: 4.4 },
+    { right: 4.6, back: 4.4 },
+    { right: 0, back: 4.8 },
   ],
 };
 

@@ -83,7 +83,10 @@ export class Game {
     if (result.type === 'kill') {
       this.score += result.points;
       this.hud.setScore(this.score);
-      this.hud.setDistance(result.distance, result.zone);
+      this.hud.setDistance(result.distance, result.zone, {
+        premium: result.premium,
+        points: result.points,
+      });
     } else if (result.type === 'cover') {
       this.hud.setBlocked(result.surface, result.distance);
     } else {
