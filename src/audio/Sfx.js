@@ -43,6 +43,18 @@ export class Sfx {
     });
   }
 
+  pickup() {
+    this.play({
+      osc: { type: 'sine', from: 680, to: 620, sweep: 0.07, gain: 0.16, fade: 0.08, length: 0.09 },
+      noise: { length: 0.015, gain: 0.03, fade: 0.015 },
+    });
+    this.play({
+      delay: 0.08,
+      osc: { type: 'sine', from: 880, to: 840, sweep: 0.1, gain: 0.16, fade: 0.12, length: 0.13 },
+      noise: { length: 0.015, gain: 0.03, fade: 0.015 },
+    });
+  }
+
   death() {
     this.play({
       osc: { type: 'sine', from: 160, to: 30, sweep: 0.28, gain: 0.45, fade: 0.32, length: 0.32 },

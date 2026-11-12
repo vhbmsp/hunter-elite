@@ -1,5 +1,6 @@
 import { Sfx } from '../audio/Sfx.js';
 import { AnimalManager } from '../entities/AnimalManager.js';
+import { LootManager } from '../entities/LootManager.js';
 import { toggleHitboxes } from '../entities/hitbox.js';
 import { MISSION_PENALTY, MISSIONS, gradeKill } from '../missions.js';
 import { Player } from '../player/Player.js';
@@ -49,13 +50,15 @@ export class Game {
     this.scope = new Scope(this.player.camera, this.hud);
     this.impacts = new ImpactEffects(this.scene);
     this.animals = new AnimalManager(this.scene, this.player.camera, this.world);
-    this.rifle = new Rifle(this.player.camera, this.animals, this.world, this.impacts, this.sfx);
+    this.loot = new LootManager(this.scene, this.world);
+    this.rifle = new Rifle(this.player.camera, this.animals, this.world, this.impacts, this.sfx, this.loot);
     this.rifle.onChange = () => this.syncAmmo();
     this.syncAmmo();
 
     this.loop = new GameLoop(this.renderer, this.scene, this.player.camera)
       .add(this.world)
       .add(this.impacts)
+      .add(this.loot)
       .add(this.rifle)
       .add(this.animals)
       .add(this.scope)
@@ -123,6 +126,7 @@ export class Game {
     this.mode = 'menu';
     this.player.unlock();
     this.scope.setActive(false);
+    this.loot.stop();
     this.hud.showMenu();
   }
 
@@ -160,6 +164,7 @@ export class Game {
     this.hud.setDistance(null);
     this.rifle.reset();
     this.animals.respawn();
+    this.loot.start();
     this.scope.setActive(false);
   }
 
@@ -167,6 +172,11 @@ export class Game {
     if (!this.playing) return;
     const result = this.rifle.fire();
     if (result.type === 'locked' || result.type === 'empty') return;
+    if (result.type === 'loot') {
+      if (this.mode === 'mission') this.shots += 1;
+      this.noteLoot(result);
+      return;
+    }
     if (this.mode === 'free') {
       this.noteFreeShot(result);
       return;
@@ -180,6 +190,12 @@ export class Game {
     }
     if (result.type === 'cover') this.hud.setBlocked(result.surface, result.distance);
     else this.hud.setDistance(null);
+  }
+
+  noteLoot(result) {
+    this.score += result.points;
+    this.hud.setScore(this.score);
+    this.hud.setPickup(result.points, result.magazines);
   }
 
   noteFreeShot(result) {
@@ -225,6 +241,7 @@ export class Game {
     this.mode = 'results';
     this.player.unlock();
     this.scope.setActive(false);
+    this.loot.stop();
     this.hud.showResults({
       success,
       mission,

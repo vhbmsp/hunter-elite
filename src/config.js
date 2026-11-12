@@ -288,4 +288,46 @@ export const GRASS = {
   wind: { strength: 0.12, speed: 1.6 },
 };
 
+// Supply crates. A few drop per session on a timer, drift down under a
+// parachute, then sit on the ground until they are shot or they expire.
+export const LOOT = {
+  // How many crates spawn after the level finishes loading.
+  perSession: 3,
+  // Seconds from load until the first drop, then between drops.
+  firstDelay: 6,
+  interval: 25,
+  // Landed crates vanish after this long if they are not shot (s).
+  groundLifetime: 28,
+  // Start this far above the terrain (m). fallSpeed is m/s, so a drop is in
+  // the air for dropHeight / fallSpeed seconds (about 6.5s).
+  dropHeight: 42,
+  fallSpeed: 6.5,
+  // Steady horizontal drift while descending (m/s), plus a sideways sway (m, Hz).
+  driftSpeed: 1.35,
+  swayAmplitude: 0.85,
+  swayFrequency: 0.45,
+  // Parachute squash after touchdown (s).
+  collapseTime: 0.6,
+  // Spawn ring around the stand. The camera starts facing -Z, and spawnArc
+  // (radians) is centered on that direction so crates fall in view.
+  minDistance: 24,
+  maxDistance: 48,
+  spawnArc: 2.2,
+  // Skip steep ground when picking a landing area (rise/run).
+  maxSlope: 0.5,
+  // Crate width, height, depth (m).
+  crateSize: [1.15, 0.78, 1.15],
+  chuteRadius: 1.85,
+  // Canopy rim height above the crate centre (m).
+  chuteHeight: 2.35,
+  // Granted on a hit. A spare magazine, not loose rounds.
+  spareMagazines: 1,
+  points: 50,
+  crateColor: 0xa56b3c,
+  bandColor: 0x3a2918,
+  chuteColor: 0xe26a1b,
+  chuteTrimColor: 0xf7f3ea,
+  ropeColor: 0x241c16,
+};
+
 export const MAX_FRAME_DELTA = 0.1;
