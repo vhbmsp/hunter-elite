@@ -69,9 +69,9 @@ export const FACING_YAW = {
 // From Tower S looking north (-Z): Tower A is west (left of view), Tower D east (right).
 // Spaced so aiming at A reads west and aiming at D reads east on the compass.
 export const STANDS = [
-  { key: 'KeyA', label: 'Tower A', position: [-35, 50], facing: 'east' },
+  { key: 'KeyA', label: 'Tower A', position: [-20, 55], facing: 'east' },
   { key: 'KeyS', label: 'Tower S', position: [22, 90], facing: 'north' },
-  { key: 'KeyD', label: 'Tower D', position: [79, 50], facing: 'west' },
+  { key: 'KeyD', label: 'Tower D', position: [64, 55], facing: 'west' },
 ];
 
 // Player spawn: Tower S, facing north (-Z).
