@@ -71,7 +71,8 @@ export class Rifle {
     const { animal, zone } = hit.object.userData;
     if (!animal.kill()) return { type: 'miss' };
     this.sfx.death();
-    return { type: 'kill', animal, zone, distance: hit.distance, points: scoreFor(hit.distance, zone) };
+    const points = scoreFor(hit.distance, zone, animal.scoreMultiplier ?? 1);
+    return { type: 'kill', animal, zone, distance: hit.distance, points, premium: Boolean(animal.premium) };
   }
 
   /**
@@ -96,8 +97,8 @@ export class Rifle {
   }
 }
 
-export function scoreFor(distance, zone = 'body') {
+export function scoreFor(distance, zone = 'body', scoreMultiplier = 1) {
   const cap = WEAPON.distanceBonusCap;
-  const multiplier = WEAPON.zoneMultiplier[zone] ?? 1;
+  const multiplier = (WEAPON.zoneMultiplier[zone] ?? 1) * scoreMultiplier;
   return Math.round((WEAPON.baseScore + (cap - Math.min(distance, cap))) * multiplier);
 }

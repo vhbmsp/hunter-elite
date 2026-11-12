@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { ANIMALS } from '../config.js';
+import { ANIMALS, DUCKS } from '../config.js';
 import { Animal } from './Animal.js';
+import { Duck, prepareDucks } from './Duck.js';
 import { prepareSpecies } from './species.js';
 
 export class AnimalManager {
@@ -9,11 +10,13 @@ export class AnimalManager {
     this.camera = camera;
     this.world = world;
     this.animals = [];
+    this.ducks = [];
     this.species = new Map();
+    this.flockTime = 0;
   }
 
   static modelUrls() {
-    return ANIMALS.types.map((t) => t.model);
+    return [...ANIMALS.types.map((t) => t.model), DUCKS.model];
   }
 
   /** Builds per-species templates from already-loaded glTFs. */
@@ -21,24 +24,37 @@ export class AnimalManager {
     for (const type of ANIMALS.types) {
       this.species.set(type.name, prepareSpecies(type, assets.get(type.model)));
     }
+    this.duckTemplate = prepareDucks(assets.get(DUCKS.model));
   }
 
   spawnInitial() {
-    const { count, types, minSpawnDistance, spawnDistanceRange } = ANIMALS;
-    for (let i = 0; i < count; i++) {
-      const type = types[i % types.length];
-      const angle = (i / count) * Math.PI * 2 + Math.random() * 0.4;
-      let dist = minSpawnDistance + Math.random() * spawnDistanceRange;
-      let x = Math.cos(angle) * dist;
-      let z = Math.sin(angle) * dist;
-      // Prefer a walkable slope; fall back to the first spot if the ring is all steep.
-      for (let attempt = 0; attempt < 8 && this.world.getSlopeAt(x, z) > ANIMALS.maxSlope; attempt++) {
-        dist = minSpawnDistance + Math.random() * spawnDistanceRange;
-        x = Math.cos(angle + attempt) * dist;
-        z = Math.sin(angle + attempt) * dist;
-      }
-      this.spawn(type.name, new THREE.Vector3(x, 0, z));
+    const pooled = ANIMALS.types.filter((type) => type.spawns == null);
+    const { count } = ANIMALS;
+    for (let i = 0; i < count; i++) this.spawnOnTerrain(pooled[i % pooled.length].name, i, count);
+    for (const type of ANIMALS.types) {
+      if (type.spawns == null) continue;
+      for (let i = 0; i < type.spawns; i++) this.spawnOnTerrain(type.name, i + 1, type.spawns + 1);
     }
+    for (const slot of DUCKS.slots) {
+      const duck = new Duck(this.duckTemplate, slot, this.world);
+      this.scene.add(duck.root);
+      this.ducks.push(duck);
+    }
+  }
+
+  spawnOnTerrain(name, index, total) {
+    const { minSpawnDistance, spawnDistanceRange } = ANIMALS;
+    const angle = (index / total) * Math.PI * 2 + Math.random() * 0.4;
+    let dist = minSpawnDistance + Math.random() * spawnDistanceRange;
+    let x = Math.cos(angle) * dist;
+    let z = Math.sin(angle) * dist;
+    // Prefer a walkable slope; fall back to the first spot if the ring is all steep.
+    for (let attempt = 0; attempt < 8 && this.world.getSlopeAt(x, z) > ANIMALS.maxSlope; attempt++) {
+      dist = minSpawnDistance + Math.random() * spawnDistanceRange;
+      x = Math.cos(angle + attempt) * dist;
+      z = Math.sin(angle + attempt) * dist;
+    }
+    this.spawn(name, new THREE.Vector3(x, 0, z));
   }
 
   spawn(name, position) {
@@ -48,9 +64,9 @@ export class AnimalManager {
     return animal;
   }
 
-  /** Hitbox zones of animals that can still be shot. */
+  /** Hitbox zones of animals and ducks that can still be shot. */
   liveHitboxes() {
-    return this.animals.filter((a) => a.alive).flatMap((a) => a.hitboxes);
+    return [...this.animals, ...this.ducks].filter((a) => a.alive).flatMap((a) => a.hitboxes);
   }
 
   update(delta) {
@@ -61,6 +77,15 @@ export class AnimalManager {
       if (animal.expired) {
         animal.dispose();
         this.animals.splice(i, 1);
+      }
+    }
+    this.flockTime += delta;
+    for (let i = this.ducks.length - 1; i >= 0; i--) {
+      const duck = this.ducks[i];
+      duck.update(delta, this.flockTime);
+      if (duck.expired) {
+        duck.dispose();
+        this.ducks.splice(i, 1);
       }
     }
   }

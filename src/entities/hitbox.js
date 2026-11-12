@@ -23,6 +23,13 @@ function createZone(zone, animal) {
   return mesh;
 }
 
+/** One small sphere. Ducks use this; T toggles the same material as the other zones. */
+export function createHitSphere(animal, radius, zone = 'body') {
+  const mesh = createZone(zone, animal);
+  mesh.scale.setScalar(radius);
+  return mesh;
+}
+
 /** Body ellipsoid (local +Z = torso axis) and head sphere for one animal. */
 export function createAnimalHitboxes(animal, { body, headRadius }) {
   const bodyBox = createZone('body', animal);

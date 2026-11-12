@@ -1,15 +1,17 @@
 # 3D model credits
 
-All models are by **[Quaternius](https://quaternius.com)** and released under
+Ground animals and scenery are by **[Quaternius](https://quaternius.com)**.
+The duck is by **[Gobkit](https://gobkit.com/freebies)**. Every file below is
 **[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/)** (public domain).
 No attribution is required; it is given here anyway.
 
-The files were downloaded as GLB from the
+Animal and scenery files from the Ultimate packs were downloaded as GLB from the
 [trebeljahr/quaternius-showcase](https://github.com/trebeljahr/quaternius-showcase)
-mirror (`public/glb/`), whose `LICENSES.md` lists each pack as CC0-1.0, and then
-renamed and compressed with `gltf-transform meshopt`
-(`EXT_meshopt_compression` + `KHR_mesh_quantization`). Geometry, rigs and
-animation clips are otherwise unchanged.
+mirror (`public/glb/`), whose `LICENSES.md` lists each pack as CC0-1.0. The farm
+pig (wild boar stand-in) is not in that mirror; it is the Pig model from
+Quaternius's Farm Animal Pack. Every file was then renamed and compressed with
+`gltf-transform meshopt` (`EXT_meshopt_compression` + `KHR_mesh_quantization`).
+Geometry, rigs and animation clips are otherwise unchanged.
 
 ## Animals: Ultimate Animated Animal Pack
 
@@ -18,11 +20,33 @@ Source: <https://quaternius.com/packs/ultimateanimatedanimals.html>. License: CC
 | File | Upstream model | Game type | Notes |
 | --- | --- | --- | --- |
 | `animals/deer.glb` | `Deer` | deer | Direct match |
+| `animals/stag.glb` | `Stag` | elk | **Substitute**: the pack has no elk. The stag is the closest large cervid and uses the same rig. Scaled so the back is about 1.3 m and the antler rack about 2.6 m |
 | `animals/fox.glb` | `Fox` | fox | Direct match |
 | `animals/wolf.glb` | `Wolf` | bear | **Substitute**: no CC0 animated bear was available |
-| `animals/shiba-inu.glb` | `ShibaInu` | rabbit | **Substitute**: no CC0 animated rabbit was available; scaled to hare size |
 
-Each rig includes the clips Idle, Idle_2, Eating, Walk, Gallop, Death, plus attack, jump and hit-react clips (not used).
+Each Ultimate-pack rig includes the clips Idle, Idle_2, Eating, Walk, Gallop, Death, plus attack, jump and hit-react clips (not used).
+
+## Animals: Farm Animal Pack (Premium wild boar)
+
+Source: <https://quaternius.com/packs/farmanimal.html> (also released as [LowPoly Animated Animals](https://quaternius.itch.io/lowpoly-animated-animals)). License: CC0-1.0.
+
+No elk and no wild boar exist in the Ultimate Animated Animal Pack or the showcase mirror. The **Premium** boar uses this pack's pig, scaled to a large wild boar (about 1.05 m at the top of the back). Only two spawn. A kill scores five times a normal animal at the same distance, and the head-shot multiplier still applies on top (7.5× the distance term).
+
+| File | Upstream model | Game type | Notes |
+| --- | --- | --- | --- |
+| `animals/pig.glb` | `Pig` | boar, **Premium** | **Substitute**: no CC0 animated wild boar was available. Domestic pig, same low-poly style |
+
+Clips used: Idle, Idle_Eating, Walk, Run, Death. The rig is smaller than the Ultimate pack (`Head`, `Neck`, `Body`, plus four legs) and has no Gallop clip. The snout follows the head bone's +Y axis.
+
+## Ducks
+
+Source: <https://gobkit.com/freebies/animal/Duck.glb> (Gobkit free animal pack). License: CC0-1.0.
+
+No CC0 duck with a flap or fly clip turned up in the Quaternius packs, the trebeljahr showcase, or Gobkit's named clips. This duck is still a licensed animated duck: idle, attack, dead, and walk. The flock glides on `idle` and plays `dead` when shot. There is no fly clip, so nothing was invented to fake wing beats.
+
+| File | Upstream model | Game type | Notes |
+| --- | --- | --- | --- |
+| `animals/duck.glb` | `Duck` | duck | CC0. Scaled from a hundreds-of-units source file to about 0.42 m tall |
 
 ## Scenery
 

@@ -26,9 +26,20 @@ export class Hud {
     this.el.distance.textContent = `Blocked by ${surface}: ${distance.toFixed(1)}m`;
   }
 
-  setDistance(distance, zone) {
+  setDistance(distance, zone, { premium = false, points = null } = {}) {
+    if (distance == null) {
+      this.el.distance.textContent = 'Distance: —';
+      return;
+    }
+    if (premium) {
+      const bits = ['Premium', `${distance.toFixed(1)}m`];
+      if (zone === 'head') bits.push('head shot');
+      if (points != null) bits.push(`+${points}`);
+      this.el.distance.textContent = bits.join(' · ');
+      return;
+    }
     const suffix = zone === 'head' ? ' · head shot' : '';
-    this.el.distance.textContent = distance == null ? 'Distance: —' : `Distance: ${distance.toFixed(1)}m${suffix}`;
+    this.el.distance.textContent = `Distance: ${distance.toFixed(1)}m${suffix}`;
   }
 
   setLoading(loaded, total) {
