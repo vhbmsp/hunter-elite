@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Hunter Elite (dev)",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "vite:dev"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Hunter Elite (preview)",
+      "url": "http://localhost:4173",
+      "webRoot": "${workspaceFolder}/dist",
+      "preLaunchTask": "vite:preview"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Vite: build",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "build"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}
