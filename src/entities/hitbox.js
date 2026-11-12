@@ -14,6 +14,8 @@ const hitboxMaterial = new THREE.MeshBasicMaterial({
 
 // Unit sphere; each zone is scaled to its size (an ellipsoid for the body).
 const unitSphere = new THREE.SphereGeometry(1, 12, 8);
+// Unit cylinder along local Y. Neck segments scale XZ to the neck radius and Y to the bone length.
+const unitCylinder = new THREE.CylinderGeometry(1, 1, 1, 12, 1);
 
 function createZone(zone, animal) {
   const mesh = new THREE.Mesh(unitSphere, hitboxMaterial);
@@ -30,13 +32,35 @@ export function createHitSphere(animal, radius, zone = 'body') {
   return mesh;
 }
 
-/** Body ellipsoid (local +Z = torso axis) and head sphere for one animal. */
-export function createAnimalHitboxes(animal, { body, headRadius }) {
+function createNeckPiece(animal, geometry) {
+  const mesh = new THREE.Mesh(geometry, hitboxMaterial);
+  mesh.name = 'hitbox-neck';
+  mesh.renderOrder = 10;
+  mesh.userData = { animal, zone: 'body' };
+  return mesh;
+}
+
+/**
+ * Body ellipsoid (local +Z = torso axis), neck cylinders and joint spheres, and a head sphere.
+ * The neck pieces are body shots, so a skull hit stays on the head sphere.
+ * `neckSlots` is the most segments the rig can need (chest to head).
+ */
+export function createAnimalHitboxes(animal, { body, headRadius, neckRadius, neckSlots }) {
   const bodyBox = createZone('body', animal);
   bodyBox.scale.set(body.halfWidth, body.halfHeight, body.halfLength);
   const headBox = createZone('head', animal);
   headBox.scale.setScalar(headRadius);
-  return { body: bodyBox, head: headBox };
+  const neckSegments = [];
+  const neckJoints = [];
+  for (let i = 0; i < neckSlots; i++) {
+    const segment = createNeckPiece(animal, unitCylinder);
+    segment.scale.set(neckRadius, 1, neckRadius);
+    neckSegments.push(segment);
+    const joint = createNeckPiece(animal, unitSphere);
+    joint.scale.setScalar(neckRadius);
+    neckJoints.push(joint);
+  }
+  return { body: bodyBox, head: headBox, neckSegments, neckJoints };
 }
 
 export function setHitboxesVisible(visible) {

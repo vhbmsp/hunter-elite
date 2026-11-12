@@ -21,7 +21,7 @@ Opening `index.html` directly from disk no longer works; use the dev server or a
 - RMB (hold): scope zoom
 - LMB or Space: shoot
 - R: reload
-- T: toggle hitbox debug (body and head zones, drawn on top of the models)
+- T: toggle hitbox debug (body, neck, and head zones, drawn on top of the models)
 - Esc: release the pointer
 - M: leave a mission or free play and return to the mission list
 
@@ -67,12 +67,15 @@ for bear) are listed in [`public/models/CREDITS.md`](public/models/CREDITS.md).
 - Real-world sizes, speeds, clip names and bone names are set per species in
   `src/config.js`. Models are scaled at load time from their bounds. Two Premium
   boars spawn; the other species share the ground count.
-- Hitboxes follow the skeleton: a body ellipsoid along the spine and a head
-  sphere on the head bone, sized from the rig. The Ultimate-pack animals use
-  `Back`, `Torso3`, `Neck3` and `Head`. The boar overrides those names.
+- Hitboxes follow the skeleton: a body ellipsoid along the spine, cylinders and
+  joint spheres along the neck bones, and a head sphere on the head bone.
+  A neck hit scores as a body shot; the skull stays a head shot. Sizes come
+  from the rig. The Ultimate-pack animals use `Back`, `Torso3`, `Neck3` and
+  `Head`. The boar overrides those names. Foxes use the same neck chain.
 - Ducks fly a circle in a V, 11 m above the ground, on the Gobkit idle clip
   (the file has no flap). A hit plays `dead` and the bird falls. Their hitbox
-  is one small sphere, and `T` toggles it with the others.
+  is one small sphere (the neck already sits inside it), and `T` toggles it
+  with the others.
 
 To swap a model, drop a GLB into `public/models/animals/` and point the species
 entry in `src/config.js` at it. A different rig can name its own spine and head
