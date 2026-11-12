@@ -21,7 +21,7 @@ export class Player {
 
   /**
    * Move the camera onto a stand and aim along a compass yaw.
-   * Yaw uses the world convention in config (north = +Z). Pitch stays gentle.
+   * Yaw uses the world convention in config (north = -Z). Pitch stays gentle.
    * Pointer lock and scope stay intact.
    */
   place(position, yaw, pitch = PLAYER.defaultPitch) {
@@ -32,11 +32,11 @@ export class Player {
     this.camera.rotation.z = 0;
   }
 
-  /** Horizontal look heading in radians, 0 = north (+Z), increasing toward east (+X). */
+  /** Horizontal look heading in radians, 0 = north (-Z), increasing toward east (+X). */
   getHeading() {
     const dir = new THREE.Vector3();
     this.camera.getWorldDirection(dir);
-    return Math.atan2(dir.x, dir.z);
+    return Math.atan2(dir.x, -dir.z);
   }
 
   lock() {

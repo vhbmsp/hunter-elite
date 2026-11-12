@@ -88,8 +88,8 @@ function chooseLanding(world) {
   const [px, , pz] = PLAYER.position;
   let pick = null;
   for (let i = 0; i < 8; i++) {
-    // π/2 → +Z (world north), matching the Tower S start facing.
-    const angle = Math.PI / 2 + (Math.random() - 0.5) * LOOT.spawnArc;
+    // -π/2 → -Z (world north), matching the Tower S start facing.
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * LOOT.spawnArc;
     const dist = LOOT.minDistance + Math.random() * (LOOT.maxDistance - LOOT.minDistance);
     pick = { x: px + Math.cos(angle) * dist, z: pz + Math.sin(angle) * dist };
     if (world.getSlopeAt(pick.x, pick.z) <= LOOT.maxSlope) return pick;

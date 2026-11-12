@@ -28,9 +28,9 @@ Opening `index.html` directly from disk no longer works; use the dev server or a
 - Esc: release the pointer
 - M: leave a mission or free play and return to the mission list
 
-You start on Tower S facing north. From that view Tower A is on the left and Tower D on the right. A, S, and D move the camera to that stand immediately and set the look yaw to the stand's facing (A → east, S → north, D → west). They do not fire or reload. Pointer lock, scope zoom, and shooting keep working after a switch. The HUD shows the active tower name. A compass dial in the top-right tracks camera look yaw live (N/E/S/W).
+You start on Tower S facing north. From that view Tower A is on the left (west) and Tower D on the right (east). Looking left toward A reads west on the compass; looking right toward D reads east. A, S, and D move the camera to that stand immediately and set the look yaw to the stand's facing (A → east, S → north, D → west). They do not fire or reload. Pointer lock, scope zoom, and shooting keep working after a switch. The HUD shows the active tower name. A compass dial in the top-right tracks camera look yaw live (N/E/S/W).
 
-**World north is +Z** (east = +X, south = −Z, west = −X). See `NORTH_AXIS` / `FACING_YAW` in `src/config.js`.
+**World north is −Z** (east = +X, south = +Z, west = −X). See `NORTH_AXIS` / `FACING_YAW` in `src/config.js`.
 
 The rifle is a bolt-action with a 5-round magazine (`WEAPON` in `src/config.js`). You start with one magazine loaded and 2 spare magazines. The HUD shows rounds left in the magazine and spare magazines.
 
@@ -104,7 +104,7 @@ bones on that entry.
 (hills, ridged noise, a raised rim) and exposes `getHeightAt(x, z)`, which
 matches the mesh triangles. Slope and height tint the vertices from grass to
 dirt to rock. Three raised wooden stands share one model (`STAND` / `STANDS`
-in `src/config.js`). Each is seated with `getHeightAt`. World north is +Z.
+in `src/config.js`). Each is seated with `getHeightAt`. World north is −Z.
 The player starts on Tower S facing north; A / S / D switch stands and apply
 that stand's facing yaw.
 
