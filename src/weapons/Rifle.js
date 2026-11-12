@@ -8,19 +8,20 @@ export class Rifle {
     this.sfx = sfx;
   }
 
-  /** Fires one shot. Returns { animal, distance, points } on a kill, otherwise null. */
+  /** Fires one shot. Returns { animal, zone, distance, points } on a kill, otherwise null. */
   fire() {
     this.sfx.shot();
     const hit = hitscan(this.camera, this.animals.liveHitboxes());
-    const animal = hit?.object.userData.animal;
+    const { animal, zone } = hit?.object.userData ?? {};
     if (!animal?.kill()) return null;
 
     this.sfx.death();
-    return { animal, distance: hit.distance, points: scoreFor(hit.distance) };
+    return { animal, zone, distance: hit.distance, points: scoreFor(hit.distance, zone) };
   }
 }
 
-export function scoreFor(distance) {
+export function scoreFor(distance, zone = 'body') {
   const cap = WEAPON.distanceBonusCap;
-  return Math.round(WEAPON.baseScore + (cap - Math.min(distance, cap)));
+  const multiplier = WEAPON.zoneMultiplier[zone] ?? 1;
+  return Math.round((WEAPON.baseScore + (cap - Math.min(distance, cap))) * multiplier);
 }

@@ -9,14 +9,29 @@ export class Hud {
       scope: $('scope'),
       instructions: $('instructions'),
     };
+    this.instructionsText = this.el.instructions.textContent;
   }
 
   setScore(score) {
     this.el.score.textContent = `Score: ${score}`;
   }
 
-  setDistance(distance) {
-    this.el.distance.textContent = distance == null ? 'Distance: —' : `Distance: ${distance.toFixed(1)}m`;
+  setDistance(distance, zone) {
+    const suffix = zone === 'head' ? ' · head shot' : '';
+    this.el.distance.textContent = distance == null ? 'Distance: —' : `Distance: ${distance.toFixed(1)}m${suffix}`;
+  }
+
+  setLoading(loaded, total) {
+    this.el.instructions.textContent = `Loading models… ${loaded}/${total}`;
+  }
+
+  setReady() {
+    this.el.instructions.textContent = this.instructionsText;
+  }
+
+  setError(message) {
+    this.el.instructions.textContent = message;
+    this.el.instructions.style.opacity = '1';
   }
 
   setZoom(zoom) {

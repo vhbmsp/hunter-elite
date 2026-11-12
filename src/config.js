@@ -1,13 +1,11 @@
-// Central tuning knobs. Gameplay values match the original single-file build.
+// Central tuning knobs.
 
-const asset = (file) => `${import.meta.env.BASE_URL}imagine_images/${file}`;
+const model = (path) => `${import.meta.env.BASE_URL}models/${path}`;
 
 export const RENDERER = {
   maxPixelRatio: 2,
   antialias: true,
-  // Nothing in the scene casts shadows (billboards are unlit), so the
-  // shadow pass would be pure overhead.
-  shadows: false,
+  shadows: true,
 };
 
 export const WORLD = {
@@ -22,14 +20,18 @@ export const WORLD = {
 
 export const LIGHTS = {
   ambient: { color: 0xffffff, intensity: 0.6 },
+  hemisphere: { sky: 0xcfe8ff, ground: 0x3a5f0b, intensity: 0.5 },
   sun: {
     color: 0xfff5e0,
-    intensity: 1.2,
+    intensity: 1.6,
     position: [50, 80, 30],
     shadowMapSize: 2048,
-    shadowExtent: 60,
+    // Half-size of the shadow frustum (m), centred on the player.
+    shadowExtent: 110,
     shadowNear: 0.5,
-    shadowFar: 200,
+    shadowFar: 300,
+    shadowBias: -0.0005,
+    shadowNormalBias: 0.03,
   },
 };
 
@@ -47,9 +49,18 @@ export const SCOPE = {
 };
 
 export const WEAPON = {
-  // Score = baseScore + (distanceBonusCap - min(distance, distanceBonusCap)).
+  // Score = (baseScore + (distanceBonusCap - min(distance, distanceBonusCap))) * zone multiplier.
   baseScore: 80,
   distanceBonusCap: 100,
+  zoneMultiplier: { body: 1, head: 1.5 },
+};
+
+// Clip names inside the Quaternius animal rigs (prefixed "AnimalArmature|" in the files).
+export const ANIMAL_CLIPS = {
+  idle: ['Idle', 'Idle_2', 'Eating'],
+  walk: 'Walk',
+  run: 'Gallop',
+  death: 'Death',
 };
 
 export const ANIMALS = {
@@ -59,28 +70,59 @@ export const ANIMALS = {
   // Animals stop approaching once this close to the player.
   minPlayerDistance: 6,
   corpseLifetime: 5,
-  deadOpacity: 0.4,
-  deadColor: 0x555555,
-  speedMin: 0.8,
-  speedRange: 2.5,
-  runMultiplier: 2.2,
-  moveScale: { sideways: 8, run: 8, approach: 6, recede: 5 },
-  hitboxRadiusFactor: 0.0875,
+  // Per-animal random speed factor range.
+  speedVariance: [0.8, 1.25],
+  // Yaw turn rate toward the movement direction (rad/s).
+  turnRate: 4,
+  crossFade: 0.25,
   hitboxColor: 0xff0000,
   hitboxOpacity: 0.6,
   showHitboxes: false,
+  // height: standing height to the top of the head/ears (m). Speeds in m/s.
+  // walkClipSpeed/runClipSpeed: ground speed at which the clip plays at timeScale 1.
   types: [
-    { name: 'rabbit', texture: asset('VHjkn.png'), scale: 1.4, height: 0.7, color: '#8d7b68' },
-    { name: 'deer', texture: asset('X1JXr.png'), scale: 2.6, height: 1.5, color: '#8b5a2b' },
-    { name: 'bear', texture: asset('epMIo.png'), scale: 3.0, height: 1.7, color: '#3e2a1c' },
-    { name: 'fox', texture: asset('zun6G.png'), scale: 2.0, height: 1.0, color: '#d2691e' },
+    // Substitute: no CC0 animated rabbit was obtainable; a Shiba Inu scaled to hare size stands in.
+    {
+      name: 'rabbit', model: model('animals/shiba-inu.glb'), height: 0.45,
+      walkSpeed: 0.8, runSpeed: 7, walkClipSpeed: 0.7, runClipSpeed: 4.5,
+    },
+    {
+      name: 'deer', model: model('animals/deer.glb'), height: 1.55,
+      walkSpeed: 1.4, runSpeed: 11, walkClipSpeed: 1.3, runClipSpeed: 9,
+    },
+    // Substitute: no CC0 animated bear was obtainable; a grey wolf (wild predator) stands in.
+    {
+      name: 'bear', model: model('animals/wolf.glb'), height: 1.05,
+      walkSpeed: 1.5, runSpeed: 10, walkClipSpeed: 1.3, runClipSpeed: 7,
+    },
+    {
+      name: 'fox', model: model('animals/fox.glb'), height: 0.6,
+      walkSpeed: 1.1, runSpeed: 8, walkClipSpeed: 0.9, runClipSpeed: 5,
+    },
   ],
 };
 
 export const ENVIRONMENT = {
-  trees: { texture: asset('x8soI.png'), count: 25, minDistance: 25, distanceRange: 150 },
-  bushes: { texture: asset('IMPtR.png'), count: 30, minDistance: 15, distanceRange: 100 },
-  logs: { texture: asset('NlAcS.png'), count: 12, minDistance: 10, distanceRange: 80 },
+  trees: {
+    models: ['nature/common-tree-1.glb', 'nature/common-tree-3.glb', 'nature/pine-tree-1.glb', 'nature/pine-tree-3.glb'].map(model),
+    count: 25, minDistance: 25, distanceRange: 150,
+    // Target height range (m).
+    height: [6, 12],
+    castShadow: true,
+  },
+  bushes: {
+    models: ['nature/bush-1.glb', 'nature/bush-2.glb', 'nature/bush-berries-1.glb'].map(model),
+    count: 30, minDistance: 15, distanceRange: 100,
+    height: [0.8, 1.8],
+    castShadow: true,
+  },
+  logs: {
+    models: ['nature/wood-log.glb', 'nature/wood-log-moss.glb'].map(model),
+    count: 12, minDistance: 10, distanceRange: 80,
+    // Logs are sized by length along their long axis instead of height.
+    length: [3, 4],
+    castShadow: true,
+  },
 };
 
 export const MAX_FRAME_DELTA = 0.1;

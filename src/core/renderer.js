@@ -6,6 +6,7 @@ export function createRenderer(container = document.body) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, RENDERER.maxPixelRatio));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = RENDERER.shadows;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
   return renderer;
 }
