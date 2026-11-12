@@ -57,6 +57,15 @@ export class AnimalManager {
     this.spawn(name, new THREE.Vector3(x, 0, z));
   }
 
+  /** Drops every animal and duck, then spawns the usual population again. */
+  respawn() {
+    for (const animal of [...this.animals, ...this.ducks]) animal.dispose();
+    this.animals = [];
+    this.ducks = [];
+    this.flockTime = 0;
+    this.spawnInitial();
+  }
+
   spawn(name, position) {
     const animal = new Animal(this.species.get(name), position, this.world);
     this.scene.add(animal.root);

@@ -22,6 +22,10 @@ export class Player {
     if (!this.controls.isLocked) this.controls.lock();
   }
 
+  unlock() {
+    if (this.controls.isLocked) this.controls.unlock();
+  }
+
   on(event, handler) {
     this.controls.addEventListener(event, handler);
   }

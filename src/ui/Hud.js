@@ -1,7 +1,24 @@
+import {
+  MISSION_PENALTY,
+  MISSIONS,
+  formatAccuracy,
+  formatClock,
+  formatLongest,
+  formatPenalties,
+  formatScore,
+  formatTimeReport,
+  penaltyRule,
+  speciesLabel,
+} from '../missions.js';
+
 export class Hud {
-  constructor(root = document) {
+  constructor(handlers = {}, root = document) {
+    this.handlers = handlers;
+    this.ready = false;
+    this.mission = null;
     const $ = (id) => root.getElementById(id);
     this.el = {
+      ui: $('ui'),
       score: $('score'),
       ammo: $('ammo'),
       distance: $('distance'),
@@ -9,12 +26,98 @@ export class Hud {
       crosshair: $('crosshair'),
       scope: $('scope'),
       instructions: $('instructions'),
+      objective: $('objective'),
+      timer: $('timer'),
+      rule: $('rule'),
+      menu: $('menu'),
+      menuStatus: $('menu-status'),
+      missionList: $('mission-list'),
+      freePlay: $('free-play'),
+      results: $('results'),
+      kicker: $('results-kicker'),
+      heading: $('results-heading'),
+      resultsObjective: $('results-objective'),
+      detail: $('results-detail'),
+      accuracy: $('results-accuracy'),
+      longest: $('results-longest'),
+      time: $('results-time'),
+      resultsScore: $('results-score'),
+      penalties: $('results-penalties'),
+      retry: $('results-retry'),
+      next: $('results-next'),
+      menuButton: $('results-menu'),
+      resultsFree: $('results-free'),
     };
     this.instructionsText = this.el.instructions.textContent;
+    this.renderMissions();
+    this.bindOverlay();
+    this.setOverlay(true);
+  }
+
+  renderMissions() {
+    const list = this.el.missionList;
+    list.replaceChildren();
+    MISSIONS.forEach((mission, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'mission';
+      button.disabled = !this.ready;
+
+      const title = document.createElement('span');
+      title.className = 'mission-title';
+      title.textContent = mission.title;
+
+      const objective = document.createElement('span');
+      objective.className = 'mission-objective';
+      objective.textContent = mission.objective;
+
+      const time = document.createElement('span');
+      time.className = 'mission-time';
+      time.textContent = formatClock(mission.seconds);
+
+      button.append(title, objective, time);
+      button.addEventListener('click', () => {
+        button.blur();
+        this.handlers.onMission?.(index);
+      });
+      list.append(button);
+    });
+  }
+
+  bindOverlay() {
+    const stop = (event) => event.stopPropagation();
+    for (const overlay of [this.el.menu, this.el.results]) {
+      overlay.addEventListener('click', stop);
+      overlay.addEventListener('mousedown', stop);
+    }
+    this.el.freePlay.addEventListener('click', () => {
+      this.el.freePlay.blur();
+      this.handlers.onFreePlay?.();
+    });
+    this.el.retry.addEventListener('click', () => {
+      this.el.retry.blur();
+      this.handlers.onRetry?.();
+    });
+    this.el.next.addEventListener('click', () => {
+      this.el.next.blur();
+      this.handlers.onNext?.();
+    });
+    this.el.menuButton.addEventListener('click', () => {
+      this.el.menuButton.blur();
+      this.handlers.onMenu?.();
+    });
+    this.el.resultsFree.addEventListener('click', () => {
+      this.el.resultsFree.blur();
+      this.handlers.onFreePlay?.();
+    });
+  }
+
+  setOverlay(open) {
+    this.el.ui.classList.toggle('overlay-open', open);
   }
 
   setScore(score) {
-    this.el.score.textContent = `Score: ${score}`;
+    this.el.score.textContent = `Score: ${formatScore(score)}`;
   }
 
   setAmmo(rounds, spares, reloading) {
@@ -23,10 +126,12 @@ export class Hud {
   }
 
   setBlocked(surface, distance) {
+    this.el.distance.classList.remove('penalty');
     this.el.distance.textContent = `Blocked by ${surface}: ${distance.toFixed(1)}m`;
   }
 
   setDistance(distance, zone, { premium = false, points = null } = {}) {
+    this.el.distance.classList.remove('penalty');
     if (distance == null) {
       this.el.distance.textContent = 'Distance: —';
       return;
@@ -42,17 +147,110 @@ export class Hud {
     this.el.distance.textContent = `Distance: ${distance.toFixed(1)}m${suffix}`;
   }
 
+  setPenalty(grade, animalType, distance, mission) {
+    this.el.distance.classList.add('penalty');
+    if (grade === 'wrong-species') {
+      const name = speciesLabel(animalType);
+      this.el.distance.textContent = `Penalty −${MISSION_PENALTY} · ${name} is not the objective · does not count`;
+      return;
+    }
+    this.el.distance.textContent = `Penalty −${MISSION_PENALTY} · ${distance.toFixed(1)} m is not over ${mission.minDistance} m · does not count`;
+  }
+
+  showMenu() {
+    this.mission = null;
+    this.el.menu.hidden = false;
+    this.el.results.hidden = true;
+    this.el.objective.hidden = true;
+    this.el.timer.hidden = true;
+    this.el.rule.hidden = true;
+    this.setOverlay(true);
+  }
+
+  showMission(mission, progress, timeLeft) {
+    this.mission = mission;
+    this.el.menu.hidden = true;
+    this.el.results.hidden = true;
+    this.el.objective.hidden = false;
+    this.el.timer.hidden = false;
+    this.el.rule.hidden = false;
+    this.el.rule.textContent = penaltyRule(mission);
+    this.setProgress(progress);
+    this.setTimer(timeLeft);
+    this.setOverlay(false);
+  }
+
+  showFreePlay() {
+    this.mission = null;
+    this.el.menu.hidden = true;
+    this.el.results.hidden = true;
+    this.el.objective.hidden = true;
+    this.el.timer.hidden = true;
+    this.el.rule.hidden = true;
+    this.setOverlay(false);
+  }
+
+  setProgress(progress) {
+    const { objective, count } = this.mission;
+    this.el.objective.textContent = `Objective: ${objective} · ${progress}/${count}`;
+  }
+
+  setTimer(seconds) {
+    this.el.timer.textContent = `Time: ${formatClock(seconds)}`;
+  }
+
+  showResults({
+    success,
+    mission,
+    progress,
+    hits,
+    shots,
+    longest,
+    timeLeft,
+    timeUsed,
+    score,
+    penalties,
+    hasNext,
+  }) {
+    this.el.menu.hidden = true;
+    this.el.results.hidden = false;
+    this.el.kicker.textContent = mission.title;
+    this.el.heading.textContent = success ? 'Success' : 'Failed';
+    this.el.heading.classList.toggle('success', success);
+    this.el.heading.classList.toggle('fail', !success);
+    this.el.resultsObjective.textContent = mission.objective;
+    this.el.detail.textContent = success
+      ? 'Objective complete.'
+      : `Time ran out · ${progress}/${mission.count}`;
+    this.el.accuracy.textContent = formatAccuracy(hits, shots);
+    this.el.longest.textContent = formatLongest(longest);
+    this.el.time.textContent = formatTimeReport(timeLeft, timeUsed);
+    this.el.resultsScore.textContent = formatScore(score);
+    this.el.penalties.textContent = formatPenalties(penalties);
+    this.el.next.hidden = !hasNext;
+    this.setOverlay(true);
+  }
+
   setLoading(loaded, total) {
-    this.el.instructions.textContent = `Loading models… ${loaded}/${total}`;
+    const text = `Loading models… ${loaded}/${total}`;
+    this.el.instructions.textContent = text;
+    this.el.menuStatus.hidden = false;
+    this.el.menuStatus.textContent = text;
   }
 
   setReady() {
+    this.ready = true;
     this.el.instructions.textContent = this.instructionsText;
+    this.el.menuStatus.hidden = true;
+    this.el.freePlay.disabled = false;
+    for (const button of this.el.missionList.querySelectorAll('button')) button.disabled = false;
   }
 
   setError(message) {
     this.el.instructions.textContent = message;
     this.el.instructions.style.opacity = '1';
+    this.el.menuStatus.hidden = false;
+    this.el.menuStatus.textContent = message;
   }
 
   setZoom(zoom) {

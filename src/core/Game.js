@@ -1,6 +1,7 @@
 import { Sfx } from '../audio/Sfx.js';
 import { AnimalManager } from '../entities/AnimalManager.js';
 import { toggleHitboxes } from '../entities/hitbox.js';
+import { MISSION_PENALTY, MISSIONS, gradeKill } from '../missions.js';
 import { Player } from '../player/Player.js';
 import { Scope } from '../player/Scope.js';
 import { Hud } from '../ui/Hud.js';
@@ -17,10 +18,26 @@ import { createScene } from './scene.js';
 export class Game {
   constructor(container = document.body) {
     this.score = 0;
+    this.loaded = false;
+    this.mode = 'menu';
+    this.mission = null;
+    this.missionIndex = -1;
+    this.progress = 0;
+    this.timeLeft = 0;
+    this.shots = 0;
+    this.hits = 0;
+    this.longest = 0;
+    this.penalties = 0;
 
     this.renderer = createRenderer(container);
     this.scene = createScene();
-    this.hud = new Hud();
+    this.hud = new Hud({
+      onMission: (index) => this.startMission(index),
+      onFreePlay: () => this.startFreePlay(),
+      onRetry: () => this.startMission(this.missionIndex),
+      onNext: () => this.startMission(this.missionIndex + 1),
+      onMenu: () => this.showMenu(),
+    });
     this.sfx = new Sfx();
     this.assets = new AssetLibrary((loaded, total) => this.hud.setLoading(loaded, total));
 
@@ -41,7 +58,24 @@ export class Game {
       .add(this.impacts)
       .add(this.rifle)
       .add(this.animals)
-      .add(this.scope);
+      .add(this.scope)
+      .add(this);
+  }
+
+  get playing() {
+    return this.mode === 'mission' || this.mode === 'free';
+  }
+
+  update(delta) {
+    if (this.mode !== 'mission') return;
+    this.timeLeft -= delta;
+    if (this.timeLeft <= 0) {
+      this.timeLeft = 0;
+      this.hud.setTimer(0);
+      this.finishMission(false);
+      return;
+    }
+    this.hud.setTimer(this.timeLeft);
   }
 
   async load() {
@@ -53,6 +87,7 @@ export class Game {
 
     this.bindEvents();
     this.hud.setZoom(this.scope.zoom);
+    this.loaded = true;
     this.hud.setReady();
   }
 
@@ -67,19 +102,87 @@ export class Game {
     this.unbindInput = bindInput({
       isLocked: () => this.player.isLocked,
       lock: () => {
+        if (!this.playing) return;
         this.sfx.unlock();
         this.player.lock();
       },
       shoot: () => this.shoot(),
       reload: () => this.reload(),
-      scope: (active) => this.scope.setActive(active),
+      scope: (active) => {
+        if (!this.playing) return;
+        this.scope.setActive(active);
+      },
       toggleHitboxes: () => toggleHitboxes(),
+      menu: () => {
+        if (this.playing) this.showMenu();
+      },
     });
   }
 
+  showMenu() {
+    this.mode = 'menu';
+    this.player.unlock();
+    this.scope.setActive(false);
+    this.hud.showMenu();
+  }
+
+  startMission(index) {
+    if (!this.loaded) return;
+    const mission = MISSIONS[index];
+    if (!mission) return;
+    this.mode = 'mission';
+    this.mission = mission;
+    this.missionIndex = index;
+    this.timeLeft = mission.seconds;
+    this.beginRound();
+    this.hud.showMission(mission, 0, mission.seconds);
+  }
+
+  startFreePlay() {
+    if (!this.loaded) return;
+    this.mode = 'free';
+    this.mission = null;
+    this.missionIndex = -1;
+    this.timeLeft = 0;
+    this.beginRound();
+    this.hud.showFreePlay();
+  }
+
+  /** Fresh score, rifle, and animals. Bolt, reload, and muzzle behavior are untouched. */
+  beginRound() {
+    this.score = 0;
+    this.progress = 0;
+    this.shots = 0;
+    this.hits = 0;
+    this.longest = 0;
+    this.penalties = 0;
+    this.hud.setScore(0);
+    this.hud.setDistance(null);
+    this.rifle.reset();
+    this.animals.respawn();
+    this.scope.setActive(false);
+  }
+
   shoot() {
+    if (!this.playing) return;
     const result = this.rifle.fire();
     if (result.type === 'locked' || result.type === 'empty') return;
+    if (this.mode === 'free') {
+      this.noteFreeShot(result);
+      return;
+    }
+    this.shots += 1;
+    if (result.type === 'kill') {
+      this.hits += 1;
+      if (result.distance > this.longest) this.longest = result.distance;
+      this.noteMissionKill(result);
+      return;
+    }
+    if (result.type === 'cover') this.hud.setBlocked(result.surface, result.distance);
+    else this.hud.setDistance(null);
+  }
+
+  noteFreeShot(result) {
     if (result.type === 'kill') {
       this.score += result.points;
       this.hud.setScore(this.score);
@@ -94,7 +197,51 @@ export class Game {
     }
   }
 
+  noteMissionKill(result) {
+    const grade = gradeKill(this.mission, result.animal.type, result.distance);
+    if (grade === 'count') {
+      this.score += result.points;
+      this.progress += 1;
+      this.hud.setScore(this.score);
+      this.hud.setDistance(result.distance, result.zone, {
+        premium: result.premium,
+        points: result.points,
+      });
+      this.hud.setProgress(this.progress);
+      if (this.progress >= this.mission.count) this.finishMission(true);
+      return;
+    }
+    this.score -= MISSION_PENALTY;
+    this.penalties += 1;
+    this.hud.setScore(this.score);
+    this.hud.setPenalty(grade, result.animal.type, result.distance, this.mission);
+  }
+
+  finishMission(success) {
+    if (this.mode !== 'mission' || !this.mission) return;
+    const mission = this.mission;
+    const timeLeft = Math.max(0, this.timeLeft);
+    const timeUsed = Math.max(0, mission.seconds - timeLeft);
+    this.mode = 'results';
+    this.player.unlock();
+    this.scope.setActive(false);
+    this.hud.showResults({
+      success,
+      mission,
+      progress: this.progress,
+      hits: this.hits,
+      shots: this.shots,
+      longest: this.longest,
+      timeLeft,
+      timeUsed,
+      score: this.score,
+      penalties: this.penalties,
+      hasNext: success && this.missionIndex < MISSIONS.length - 1,
+    });
+  }
+
   reload() {
+    if (!this.playing) return;
     this.rifle.tryReload();
   }
 
