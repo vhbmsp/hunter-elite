@@ -29,13 +29,15 @@ The rifle is a bolt-action with a 5-round magazine (`WEAPON` in `src/config.js`)
 
 After each shot the bolt cycles for about 0.85s and the rifle will not fire again until it closes. R starts a 2s reload when the magazine is empty or partial and a spare remains: the spare replaces the seated magazine, and any rounds left in the old one are discarded. Reload does nothing with no spare magazines, or when the current one is already full. The trigger on an empty, ready rifle clicks and does not fire. No shot is fired while the bolt is cycling or a reload is in progress.
 
+Supply crates are collected by shooting them (LMB or Space). The hunter stands still, so there is no close-range pickup. See [Supply drops](#supply-drops).
+
 Head shots score 1.5× (`WEAPON.zoneMultiplier` in `src/config.js`). The Premium pig multiplies that whole score by 5 (`scoreMultiplier` on the boar entry), so a head shot is 7.5× the distance term. A Premium kill reads "Premium" on the distance line, with the points just earned.
 
 ## Missions
 
 The game opens on a mission list. Each level names an objective (species, count, and a minimum distance) and runs a countdown. Clearing the objective ends the level immediately and opens the results. Running the clock out fails the level.
 
-A shot counts only when it hits the objective species strictly farther than the minimum. Shooting any other animal, or the right species that is not over that distance, subtracts 50 from the score and does not count. The animal still drops. The HUD states that rule for the level you are on. Misses and shots stopped by cover are not that penalty; they do count as shots when accuracy is hits / shots.
+A shot counts only when it hits the objective species strictly farther than the minimum. Shooting any other animal, or the right species that is not over that distance, subtracts 50 from the score and does not count. The animal still drops. The HUD states that rule for the level you are on. Misses and shots stopped by cover are not that penalty; they do count as shots when accuracy is hits / shots. Shooting a supply crate is not that penalty and does not count toward the objective. It does count as a shot fired.
 
 The results screen shows success or failure, accuracy (hits / shots), the longest shot that hit an animal, time left and time used, the level score, and how many penalties landed.
 
@@ -51,6 +53,14 @@ Free play skips missions and keeps the sandbox: no timer, no objective, and no w
 | Passing ducks | 2 ducks over 35 m | 1:30 |
 
 Elk uses the stag model, bear uses the wolf, and the Premium pig is the boar species, same as free play.
+
+## Supply drops
+
+Crates parachute in during a mission and during free play (`LOOT` in `src/config.js`). Each round drops three: the first 6 seconds after the round starts, then one every 25 seconds. Each starts 42 m above the ground, falls at 6.5 m/s (about 6.5 seconds in the air), and drifts sideways at 1.35 m/s with a small sway. They spawn ahead of the stand, 24 m to 48 m out, on ground that is not too steep. Leaving for the mission list or the results screen clears them, and the next round starts a new set.
+
+On touchdown the parachute collapses and the crate sits for 28 seconds. If it is not shot it disappears. A hit spends the round in the chamber and grants one spare magazine plus 50 points. The ammo line, the score, and the status line (`Loot: +1 spare mag · +50`) all update.
+
+Only the wooden crate stops a bullet. The canopy and the ropes do not, so the cloth does not silently eat shots aimed past it. Crates are tested on the same ray as animals and solid cover, and the nearest hit wins: a shot that hits the crate does not also kill an animal behind it, and a crate behind an animal or behind a tree is not collected. The crate and parachute are built-in meshes, not a downloaded model.
 
 ## Assets
 
@@ -94,7 +104,7 @@ pitch to the slope, slow down uphill, and turn away from grades steeper than
 `ANIMALS.maxSlope`.
 
 Shots are tested against the terrain and solid scenery (trees, rocks, logs)
-before animal hitboxes, so cover blocks the bullet. A hit on cover kicks up
+before animal hitboxes and supply crates, so cover blocks the bullet. A hit on cover kicks up
 dust and leaves a mark, and the HUD reads "Blocked by …" with no score. Grass
 and bushes are visual cover only: they hide animals and do not stop bullets.
 Grass is chunked `InstancedMesh` tufts with a wind sway in the vertex shader
@@ -110,7 +120,7 @@ src/
   core/                Game composition root, glTF asset loading, renderer, scene + lights, input, frame loop
   player/              camera + PointerLockControls, scope zoom
   weapons/             rifle (firing, ammo, bolt, reload, muzzle flash, zone scoring) and hitscan ballistics
-  entities/            species prep (scale, clips, hitbox sizes), animated Animal, flying ducks, hitbox zones, manager
+  entities/            species prep (scale, clips, hitbox sizes), animated Animal, flying ducks, parachute crates, hitbox zones, manager
   world/               heightmap terrain, hunting stand, instanced scenery, grass, World facade
   audio/               procedural WebAudio sound effects
   ui/                  HUD DOM bindings

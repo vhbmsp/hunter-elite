@@ -3,12 +3,13 @@ import { hitscan } from './ballistics.js';
 import { MuzzleFlash } from './muzzle.js';
 
 export class Rifle {
-  constructor(camera, animals, world, impacts, sfx) {
+  constructor(camera, animals, world, impacts, sfx, loot) {
     this.camera = camera;
     this.animals = animals;
     this.world = world;
     this.impacts = impacts;
     this.sfx = sfx;
+    this.loot = loot;
     this.rounds = WEAPON.magazineSize;
     this.spares = WEAPON.spareMagazines;
     this.boltTimer = 0;
@@ -38,6 +39,7 @@ export class Rifle {
   /**
    * Fires one shot when the rifle is ready and the magazine has a round.
    * Returns { type: 'kill', animal, zone, distance, points },
+   * { type: 'loot', distance, points, magazines } when a supply crate is hit,
    * { type: 'cover', surface, distance } when terrain or solid scenery stops it,
    * { type: 'miss' }, { type: 'locked' } during the bolt cycle or a reload,
    * or { type: 'empty' } for a dry click.
@@ -60,8 +62,17 @@ export class Rifle {
       targets: this.animals.liveHitboxes(),
       solids: this.world.solids,
       heightfield: this.world.heightfield,
+      loot: this.loot.hitMeshes(),
     });
     if (!hit) return { type: 'miss' };
+
+    if (hit.kind === 'loot') {
+      const grant = hit.object.userData.crate?.collect() ?? null;
+      if (!grant) return { type: 'miss' };
+      this.grantSpares(grant.magazines);
+      this.sfx.pickup();
+      return { type: 'loot', distance: hit.distance, points: grant.points, magazines: grant.magazines };
+    }
 
     if (hit.kind === 'cover') {
       this.impacts.spawn(hit.point, hit.normal, hit.surface);
@@ -87,6 +98,13 @@ export class Rifle {
     this.reloadTimer = WEAPON.reloadTime;
     this.onChange?.();
     return true;
+  }
+
+  /** Adds spare magazines and refreshes the ammo HUD. */
+  grantSpares(count) {
+    if (count <= 0) return;
+    this.spares += count;
+    this.onChange?.();
   }
 
   finishReload() {

@@ -125,6 +125,12 @@ export class Hud {
     this.el.ammo.textContent = `${prefix}Rounds: ${rounds} · Spare mags: ${spares}`;
   }
 
+  setPickup(points, magazines) {
+    this.el.distance.classList.remove('penalty');
+    const mags = magazines === 1 ? '+1 spare mag' : `+${magazines} spare mags`;
+    this.el.distance.textContent = `Loot: ${mags} · +${points}`;
+  }
+
   setBlocked(surface, distance) {
     this.el.distance.classList.remove('penalty');
     this.el.distance.textContent = `Blocked by ${surface}: ${distance.toFixed(1)}m`;
