@@ -18,6 +18,12 @@ export class Player {
     return this.controls.isLocked;
   }
 
+  /** Move the camera onto a stand. Pointer lock and scope stay intact. */
+  place(position, target) {
+    this.camera.position.copy(position);
+    this.camera.lookAt(target);
+  }
+
   lock() {
     if (!this.controls.isLocked) this.controls.lock();
   }
