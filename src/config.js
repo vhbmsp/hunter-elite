@@ -96,6 +96,25 @@ export const WEAPON = {
   zoneMultiplier: { body: 1, head: 1.5 },
   // Terrain ray-march step (m) before bisection refinement.
   terrainRayStep: 0.75,
+  // Bolt-action magazine. Spares are full magazines, not loose rounds.
+  magazineSize: 5,
+  spareMagazines: 2,
+  // Lockout after each shot while the bolt cycles (s).
+  boltCycle: 0.85,
+  // Magazine swap (s). Rounds left in the seated magazine are discarded.
+  reloadTime: 2,
+  // First-person muzzle flash parented to the camera. `frames` is how many
+  // rendered frames it stays visible; the next frame turns the light off.
+  muzzle: {
+    frames: 5,
+    color: 0xfff1c4,
+    // Camera-local offset (m): right, down, forward.
+    offset: [0.2, -0.17, -0.62],
+    size: 0.26,
+    lightIntensity: 36,
+    lightDistance: 9,
+    lightDecay: 2,
+  },
 };
 
 export const IMPACTS = {

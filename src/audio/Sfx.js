@@ -21,6 +21,28 @@ export class Sfx {
     });
   }
 
+  // Metallic clack of the bolt opening, then closing, across the cycle.
+  bolt() {
+    this.play({
+      delay: 0.1,
+      osc: { type: 'triangle', from: 740, to: 210, sweep: 0.05, gain: 0.2, fade: 0.07, length: 0.08 },
+      noise: { length: 0.05, gain: 0.28, fade: 0.05 },
+    });
+    this.play({
+      delay: 0.5,
+      osc: { type: 'square', from: 260, to: 90, sweep: 0.03, gain: 0.14, fade: 0.05, length: 0.06 },
+      noise: { length: 0.035, gain: 0.3, fade: 0.04 },
+    });
+  }
+
+  // Dry fire: a short click, no report.
+  empty() {
+    this.play({
+      osc: { type: 'square', from: 210, to: 110, sweep: 0.012, gain: 0.1, fade: 0.02, length: 0.025 },
+      noise: { length: 0.012, gain: 0.16, fade: 0.012 },
+    });
+  }
+
   death() {
     this.play({
       osc: { type: 'sine', from: 160, to: 30, sweep: 0.28, gain: 0.45, fade: 0.32, length: 0.32 },
@@ -28,11 +50,11 @@ export class Sfx {
     });
   }
 
-  play({ osc, noise }) {
+  play({ osc, noise, delay = 0 }) {
     this.unlock();
     const { ctx } = this;
     if (!ctx) return;
-    const now = ctx.currentTime;
+    const now = ctx.currentTime + delay;
 
     const o = ctx.createOscillator();
     const og = ctx.createGain();

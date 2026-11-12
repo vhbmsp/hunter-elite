@@ -27,14 +27,19 @@ export class Game {
     this.world = new World(this.scene);
     this.player = new Player(this.renderer.domElement);
     this.player.camera.position.copy(this.world.eyePosition);
+    // The muzzle flash is parented to the camera, so the camera has to live in the scene.
+    this.scene.add(this.player.camera);
     this.scope = new Scope(this.player.camera, this.hud);
     this.impacts = new ImpactEffects(this.scene);
     this.animals = new AnimalManager(this.scene, this.player.camera, this.world);
     this.rifle = new Rifle(this.player.camera, this.animals, this.world, this.impacts, this.sfx);
+    this.rifle.onChange = () => this.syncAmmo();
+    this.syncAmmo();
 
     this.loop = new GameLoop(this.renderer, this.scene, this.player.camera)
       .add(this.world)
       .add(this.impacts)
+      .add(this.rifle)
       .add(this.animals)
       .add(this.scope);
   }
@@ -66,6 +71,7 @@ export class Game {
         this.player.lock();
       },
       shoot: () => this.shoot(),
+      reload: () => this.reload(),
       scope: (active) => this.scope.setActive(active),
       toggleHitboxes: () => toggleHitboxes(),
     });
@@ -73,6 +79,7 @@ export class Game {
 
   shoot() {
     const result = this.rifle.fire();
+    if (result.type === 'locked' || result.type === 'empty') return;
     if (result.type === 'kill') {
       this.score += result.points;
       this.hud.setScore(this.score);
@@ -82,6 +89,14 @@ export class Game {
     } else {
       this.hud.setDistance(null);
     }
+  }
+
+  reload() {
+    this.rifle.tryReload();
+  }
+
+  syncAmmo() {
+    this.hud.setAmmo(this.rifle.rounds, this.rifle.spares, this.rifle.reloading);
   }
 
   start() {
