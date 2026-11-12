@@ -21,12 +21,52 @@
       <div class="dot" style="transform: translate(-50%, -50%) translateX(60px);"></div>
     </div>
     <div id="hud">
+      <div id="objective" hidden></div>
+      <div id="timer" hidden></div>
+      <div id="rule" hidden></div>
       <div id="score">Score: 0</div>
       <div id="ammo">Rounds: 5 · Spare mags: 2</div>
       <div id="distance">Distance: —</div>
       <div id="zoom">Zoom: 1x</div>
     </div>
-    <div id="instructions">Click to aim · Hold RMB for scope · LMB or Space to shoot · R to reload</div>
+    <div id="instructions">Click to aim · Hold RMB for scope · LMB or Space to shoot · R to reload · M mission menu</div>
+    <div id="menu" class="overlay">
+      <div class="panel">
+        <p class="kicker">Hunter Elite</p>
+        <h1>Missions</h1>
+        <p class="lede">Each level has an objective and a countdown. Clear it before the time runs out.</p>
+        <p id="menu-status" class="hint">Loading models…</p>
+        <div id="mission-list"></div>
+        <button id="free-play" type="button" disabled>Free play</button>
+        <p class="hint">Skips missions and opens the sandbox. No timer, no objective, and no wrong-target penalty.</p>
+      </div>
+    </div>
+    <div id="results" class="overlay" hidden>
+      <div class="panel">
+        <p id="results-kicker" class="kicker"></p>
+        <h1 id="results-heading"></h1>
+        <p id="results-objective" class="objective-line"></p>
+        <p id="results-detail" class="lede"></p>
+        <dl class="stats">
+          <dt>Accuracy</dt>
+          <dd id="results-accuracy"></dd>
+          <dt>Longest shot</dt>
+          <dd id="results-longest"></dd>
+          <dt>Time</dt>
+          <dd id="results-time"></dd>
+          <dt>Score</dt>
+          <dd id="results-score"></dd>
+          <dt>Penalties</dt>
+          <dd id="results-penalties"></dd>
+        </dl>
+        <div class="actions">
+          <button id="results-retry" type="button">Retry</button>
+          <button id="results-next" type="button" hidden>Next mission</button>
+          <button id="results-menu" type="button">Mission select</button>
+          <button id="results-free" type="button">Free play</button>
+        </div>
+      </div>
+    </div>
   </div>
   <script type="module" src="/src/main.js"></script>
 </body>

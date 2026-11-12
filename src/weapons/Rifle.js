@@ -95,6 +95,15 @@ export class Rifle {
     this.spares -= 1;
     this.onChange?.();
   }
+
+  /** Seats a full magazine and restores spare magazines. Bolt, reload, and muzzle behavior stay the same. */
+  reset() {
+    this.rounds = WEAPON.magazineSize;
+    this.spares = WEAPON.spareMagazines;
+    this.boltTimer = 0;
+    this.reloadTimer = 0;
+    this.onChange?.();
+  }
 }
 
 export function scoreFor(distance, zone = 'body', scoreMultiplier = 1) {

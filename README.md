@@ -23,12 +23,34 @@ Opening `index.html` directly from disk no longer works; use the dev server or a
 - R: reload
 - T: toggle hitbox debug (body and head zones, drawn on top of the models)
 - Esc: release the pointer
+- M: leave a mission or free play and return to the mission list
 
 The rifle is a bolt-action with a 5-round magazine (`WEAPON` in `src/config.js`). You start with one magazine loaded and 2 spare magazines. The HUD shows rounds left in the magazine and spare magazines.
 
 After each shot the bolt cycles for about 0.85s and the rifle will not fire again until it closes. R starts a 2s reload when the magazine is empty or partial and a spare remains: the spare replaces the seated magazine, and any rounds left in the old one are discarded. Reload does nothing with no spare magazines, or when the current one is already full. The trigger on an empty, ready rifle clicks and does not fire. No shot is fired while the bolt is cycling or a reload is in progress.
 
 Head shots score 1.5× (`WEAPON.zoneMultiplier` in `src/config.js`). The Premium pig multiplies that whole score by 5 (`scoreMultiplier` on the boar entry), so a head shot is 7.5× the distance term. A Premium kill reads "Premium" on the distance line, with the points just earned.
+
+## Missions
+
+The game opens on a mission list. Each level names an objective (species, count, and a minimum distance) and runs a countdown. Clearing the objective ends the level immediately and opens the results. Running the clock out fails the level.
+
+A shot counts only when it hits the objective species strictly farther than the minimum. Shooting any other animal, or the right species that is not over that distance, subtracts 50 from the score and does not count. The animal still drops. The HUD states that rule for the level you are on. Misses and shots stopped by cover are not that penalty; they do count as shots when accuracy is hits / shots.
+
+The results screen shows success or failure, accuracy (hits / shots), the longest shot that hit an animal, time left and time used, the level score, and how many penalties landed.
+
+Free play skips missions and keeps the sandbox: no timer, no objective, and no wrong-target penalty. Each mission and each free-play start loads a full rifle (5 rounds and 2 spare magazines). The bolt, reload, and muzzle flash are unchanged.
+
+| Level | Objective | Time |
+| --- | --- | --- |
+| Valley deer | 2 deer over 70 m | 2:30 |
+| Ridge elk | 1 elk over 110 m | 2:30 |
+| Brush foxes | 3 foxes over 40 m | 2:30 |
+| Timber bear | 1 bear over 85 m | 2:00 |
+| Premium pig | 1 Premium pig over 55 m | 2:00 |
+| Passing ducks | 2 ducks over 35 m | 1:30 |
+
+Elk uses the stag model, bear uses the wolf, and the Premium pig is the boar species, same as free play.
 
 ## Assets
 
@@ -81,6 +103,7 @@ and a distance density falloff. Scenery is one instanced mesh per model part.
 src/
   main.js              entry point
   config.js            all tuning constants (FOVs, spawn counts, scoring, asset paths)
+  missions.js          mission list, distance check, penalty and results formatting
   core/                Game composition root, glTF asset loading, renderer, scene + lights, input, frame loop
   player/              camera + PointerLockControls, scope zoom
   weapons/             rifle (firing, ammo, bolt, reload, muzzle flash, zone scoring) and hitscan ballistics
