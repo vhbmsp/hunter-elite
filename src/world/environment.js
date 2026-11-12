@@ -1,46 +1,52 @@
 import * as THREE from 'three';
-import { ENVIRONMENT, PLAYER } from '../config.js';
-import { createBillboardMaterial, randomRingPosition } from './billboard.js';
-import { drawBush, drawLog, drawTree, getBillboardTexture } from './textures.js';
+import { enableShadows } from '../core/assets.js';
+import { ENVIRONMENT } from '../config.js';
 
-const unitPlane = new THREE.PlaneGeometry(1, 1);
-const [, , playerZ] = PLAYER.position;
+const randomRange = ([min, max]) => min + Math.random() * (max - min);
 
-function scatter(group, { texture, count, minDistance, distanceRange }, draw, place) {
-  // One material per decoration kind; every instance shares it and the unit plane.
-  const material = createBillboardMaterial(getBillboardTexture(texture, draw));
-  for (let i = 0; i < count; i++) {
-    const { x, z } = randomRingPosition(minDistance, distanceRange);
-    const mesh = new THREE.Mesh(unitPlane, material);
-    place(mesh, x, z);
-    group.add(mesh);
+export function environmentModelUrls() {
+  return Object.values(ENVIRONMENT).flatMap((kind) => kind.models);
+}
+
+/** Template plus its rest bounds, measured once per model. */
+function prepareTemplates(assets, kind) {
+  return kind.models.map((url) => {
+    const template = assets.get(url).scene;
+    enableShadows(template, kind.castShadow, true);
+    const size = new THREE.Box3().setFromObject(template).getSize(new THREE.Vector3());
+    return { template, size };
+  });
+}
+
+function scatter(group, assets, kind) {
+  const templates = prepareTemplates(assets, kind);
+  for (let i = 0; i < kind.count; i++) {
+    const { template, size } = templates[Math.floor(Math.random() * templates.length)];
+    const scale = kind.length
+      ? randomRange(kind.length) / Math.max(size.x, size.z)
+      : randomRange(kind.height) / size.y;
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist = kind.minDistance + Math.random() * kind.distanceRange;
+
+    // Plain clone shares geometry and materials with the template.
+    const object = template.clone();
+    object.position.set(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
+    object.rotation.y = Math.random() * Math.PI * 2;
+    object.scale.setScalar(scale);
+    group.add(object);
   }
 }
 
-function placeFacingPlayer(mesh, x, y, z, w, h) {
-  mesh.scale.set(w, h, 1);
-  mesh.position.set(x, y, z);
-  mesh.lookAt(0, y, playerZ);
-}
-
-export function createEnvironment() {
+export function createEnvironment(assets) {
   const group = new THREE.Group();
   group.name = 'environment';
+  for (const kind of Object.values(ENVIRONMENT)) scatter(group, assets, kind);
 
-  scatter(group, ENVIRONMENT.trees, drawTree, (mesh, x, z) => {
-    const s = 4 + Math.random() * 6;
-    placeFacingPlayer(mesh, x, s * 0.45, z, s * 0.7, s);
+  // Static scenery: compute matrices once and skip per-frame updates.
+  group.updateMatrixWorld(true);
+  group.traverse((child) => {
+    child.matrixAutoUpdate = false;
   });
-
-  scatter(group, ENVIRONMENT.bushes, drawBush, (mesh, x, z) => {
-    const s = 1.5 + Math.random() * 2.5;
-    placeFacingPlayer(mesh, x, s * 0.4, z, s * 1.4, s);
-  });
-
-  scatter(group, ENVIRONMENT.logs, drawLog, (mesh, x, z) => {
-    placeFacingPlayer(mesh, x, 0.4, z, 3.5, 0.8);
-    mesh.rotation.y = Math.random() * Math.PI;
-  });
-
   return group;
 }

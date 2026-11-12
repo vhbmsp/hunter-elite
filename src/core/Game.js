@@ -5,8 +5,9 @@ import { Player } from '../player/Player.js';
 import { Scope } from '../player/Scope.js';
 import { Hud } from '../ui/Hud.js';
 import { Rifle } from '../weapons/Rifle.js';
-import { createEnvironment } from '../world/environment.js';
+import { createEnvironment, environmentModelUrls } from '../world/environment.js';
 import { createTerrain } from '../world/terrain.js';
+import { AssetLibrary } from './assets.js';
 import { bindInput } from './input.js';
 import { GameLoop } from './loop.js';
 import { bindResize, createRenderer } from './renderer.js';
@@ -20,21 +21,28 @@ export class Game {
     this.scene = createScene();
     this.hud = new Hud();
     this.sfx = new Sfx();
+    this.assets = new AssetLibrary((loaded, total) => this.hud.setLoading(loaded, total));
 
     this.player = new Player(this.renderer.domElement);
     this.scope = new Scope(this.player.camera, this.hud);
     this.animals = new AnimalManager(this.scene, this.player.camera);
     this.rifle = new Rifle(this.player.camera, this.animals, this.sfx);
 
-    this.scene.add(createTerrain(), createEnvironment());
-    this.animals.spawnInitial();
-
     this.loop = new GameLoop(this.renderer, this.scene, this.player.camera)
       .add(this.animals)
       .add(this.scope);
+  }
+
+  async load() {
+    await this.assets.loadAll([...AnimalManager.modelUrls(), ...environmentModelUrls()]);
+
+    this.scene.add(createTerrain(), createEnvironment(this.assets));
+    this.animals.init(this.assets);
+    this.animals.spawnInitial();
 
     this.bindEvents();
     this.hud.setZoom(this.scope.zoom);
+    this.hud.setReady();
   }
 
   bindEvents() {
@@ -65,7 +73,7 @@ export class Game {
     }
     this.score += result.points;
     this.hud.setScore(this.score);
-    this.hud.setDistance(result.distance);
+    this.hud.setDistance(result.distance, result.zone);
   }
 
   start() {
@@ -74,8 +82,8 @@ export class Game {
 
   dispose() {
     this.loop.stop();
-    this.unbindInput();
-    this.unbindResize();
+    this.unbindInput?.();
+    this.unbindResize?.();
     this.player.dispose();
     this.renderer.dispose();
   }

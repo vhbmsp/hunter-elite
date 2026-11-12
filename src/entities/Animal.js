@@ -1,9 +1,13 @@
 import * as THREE from 'three';
-import { ANIMALS, WORLD } from '../config.js';
-import { createBillboard } from '../world/billboard.js';
-import { createHitbox } from './hitbox.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
+import { ANIMAL_CLIPS, ANIMALS, WORLD } from '../config.js';
+import { createAnimalHitboxes } from './hitbox.js';
+import { RIG_BONES } from './species.js';
 
-const _toward = new THREE.Vector3();
+const _front = new THREE.Vector3();
+const _back = new THREE.Vector3();
+const _head = new THREE.Vector3();
+const _neck = new THREE.Vector3();
 
 // Weighted state transitions: [cumulative probability, state, base duration, random extra].
 const TRANSITIONS = [
@@ -14,105 +18,186 @@ const TRANSITIONS = [
   [1.0, 'recede', 4, 3],
 ];
 
+const randomRange = ([min, max]) => min + Math.random() * (max - min);
+const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+
 export class Animal {
-  constructor(type, texture, position) {
-    const width = type.scale * 1.6;
-    const height = type.scale;
+  constructor(species, position) {
+    this.species = species;
+    this.type = species.name;
 
-    this.type = type.name;
-    this.mesh = createBillboard(texture, width, height);
-    this.mesh.position.copy(position);
-    this.mesh.name = type.name;
-    this.hitbox = createHitbox(width, height);
-    this.hitbox.userData.animal = this;
-    this.mesh.add(this.hitbox);
+    // root: ground position + heading (yaw). model: scaled skinned clone, facing +Z.
+    this.root = new THREE.Group();
+    this.root.name = species.name;
+    this.root.position.set(position.x, 0, position.z);
+    this.yaw = Math.random() * Math.PI * 2;
+    this.root.rotation.y = this.yaw;
 
-    this.baseY = position.y;
+    this.model = cloneSkinned(species.template);
+    this.model.scale.setScalar(species.scale);
+    this.model.position.y = species.groundOffset;
+    this.root.add(this.model);
+
+    this.bones = Object.fromEntries(
+      Object.entries(RIG_BONES).map(([key, name]) => [key, this.model.getObjectByName(name)]),
+    );
+
+    const { body, head } = createAnimalHitboxes(this, species.hitbox);
+    this.hitboxes = [body, head];
+    this.bodyHitbox = body;
+    this.headHitbox = head;
+    this.root.add(body, head);
+
+    this.mixer = new THREE.AnimationMixer(this.model);
+    this.action = null;
+
     this.alive = true;
     this.timeSinceDeath = 0;
-    this.state = 'idle';
-    this.stateTimer = 1 + Math.random() * 4;
-    this.speed = ANIMALS.speedMin + Math.random() * ANIMALS.speedRange;
+    this.speedFactor = randomRange(ANIMALS.speedVariance);
     this.direction = Math.random() * Math.PI * 2;
+    this.enterState('idle', 1 + Math.random() * 4);
   }
 
   get expired() {
     return !this.alive && this.timeSinceDeath > ANIMALS.corpseLifetime;
   }
 
+  play(clipName, { timeScale = 1, once = false } = {}) {
+    const clip = this.species.clips[clipName];
+    if (!clip) return;
+    const next = this.mixer.clipAction(clip);
+    next.timeScale = timeScale;
+    if (next === this.action) return;
+
+    next.reset();
+    next.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+    next.clampWhenFinished = once;
+    next.play();
+    if (this.action) next.crossFadeFrom(this.action, ANIMALS.crossFade, false);
+    this.action = next;
+  }
+
   kill() {
     if (!this.alive) return false;
     this.alive = false;
-    this.mesh.material.opacity = ANIMALS.deadOpacity;
-    this.mesh.material.color.set(ANIMALS.deadColor);
+    this.play(ANIMAL_CLIPS.death, { once: true });
     return true;
   }
 
-  update(delta, playerPosition) {
-    if (!this.alive) {
-      this.timeSinceDeath += delta;
+  enterState(state, duration) {
+    this.state = state;
+    this.stateTimer = duration;
+    const { walkSpeed, runSpeed, walkClipSpeed, runClipSpeed } = this.species;
+
+    if (state === 'idle') {
+      this.speed = 0;
+      const idles = ANIMAL_CLIPS.idle;
+      this.play(idles[Math.floor(Math.random() * idles.length)]);
       return;
     }
+    if (state === 'sideways' || state === 'run') this.direction = Math.random() * Math.PI * 2;
 
-    this.stateTimer -= delta;
-    if (this.stateTimer <= 0) this.pickState();
-
-    this.move(delta, playerPosition);
-    this.faceCamera(playerPosition);
+    if (state === 'run') {
+      this.speed = runSpeed * this.speedFactor;
+      this.play(ANIMAL_CLIPS.run, { timeScale: this.speed / runClipSpeed });
+    } else {
+      this.speed = walkSpeed * this.speedFactor;
+      this.play(ANIMAL_CLIPS.walk, { timeScale: this.speed / walkClipSpeed });
+    }
   }
 
   pickState() {
     const roll = Math.random();
     const [, state, base, extra] = TRANSITIONS.find(([p]) => roll < p);
-    this.state = state;
-    this.stateTimer = base + Math.random() * extra;
-    if (state === 'sideways' || state === 'run') {
-      this.direction = Math.random() * Math.PI * 2;
+    this.enterState(state, base + Math.random() * extra);
+  }
+
+  update(delta, playerPosition) {
+    if (this.alive) {
+      this.stateTimer -= delta;
+      if (this.stateTimer <= 0) this.pickState();
+      this.move(delta, playerPosition);
+    } else {
+      this.timeSinceDeath += delta;
+    }
+    this.mixer.update(delta);
+    this.updateHitboxes();
+  }
+
+  /** Desired heading for the current state (yaw, 0 = +Z), or null to keep the current one. */
+  targetYaw(playerPosition) {
+    const pos = this.root.position;
+    switch (this.state) {
+      case 'sideways':
+      case 'run':
+        return Math.atan2(Math.cos(this.direction), Math.sin(this.direction));
+      case 'approach':
+        return Math.atan2(playerPosition.x - pos.x, playerPosition.z - pos.z);
+      case 'recede':
+        return Math.atan2(pos.x - playerPosition.x, pos.z - playerPosition.z);
+      default:
+        return null;
     }
   }
 
   move(delta, playerPosition) {
-    const pos = this.mesh.position;
-    const mul = ANIMALS.moveScale[this.state];
-    if (!mul) return;
+    if (this.speed === 0) return;
+    const pos = this.root.position;
 
-    const step = this.speed * (this.state === 'run' ? ANIMALS.runMultiplier : 1) * delta * mul;
-
-    if (this.state === 'sideways' || this.state === 'run') {
-      pos.x += Math.cos(this.direction) * step;
-      pos.z += Math.sin(this.direction) * step;
-    } else {
-      _toward.set(playerPosition.x - pos.x, 0, playerPosition.z - pos.z);
-      const dist = _toward.length();
-      if (this.state === 'approach') {
-        pos.addScaledVector(_toward.normalize(), Math.min(step, Math.max(0, dist - ANIMALS.minPlayerDistance)));
-      } else {
-        pos.addScaledVector(_toward.normalize(), -step);
+    if (this.state === 'approach') {
+      const dist = Math.hypot(playerPosition.x - pos.x, playerPosition.z - pos.z);
+      if (dist <= ANIMALS.minPlayerDistance) {
+        this.enterState('idle', 2 + Math.random() * 3);
+        return;
       }
     }
 
-    // Keep inside the playable disc.
+    const target = this.targetYaw(playerPosition);
+    if (target !== null) {
+      const diff = wrapAngle(target - this.yaw);
+      const maxTurn = ANIMALS.turnRate * delta;
+      this.yaw += THREE.MathUtils.clamp(diff, -maxTurn, maxTurn);
+      this.root.rotation.y = this.yaw;
+    }
+
+    // Walk along the current facing so turns arc instead of sliding sideways.
+    const step = this.speed * delta;
+    pos.x += Math.sin(this.yaw) * step;
+    pos.z += Math.cos(this.yaw) * step;
+
     const r = Math.hypot(pos.x, pos.z);
     if (r > WORLD.roamRadius) {
       pos.x *= WORLD.roamRadius / r;
       pos.z *= WORLD.roamRadius / r;
+      // Head back toward the centre of the map.
+      this.direction = Math.atan2(-pos.z, -pos.x);
     }
-    pos.y = this.baseY;
   }
 
-  faceCamera(playerPosition) {
-    const { mesh } = this;
-    mesh.rotation.y = Math.atan2(playerPosition.x - mesh.position.x, playerPosition.z - mesh.position.z);
+  updateHitboxes() {
+    const { root, model, bones, bodyHitbox, headHitbox } = this;
+    root.updateMatrixWorld(true);
 
-    // Mirror the sprite to match lateral movement direction.
-    const lateral = this.state === 'sideways' || this.state === 'run';
-    mesh.scale.x = lateral && Math.cos(this.direction) <= 0 ? -1 : 1;
+    const { hitbox } = this.species;
+    bones.chest.getWorldPosition(_front);
+    bones.rump.getWorldPosition(_back);
+    _back.lerp(_front, 0.5);
+    _back.y -= hitbox.body.dropBelowSpine;
+    _front.y -= hitbox.body.dropBelowSpine;
+    bodyHitbox.position.copy(root.worldToLocal(_back));
+    bodyHitbox.lookAt(_front);
+
+    bones.head.getWorldPosition(_head);
+    bones.neck.getWorldPosition(_neck);
+    // Bone origin is at the skull base; push the sphere toward the snout.
+    _neck.subVectors(_head, _neck).normalize();
+    _head.addScaledVector(_neck, hitbox.headRadius * 0.6);
+    headHitbox.position.copy(root.worldToLocal(_head));
   }
 
   dispose() {
-    this.mesh.removeFromParent();
-    this.mesh.geometry.dispose();
-    this.mesh.material.dispose();
-    this.hitbox.geometry.dispose();
+    this.mixer.stopAllAction();
+    this.mixer.uncacheRoot(this.model);
+    this.root.removeFromParent();
   }
 }
