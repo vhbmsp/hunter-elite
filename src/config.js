@@ -229,21 +229,30 @@ export const ANIMALS = {
   ],
 };
 
-// Flying flock. The Gobkit duck has no flap clip (idle, attack, dead, walk),
-// so the birds glide on idle and play dead as they fall.
+// Flying flock. No CC0 duck with a fly/flap clip turned up (Gobkit, Quaternius,
+// Kenney, Poly Pizza, Pixor, Sketchfab CC0, OpenGameArt), so the Gobkit duck
+// stays: idle while airborne with a procedural wing flap on LeftHand/RightHand,
+// then dead as they fall.
 export const DUCKS = {
   model: model('animals/duck.glb'),
   // Standing height (m). The source file is hundreds of units tall.
-  height: 0.42,
+  // Slightly larger than real so the silhouette reads at scoped range.
+  height: 0.55,
   count: 6,
   // Circle around the map centre. radius in m, speed in m/s, altitude above the ground.
-  radius: 46,
-  speed: 11,
-  altitude: 11,
-  hitRadius: 0.18,
+  // Tuned so Tower A sees ~29–39 m passes and a scoped shot can lead the flock.
+  radius: 34,
+  speed: 5.5,
+  altitude: 8.5,
+  // Forgiving bird sphere without making hits trivial.
+  hitRadius: 0.28,
   gravity: 18,
   flyClip: 'idle',
   deathClip: 'dead',
+  // Nose-down flight attitude (rad) and wing beat on the Hand bones.
+  flyPitch: 0.22,
+  flapHz: 3.2,
+  flapAmp: 0.7,
   // V formation, metres to the right and behind the leader.
   slots: [
     { right: 0, back: 0 },
