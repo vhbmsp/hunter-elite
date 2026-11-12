@@ -33,21 +33,24 @@ Head shots score 1.5x (`WEAPON.zoneMultiplier` in `src/config.js`).
 ## Assets
 
 Animals and scenery are animated/static low-poly glTF models by Quaternius
-(CC0) in `public/models/`. Sources, licenses and the two species substitutions
-(wolf for bear, Shiba Inu for rabbit) are listed in
-[`public/models/CREDITS.md`](public/models/CREDITS.md).
+(CC0) in `public/models/`. Sources, licenses and the species substitutions
+(stag for elk, pig for wild boar, wolf for bear, Shiba Inu for rabbit) are
+listed in [`public/models/CREDITS.md`](public/models/CREDITS.md).
 
 - Each GLB is loaded once with `GLTFLoader` (meshopt-compressed, decoded with
   three's bundled `MeshoptDecoder`). Animals are cloned per instance with
   `SkeletonUtils.clone` and driven by their own `AnimationMixer`
-  (Idle/Idle_2/Eating while idle, Walk, Gallop, Death on a kill).
-- Real-world sizes, speeds and clip names are set per species in `src/config.js`.
-  Models are scaled at load time from their bounds.
-- Hitboxes follow the skeleton: a body ellipsoid along the spine (`Back` to
-  `Torso3` bones) and a head sphere on the `Head` bone, sized from the rig.
+  (Idle/Idle_2/Eating while idle, or Idle/Idle_Eating for the boar; Walk;
+  Gallop, or Run for the boar; Death on a kill when that clip exists).
+- Real-world sizes, speeds, clip names and bone names are set per species in
+  `src/config.js`. Models are scaled at load time from their bounds.
+- Hitboxes follow the skeleton: a body ellipsoid along the spine and a head
+  sphere on the head bone, sized from the rig. The Ultimate-pack animals use
+  `Back`, `Torso3`, `Neck3` and `Head`. The boar overrides those names.
 
-To swap a model, drop a GLB with the same Quaternius animal rig into
-`public/models/animals/` and point the species entry in `src/config.js` at it.
+To swap a model, drop a GLB into `public/models/animals/` and point the species
+entry in `src/config.js` at it. A different rig can name its own spine and head
+bones on that entry.
 
 ## World
 

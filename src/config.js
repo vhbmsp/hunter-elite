@@ -139,7 +139,8 @@ export const ANIMAL_CLIPS = {
 };
 
 export const ANIMALS = {
-  count: 16,
+  // Six species, three of each, spread around the stand.
+  count: 18,
   minSpawnDistance: 30,
   spawnDistanceRange: 120,
   // Animals stop approaching once this close to the player.
@@ -172,6 +173,15 @@ export const ANIMALS = {
       name: 'deer', model: model('animals/deer.glb'), height: 1.55,
       walkSpeed: 1.4, runSpeed: 11, walkClipSpeed: 1.3, runClipSpeed: 9,
     },
+    // Substitute: no CC0 animated elk. The Quaternius stag shares the deer rig.
+    // Height is the bounding box, which includes the antler rack, so the back
+    // sits near 1.3 m and the rack near 2.6 m.
+    {
+      name: 'elk', model: model('animals/stag.glb'), height: 2.6,
+      walkSpeed: 1.5, runSpeed: 12, walkClipSpeed: 1.75, runClipSpeed: 12,
+      // Antlers widen the bounds; keep the head sphere on the skull.
+      headRadiusFactor: 0.6,
+    },
     // Substitute: no CC0 animated bear was obtainable; a grey wolf (wild predator) stands in.
     {
       name: 'bear', model: model('animals/wolf.glb'), height: 1.05,
@@ -180,6 +190,20 @@ export const ANIMALS = {
     {
       name: 'fox', model: model('animals/fox.glb'), height: 0.6,
       walkSpeed: 1.1, runSpeed: 8, walkClipSpeed: 0.9, runClipSpeed: 5,
+    },
+    // Substitute: no CC0 animated wild boar. A Quaternius farm pig, scaled to a
+    // large boar, uses the same loader. Its rig is Head/Neck/Body and its run
+    // clip is Run. The snout points along the head bone's +Y axis.
+    {
+      name: 'boar', model: model('animals/pig.glb'), height: 1.05,
+      walkSpeed: 1.0, runSpeed: 8, walkClipSpeed: 0.85, runClipSpeed: 4.5,
+      bones: { neck: 'Neck', rump: 'Body', chest: 'Neck' },
+      clips: { idle: ['Idle', 'Idle_Eating'], run: 'Run' },
+      snoutAxis: 'y',
+      headRadiusFactor: 1.7,
+      snoutPush: 1.15,
+      // Rounder than the deer the default ellipsoid was tuned on.
+      bodyFit: { width: 1.5, height: 2.4, length: 1.25, drop: 0.2 },
     },
   ],
 };

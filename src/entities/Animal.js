@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
-import { ANIMAL_CLIPS, ANIMALS, WORLD } from '../config.js';
+import { ANIMALS, WORLD } from '../config.js';
 import { createAnimalHitboxes } from './hitbox.js';
-import { RIG_BONES } from './species.js';
 
 const _front = new THREE.Vector3();
 const _back = new THREE.Vector3();
@@ -42,7 +41,7 @@ export class Animal {
     this.root.add(this.model);
 
     this.bones = Object.fromEntries(
-      Object.entries(RIG_BONES).map(([key, name]) => [key, this.model.getObjectByName(name)]),
+      Object.entries(species.bones).map(([key, name]) => [key, this.model.getObjectByName(name)]),
     );
 
     const { body, head } = createAnimalHitboxes(this, species.hitbox);
@@ -83,18 +82,18 @@ export class Animal {
   kill() {
     if (!this.alive) return false;
     this.alive = false;
-    this.play(ANIMAL_CLIPS.death, { once: true });
+    if (this.species.clipNames.death) this.play(this.species.clipNames.death, { once: true });
     return true;
   }
 
   enterState(state, duration) {
     this.state = state;
     this.stateTimer = duration;
-    const { walkSpeed, runSpeed, walkClipSpeed, runClipSpeed } = this.species;
+    const { walkSpeed, runSpeed, walkClipSpeed, runClipSpeed, clipNames } = this.species;
 
     if (state === 'idle') {
       this.speed = 0;
-      const idles = ANIMAL_CLIPS.idle;
+      const idles = clipNames.idle;
       this.play(idles[Math.floor(Math.random() * idles.length)]);
       return;
     }
@@ -102,10 +101,10 @@ export class Animal {
 
     if (state === 'run') {
       this.speed = runSpeed * this.speedFactor;
-      this.play(ANIMAL_CLIPS.run, { timeScale: this.speed / runClipSpeed });
+      this.play(clipNames.run, { timeScale: this.speed / runClipSpeed });
     } else {
       this.speed = walkSpeed * this.speedFactor;
-      this.play(ANIMAL_CLIPS.walk, { timeScale: this.speed / walkClipSpeed });
+      this.play(clipNames.walk, { timeScale: this.speed / walkClipSpeed });
     }
   }
 
@@ -216,10 +215,16 @@ export class Animal {
     bodyHitbox.lookAt(_front);
 
     bones.head.getWorldPosition(_head);
-    bones.neck.getWorldPosition(_neck);
-    // Bone origin is at the skull base; push the sphere toward the snout.
-    _neck.subVectors(_head, _neck).normalize();
-    _head.addScaledVector(_neck, hitbox.headRadius * 0.6);
+    if (this.species.snoutAxis) {
+      const axis = this.species.snoutAxis;
+      _neck.set(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
+      _neck.transformDirection(bones.head.matrixWorld).normalize();
+    } else {
+      bones.neck.getWorldPosition(_neck);
+      // Bone origin is at the skull base; push the sphere toward the snout.
+      _neck.subVectors(_head, _neck).normalize();
+    }
+    _head.addScaledVector(_neck, hitbox.headRadius * hitbox.snoutPush);
     headHitbox.position.copy(root.worldToLocal(_head));
   }
 
