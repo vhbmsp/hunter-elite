@@ -22,15 +22,18 @@ const randomRange = ([min, max]) => min + Math.random() * (max - min);
 const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export class Animal {
-  constructor(species, position) {
+  constructor(species, position, world) {
     this.species = species;
     this.type = species.name;
+    this.world = world;
 
-    // root: ground position + heading (yaw). model: scaled skinned clone, facing +Z.
+    // root: ground position + heading. YXZ so yaw applies before the slope pitch.
     this.root = new THREE.Group();
     this.root.name = species.name;
-    this.root.position.set(position.x, 0, position.z);
+    this.root.rotation.order = 'YXZ';
+    this.root.position.set(position.x, world.getHeightAt(position.x, position.z), position.z);
     this.yaw = Math.random() * Math.PI * 2;
+    this.pitch = 0;
     this.root.rotation.y = this.yaw;
 
     this.model = cloneSkinned(species.template);
@@ -120,8 +123,21 @@ export class Animal {
     } else {
       this.timeSinceDeath += delta;
     }
+    this.stickToGround(delta);
     this.mixer.update(delta);
     this.updateHitboxes();
+  }
+
+  /** Plant the feet on the heightfield and pitch the body to the slope. */
+  stickToGround(delta) {
+    const { x, z } = this.root.position;
+    const y = this.world.getHeightAt(x, z);
+    this.root.position.y = y;
+    const ahead = this.world.getHeightAt(x + Math.sin(this.yaw), z + Math.cos(this.yaw));
+    const targetPitch = -Math.atan(ahead - y);
+    this.pitch += (targetPitch - this.pitch) * (1 - Math.exp(-ANIMALS.pitchRate * delta));
+    this.root.rotation.x = this.pitch;
+    this.root.rotation.y = this.yaw;
   }
 
   /** Desired heading for the current state (yaw, 0 = +Z), or null to keep the current one. */
@@ -160,8 +176,20 @@ export class Animal {
       this.root.rotation.y = this.yaw;
     }
 
-    // Walk along the current facing so turns arc instead of sliding sideways.
-    const step = this.speed * delta;
+    // Refuse the step if the ground ahead is too steep, and veer off instead.
+    const probe = ANIMALS.slopeProbe;
+    const aheadX = pos.x + Math.sin(this.yaw) * probe;
+    const aheadZ = pos.z + Math.cos(this.yaw) * probe;
+    const grade = (this.world.getHeightAt(aheadX, aheadZ) - this.world.getHeightAt(pos.x, pos.z)) / probe;
+    if (grade > ANIMALS.maxSlope || this.world.getSlopeAt(aheadX, aheadZ) > ANIMALS.maxSlope) {
+      this.yaw += (Math.random() < 0.5 ? 1 : -1) * ANIMALS.turnRate * delta * 3;
+      this.root.rotation.y = this.yaw;
+      return;
+    }
+
+    // Walk along the current facing; uphill costs speed.
+    const climb = grade > 0 ? Math.max(0.4, 1 - grade * ANIMALS.uphillPenalty) : 1;
+    const step = this.speed * climb * delta;
     pos.x += Math.sin(this.yaw) * step;
     pos.z += Math.cos(this.yaw) * step;
 

@@ -4,9 +4,10 @@ import { toggleHitboxes } from '../entities/hitbox.js';
 import { Player } from '../player/Player.js';
 import { Scope } from '../player/Scope.js';
 import { Hud } from '../ui/Hud.js';
+import { ImpactEffects } from '../weapons/impacts.js';
 import { Rifle } from '../weapons/Rifle.js';
-import { createEnvironment, environmentModelUrls } from '../world/environment.js';
-import { createTerrain } from '../world/terrain.js';
+import { environmentModelUrls } from '../world/environment.js';
+import { World } from '../world/World.js';
 import { AssetLibrary } from './assets.js';
 import { bindInput } from './input.js';
 import { GameLoop } from './loop.js';
@@ -23,12 +24,17 @@ export class Game {
     this.sfx = new Sfx();
     this.assets = new AssetLibrary((loaded, total) => this.hud.setLoading(loaded, total));
 
+    this.world = new World(this.scene);
     this.player = new Player(this.renderer.domElement);
+    this.player.camera.position.copy(this.world.eyePosition);
     this.scope = new Scope(this.player.camera, this.hud);
-    this.animals = new AnimalManager(this.scene, this.player.camera);
-    this.rifle = new Rifle(this.player.camera, this.animals, this.sfx);
+    this.impacts = new ImpactEffects(this.scene);
+    this.animals = new AnimalManager(this.scene, this.player.camera, this.world);
+    this.rifle = new Rifle(this.player.camera, this.animals, this.world, this.impacts, this.sfx);
 
     this.loop = new GameLoop(this.renderer, this.scene, this.player.camera)
+      .add(this.world)
+      .add(this.impacts)
       .add(this.animals)
       .add(this.scope);
   }
@@ -36,7 +42,7 @@ export class Game {
   async load() {
     await this.assets.loadAll([...AnimalManager.modelUrls(), ...environmentModelUrls()]);
 
-    this.scene.add(createTerrain(), createEnvironment(this.assets));
+    this.world.populate(this.assets);
     this.animals.init(this.assets);
     this.animals.spawnInitial();
 
@@ -67,13 +73,15 @@ export class Game {
 
   shoot() {
     const result = this.rifle.fire();
-    if (!result) {
+    if (result.type === 'kill') {
+      this.score += result.points;
+      this.hud.setScore(this.score);
+      this.hud.setDistance(result.distance, result.zone);
+    } else if (result.type === 'cover') {
+      this.hud.setBlocked(result.surface, result.distance);
+    } else {
       this.hud.setDistance(null);
-      return;
     }
-    this.score += result.points;
-    this.hud.setScore(this.score);
-    this.hud.setDistance(result.distance, result.zone);
   }
 
   start() {

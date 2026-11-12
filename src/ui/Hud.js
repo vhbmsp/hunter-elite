@@ -16,6 +16,10 @@ export class Hud {
     this.el.score.textContent = `Score: ${score}`;
   }
 
+  setBlocked(surface, distance) {
+    this.el.distance.textContent = `Blocked by ${surface}: ${distance.toFixed(1)}m`;
+  }
+
   setDistance(distance, zone) {
     const suffix = zone === 'head' ? ' · head shot' : '';
     this.el.distance.textContent = distance == null ? 'Distance: —' : `Distance: ${distance.toFixed(1)}m${suffix}`;
