@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hunter Elite</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="ui">
+    <div id="crosshair"></div>
+    <div id="scope">
+      <div class="reticle-h"></div>
+      <div class="reticle-v"></div>
+      <div class="dot" style="transform: translate(-50%, -50%) translateY(-30px);"></div>
+      <div class="dot" style="transform: translate(-50%, -50%) translateY(-60px);"></div>
+      <div class="dot" style="transform: translate(-50%, -50%) translateY(30px);"></div>
+      <div class="dot" style="transform: translate(-50%, -50%) translateY(60px);"></div>
+      <div class="dot" style="transform: translate(-50%, -50%) translateX(-30px);"></div>
+      <div class="dot" style="transform: translate(-50%, -50%) translateX(-60px);"></div>
+      <div class="dot" style="transform: translate(-50%, -50%) translateX(30px);"></div>
+      <div class="dot" style="transform: translate(-50%, -50%) translateX(60px);"></div>
+    </div>
+    <div id="hud">
+      <div id="score">Score: 0</div>
+      <div id="ammo">Ammo: ∞</div>
+      <div id="distance">Distance: —</div>
+      <div id="zoom">Zoom: 1x</div>
+    </div>
+    <div id="instructions">Click to aim · Hold RMB for scope · LMB or Space to shoot</div>
+  </div>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.169.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
