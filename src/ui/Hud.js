@@ -3,6 +3,7 @@ export class Hud {
     const $ = (id) => root.getElementById(id);
     this.el = {
       score: $('score'),
+      ammo: $('ammo'),
       distance: $('distance'),
       zoom: $('zoom'),
       crosshair: $('crosshair'),
@@ -14,6 +15,11 @@ export class Hud {
 
   setScore(score) {
     this.el.score.textContent = `Score: ${score}`;
+  }
+
+  setAmmo(rounds, spares, reloading) {
+    const prefix = reloading ? 'Reloading… · ' : '';
+    this.el.ammo.textContent = `${prefix}Rounds: ${rounds} · Spare mags: ${spares}`;
   }
 
   setBlocked(surface, distance) {

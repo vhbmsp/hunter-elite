@@ -1,6 +1,6 @@
 /**
  * Maps raw DOM events to game actions.
- * actions: { lock, shoot, scope(active), toggleHitboxes, isLocked() }
+ * actions: { lock, shoot, reload, scope(active), toggleHitboxes, isLocked() }
  */
 export function bindInput(actions, target = document) {
   const listeners = {
@@ -18,6 +18,7 @@ export function bindInput(actions, target = document) {
         e.preventDefault();
         if (actions.isLocked() && !e.repeat) actions.shoot();
       }
+      if (e.code === 'KeyR' && !e.repeat && actions.isLocked()) actions.reload();
       if (e.code === 'KeyT' && !e.repeat) actions.toggleHitboxes();
     },
     contextmenu: (e) => e.preventDefault(),

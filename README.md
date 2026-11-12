@@ -20,8 +20,13 @@ Opening `index.html` directly from disk no longer works; use the dev server or a
 - Click: lock the pointer (mouse look)
 - RMB (hold): scope zoom
 - LMB or Space: shoot
+- R: reload
 - T: toggle hitbox debug (body and head zones, drawn on top of the models)
 - Esc: release the pointer
+
+The rifle is a bolt-action with a 5-round magazine (`WEAPON` in `src/config.js`). You start with one magazine loaded and 2 spare magazines. The HUD shows rounds left in the magazine and spare magazines.
+
+After each shot the bolt cycles for about 0.85s and the rifle will not fire again until it closes. R starts a 2s reload when the magazine is empty or partial and a spare remains: the spare replaces the seated magazine, and any rounds left in the old one are discarded. Reload does nothing with no spare magazines, or when the current one is already full. The trigger on an empty, ready rifle clicks and does not fire. No shot is fired while the bolt is cycling or a reload is in progress.
 
 Head shots score 1.5x (`WEAPON.zoneMultiplier` in `src/config.js`).
 
@@ -71,7 +76,7 @@ src/
   config.js            all tuning constants (FOVs, spawn counts, scoring, asset paths)
   core/                Game composition root, glTF asset loading, renderer, scene + lights, input, frame loop
   player/              camera + PointerLockControls, scope zoom
-  weapons/             rifle (firing, zone scoring) and hitscan ballistics
+  weapons/             rifle (firing, ammo, bolt, reload, muzzle flash, zone scoring) and hitscan ballistics
   entities/            species prep (scale, clips, hitbox sizes), animated Animal, hitbox zones, manager
   world/               heightmap terrain, hunting stand, instanced scenery, grass, World facade
   audio/               procedural WebAudio sound effects
