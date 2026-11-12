@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ENVIRONMENT, PLAYER } from '../config.js';
+import { ENVIRONMENT, PLAYER, STANDS } from '../config.js';
 
 const randomRange = ([min, max]) => min + Math.random() * (max - min);
 const UP = new THREE.Vector3(0, 1, 0);
@@ -26,6 +26,29 @@ function prepareTemplate(gltf) {
   return { size, parts };
 }
 
+function distanceToSegment(x, z, [ax, az], [bx, bz]) {
+  const abx = bx - ax;
+  const abz = bz - az;
+  const len2 = abx * abx + abz * abz;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * abx + (z - az) * abz) / len2));
+  return Math.hypot(x - (ax + abx * t), z - (az + abz * t));
+}
+
+/** False when a prop would sit on a stand or, for trees, on a sight line between stands. */
+function spotClear(x, z, kind) {
+  for (const stand of STANDS) {
+    const [sx, sz] = stand.position;
+    if (Math.hypot(x - sx, z - sz) < kind.minDistance) return false;
+  }
+  if (!kind.sightClear) return true;
+  for (let i = 0; i < STANDS.length; i++) {
+    for (let j = i + 1; j < STANDS.length; j++) {
+      if (distanceToSegment(x, z, STANDS[i].position, STANDS[j].position) < kind.sightClear) return false;
+    }
+  }
+  return true;
+}
+
 function pickSpot(heightfield, kind, placed) {
   const [px, , pz] = PLAYER.position;
   for (let attempt = 0; attempt < 30; attempt++) {
@@ -37,13 +60,13 @@ function pickSpot(heightfield, kind, placed) {
       const r = Math.random() * kind.clumpRadius;
       x = anchor.x + Math.cos(a) * r;
       z = anchor.z + Math.sin(a) * r;
-      if (Math.hypot(x - px, z - pz) < kind.minDistance) continue;
     } else {
       const a = Math.random() * Math.PI * 2;
       const d = kind.minDistance + Math.random() * kind.distanceRange;
       x = px + Math.cos(a) * d;
       z = pz + Math.sin(a) * d;
     }
+    if (!spotClear(x, z, kind)) continue;
     if (heightfield.getSlopeAt(x, z) <= kind.maxSlope) return { x, z };
   }
   return null;

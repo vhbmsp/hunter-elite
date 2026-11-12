@@ -48,13 +48,23 @@ export const TERRAIN = {
   dryHeight: 12,
 };
 
-// Elevated hunting stand at the player's position.
+// Elevated wooden hunting stands. Ground x/z only; y comes from getHeightAt.
+// Keys select them in order: A, S, D. Each site sees the other two and the valley.
+export const STANDS = [
+  { key: 'KeyA', position: [0, 5] },
+  { key: 'KeyS', position: [22, -73] },
+  { key: 'KeyD', position: [74, -27] },
+];
+
 export const STAND = {
   enabled: true,
   height: 3.5,
   platformSize: 2.2,
   railHeight: 1.0,
   color: 0x6b4a2b,
+  // Switch aim blends from the other stands' eye midpoint down toward the ground
+  // so the other towers and the valley share the frame.
+  aimDrop: 0.15,
 };
 
 export const LIGHTS = {
@@ -75,8 +85,8 @@ export const LIGHTS = {
 };
 
 export const PLAYER = {
-  // Ground x/z of the player; y is derived from the terrain + stand + eye height.
-  position: [0, 0, 5],
+  // Ground x/z of stand 1 (A). y is derived from the terrain + stand + eye height.
+  position: [STANDS[0].position[0], 0, STANDS[0].position[1]],
   eyeHeight: 1.6,
   near: 0.1,
   far: 1000,
@@ -242,6 +252,8 @@ export const ENVIRONMENT = {
     // Target height range (m).
     height: [6, 12],
     solid: true, castShadow: true, maxSlope: 0.5, sink: 0.3,
+    // Keep trunks off the stand-to-stand sight lines so each tower stays visible.
+    sightClear: 14,
   },
   rocks: {
     models: ['nature/rock-1.glb', 'nature/rock-3.glb', 'nature/rock-5.glb', 'nature/rock-moss-2.glb', 'nature/rock-moss-4.glb'].map(model),
@@ -270,7 +282,7 @@ export const ENVIRONMENT = {
 export const GRASS = {
   // Grass is generated in square chunks so each chunk can be frustum-culled.
   chunkSize: 40,
-  // Keep the area right around the stand clear.
+  // Keep the area right around each stand clear.
   clearRadius: 7,
   // Distance LOD: tufts per m² inside each radius band (m).
   densityBands: [[40, 0.55], [75, 0.22], [115, 0.08]],

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PLAYER, STAND } from '../config.js';
+import { PLAYER, STAND, STANDS } from '../config.js';
 import { createEnvironment } from './environment.js';
 import { Grass } from './grass.js';
 import { createStand } from './stand.js';
@@ -16,10 +16,23 @@ export class World {
     this.terrain = this.heightfield.createMesh();
     scene.add(this.terrain);
 
-    const [px, , pz] = PLAYER.position;
-    this.playerGround = this.heightfield.getHeightAt(px, pz);
     this.standHeight = STAND.enabled ? STAND.height : 0;
-    if (STAND.enabled) scene.add(createStand(px, this.playerGround, pz));
+    this.stands = STANDS.map((stand, index) => {
+      const [x, z] = stand.position;
+      const groundY = this.heightfield.getHeightAt(x, z);
+      if (STAND.enabled) {
+        const mesh = createStand(x, groundY, z);
+        mesh.name = `stand-${index + 1}`;
+        scene.add(mesh);
+      }
+      return {
+        index,
+        key: stand.key,
+        groundY,
+        eye: new THREE.Vector3(x, groundY + this.standHeight + PLAYER.eyeHeight, z),
+      };
+    });
+    this.activeIndex = 0;
   }
 
   /** Builds glTF-based scenery once models are loaded. */
@@ -32,8 +45,22 @@ export class World {
   }
 
   get eyePosition() {
-    const [px, , pz] = PLAYER.position;
-    return new THREE.Vector3(px, this.playerGround + this.standHeight + PLAYER.eyeHeight, pz);
+    return this.stands[this.activeIndex].eye.clone();
+  }
+
+  /** Point between the other stands, dropped toward the valley floor. */
+  lookTarget(index = this.activeIndex) {
+    const target = new THREE.Vector3();
+    let count = 0;
+    this.stands.forEach((stand, i) => {
+      if (i === index) return;
+      target.add(stand.eye);
+      count += 1;
+    });
+    target.multiplyScalar(1 / count);
+    const ground = this.heightfield.getHeightAt(target.x, target.z);
+    target.y = THREE.MathUtils.lerp(target.y, ground, STAND.aimDrop);
+    return target;
   }
 
   getHeightAt(x, z) {

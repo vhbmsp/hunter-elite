@@ -1,3 +1,4 @@
+import { STANDS } from '../config.js';
 import { Sfx } from '../audio/Sfx.js';
 import { AnimalManager } from '../entities/AnimalManager.js';
 import { LootManager } from '../entities/LootManager.js';
@@ -44,7 +45,8 @@ export class Game {
 
     this.world = new World(this.scene);
     this.player = new Player(this.renderer.domElement);
-    this.player.camera.position.copy(this.world.eyePosition);
+    this.player.place(this.world.eyePosition, this.world.lookTarget());
+    this.hud.setStand(1);
     // The muzzle flash is parented to the camera, so the camera has to live in the scene.
     this.scene.add(this.player.camera);
     this.scope = new Scope(this.player.camera, this.hud);
@@ -119,6 +121,8 @@ export class Game {
       menu: () => {
         if (this.playing) this.showMenu();
       },
+      standIndex: (code) => STANDS.findIndex((stand) => stand.key === code),
+      switchStand: (index) => this.switchStand(index),
     });
   }
 
@@ -166,6 +170,13 @@ export class Game {
     this.animals.respawn();
     this.loot.start();
     this.scope.setActive(false);
+  }
+
+  switchStand(index) {
+    if (!this.world.stands[index]) return;
+    this.world.activeIndex = index;
+    this.player.place(this.world.eyePosition, this.world.lookTarget());
+    this.hud.setStand(index + 1);
   }
 
   shoot() {

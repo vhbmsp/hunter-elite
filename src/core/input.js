@@ -1,6 +1,6 @@
 /**
  * Maps raw DOM events to game actions.
- * actions: { lock, shoot, reload, scope(active), toggleHitboxes, menu, isLocked() }
+ * actions: { lock, shoot, reload, scope(active), toggleHitboxes, menu, standIndex(code), switchStand(index), isLocked() }
  */
 export function bindInput(actions, target = document) {
   const listeners = {
@@ -14,6 +14,12 @@ export function bindInput(actions, target = document) {
       if (e.button === 2) actions.scope(false);
     },
     keydown: (e) => {
+      const standIndex = actions.standIndex(e.code);
+      if (standIndex >= 0) {
+        e.preventDefault();
+        if (!e.repeat) actions.switchStand(standIndex);
+        return;
+      }
       if (e.code === 'Space') {
         e.preventDefault();
         if (actions.isLocked() && !e.repeat) actions.shoot();

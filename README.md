@@ -21,9 +21,14 @@ Opening `index.html` directly from disk no longer works; use the dev server or a
 - RMB (hold): scope zoom
 - LMB or Space: shoot
 - R: reload
+- A: stand 1
+- S: stand 2
+- D: stand 3
 - T: toggle hitbox debug (body, neck, and head zones, drawn on top of the models)
 - Esc: release the pointer
 - M: leave a mission or free play and return to the mission list
+
+A, S, and D move the camera to that stand immediately and aim it across the ground toward the other two. They do not fire or reload. Pointer lock, scope zoom, and shooting keep working after a switch. The HUD shows the active stand (`Stand: 1`, `Stand: 2`, or `Stand: 3`).
 
 The rifle is a bolt-action with a 5-round magazine (`WEAPON` in `src/config.js`). You start with one magazine loaded and 2 spare magazines. The HUD shows rounds left in the magazine and spare magazines.
 
@@ -96,8 +101,9 @@ bones on that entry.
 `src/world/terrain.js` builds the ground from seeded layered simplex noise
 (hills, ridged noise, a raised rim) and exposes `getHeightAt(x, z)`, which
 matches the mesh triangles. Slope and height tint the vertices from grass to
-dirt to rock. The player stands on a raised wooden stand (`STAND` in
-`src/config.js`).
+dirt to rock. Three raised wooden stands share one model (`STAND` / `STANDS`
+in `src/config.js`). Each is seated with `getHeightAt`. The player starts on
+stand 1; A, S, and D switch stands.
 
 Animals, trees, rocks, bushes and logs are planted on that surface. Animals
 pitch to the slope, slow down uphill, and turn away from grades steeper than

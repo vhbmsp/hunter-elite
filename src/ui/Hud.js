@@ -23,6 +23,7 @@ export class Hud {
       ammo: $('ammo'),
       distance: $('distance'),
       zoom: $('zoom'),
+      stand: $('stand'),
       crosshair: $('crosshair'),
       scope: $('scope'),
       instructions: $('instructions'),
@@ -261,6 +262,10 @@ export class Hud {
 
   setZoom(zoom) {
     this.el.zoom.textContent = `Zoom: ${zoom.toFixed(1)}x`;
+  }
+
+  setStand(number) {
+    this.el.stand.textContent = `Stand: ${number}`;
   }
 
   setScoped(scoped) {

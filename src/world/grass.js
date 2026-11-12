@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GRASS, PLAYER } from '../config.js';
+import { GRASS, PLAYER, STANDS } from '../config.js';
 
 /**
  * One tuft of crossed tapered blades (one triangle each), 1 m tall in model
@@ -65,6 +65,13 @@ function densityAt(distance) {
   return 0;
 }
 
+function onStandPad(x, z) {
+  return STANDS.some((stand) => {
+    const [sx, sz] = stand.position;
+    return Math.hypot(x - sx, z - sz) < GRASS.clearRadius;
+  });
+}
+
 /**
  * Chunked instanced grass. Each chunk is its own InstancedMesh with a tight
  * bounding sphere, so chunks outside the (scoped) view are frustum-culled.
@@ -96,6 +103,7 @@ export class Grass {
           const x = cx + Math.random() * chunkSize;
           const z = cz + Math.random() * chunkSize;
           const d = Math.hypot(x - px, z - pz);
+          if (onStandPad(x, z)) continue;
           if (Math.random() * GRASS.densityBands[0][1] > densityAt(d)) continue;
           if (heightfield.getSlopeAt(x, z) > GRASS.maxSlope) continue;
 
