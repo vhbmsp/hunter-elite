@@ -44,6 +44,25 @@ Animals and scenery are animated/static low-poly glTF models by Quaternius
 To swap a model, drop a GLB with the same Quaternius animal rig into
 `public/models/animals/` and point the species entry in `src/config.js` at it.
 
+## World
+
+`src/world/terrain.js` builds the ground from seeded layered simplex noise
+(hills, ridged noise, a raised rim) and exposes `getHeightAt(x, z)`, which
+matches the mesh triangles. Slope and height tint the vertices from grass to
+dirt to rock. The player stands on a raised wooden stand (`STAND` in
+`src/config.js`).
+
+Animals, trees, rocks, bushes and logs are planted on that surface. Animals
+pitch to the slope, slow down uphill, and turn away from grades steeper than
+`ANIMALS.maxSlope`.
+
+Shots are tested against the terrain and solid scenery (trees, rocks, logs)
+before animal hitboxes, so cover blocks the bullet. A hit on cover kicks up
+dust and leaves a mark, and the HUD reads "Blocked by …" with no score. Grass
+and bushes are visual cover only: they hide animals and do not stop bullets.
+Grass is chunked `InstancedMesh` tufts with a wind sway in the vertex shader
+and a distance density falloff. Scenery is one instanced mesh per model part.
+
 ## Project layout
 
 ```
@@ -54,7 +73,7 @@ src/
   player/              camera + PointerLockControls, scope zoom
   weapons/             rifle (firing, zone scoring) and hitscan ballistics
   entities/            species prep (scale, clips, hitbox sizes), animated Animal, hitbox zones, manager
-  world/               terrain, scattered tree/bush/log models
+  world/               heightmap terrain, hunting stand, instanced scenery, grass, World facade
   audio/               procedural WebAudio sound effects
   ui/                  HUD DOM bindings
 ```

@@ -24,18 +24,23 @@ Source: <https://quaternius.com/packs/ultimateanimatedanimals.html>. License: CC
 
 Each rig includes the clips Idle, Idle_2, Eating, Walk, Gallop, Death, plus attack, jump and hit-react clips (not used).
 
-## Scenery: Ultimate Nature Pack
+## Scenery
 
-Source: <https://quaternius.com/packs/ultimatenature.html>. License: CC0-1.0.
+Trees and bushes are from the [Simple Nature Pack](https://quaternius.com/packs/simplenature.html).
+Rocks and logs are from the [Ultimate Nature Pack](https://quaternius.com/packs/ultimatenature.html).
+Both are CC0-1.0.
 
-| File | Upstream model |
-| --- | --- |
-| `nature/common-tree-1.glb` | `CommonTree_1` |
-| `nature/common-tree-3.glb` | `CommonTree_3` |
-| `nature/pine-tree-1.glb` | `PineTree_1` |
-| `nature/pine-tree-3.glb` | `PineTree_3` |
-| `nature/bush-1.glb` | `Bush_1` |
-| `nature/bush-2.glb` | `Bush_2` |
-| `nature/bush-berries-1.glb` | `BushBerries_1` |
-| `nature/wood-log.glb` | `WoodLog` |
-| `nature/wood-log-moss.glb` | `WoodLog_Moss` |
+| File | Upstream model | Pack |
+| --- | --- | --- |
+| `nature/tree-1.glb` | `Tree1` | Simple Nature |
+| `nature/tree-2.glb` | `Tree2` | Simple Nature |
+| `nature/tree-3.glb` | `Tree3` | Simple Nature |
+| `nature/bush-1.glb` | `Bush1` | Simple Nature |
+| `nature/bush-2.glb` | `Bush2` | Simple Nature |
+| `nature/rock-1.glb` | `Rock_1` | Ultimate Nature |
+| `nature/rock-3.glb` | `Rock_3` | Ultimate Nature |
+| `nature/rock-5.glb` | `Rock_5` | Ultimate Nature |
+| `nature/rock-moss-2.glb` | `Rock_Moss_2` | Ultimate Nature |
+| `nature/rock-moss-4.glb` | `Rock_Moss_4` | Ultimate Nature |
+| `nature/wood-log.glb` | `WoodLog` | Ultimate Nature |
+| `nature/wood-log-moss.glb` | `WoodLog_Moss` | Ultimate Nature |

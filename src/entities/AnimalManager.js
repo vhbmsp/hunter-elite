@@ -4,9 +4,10 @@ import { Animal } from './Animal.js';
 import { prepareSpecies } from './species.js';
 
 export class AnimalManager {
-  constructor(scene, camera) {
+  constructor(scene, camera, world) {
     this.scene = scene;
     this.camera = camera;
+    this.world = world;
     this.animals = [];
     this.species = new Map();
   }
@@ -27,13 +28,21 @@ export class AnimalManager {
     for (let i = 0; i < count; i++) {
       const type = types[i % types.length];
       const angle = (i / count) * Math.PI * 2 + Math.random() * 0.4;
-      const dist = minSpawnDistance + Math.random() * spawnDistanceRange;
-      this.spawn(type.name, new THREE.Vector3(Math.cos(angle) * dist, 0, Math.sin(angle) * dist));
+      let dist = minSpawnDistance + Math.random() * spawnDistanceRange;
+      let x = Math.cos(angle) * dist;
+      let z = Math.sin(angle) * dist;
+      // Prefer a walkable slope; fall back to the first spot if the ring is all steep.
+      for (let attempt = 0; attempt < 8 && this.world.getSlopeAt(x, z) > ANIMALS.maxSlope; attempt++) {
+        dist = minSpawnDistance + Math.random() * spawnDistanceRange;
+        x = Math.cos(angle + attempt) * dist;
+        z = Math.sin(angle + attempt) * dist;
+      }
+      this.spawn(type.name, new THREE.Vector3(x, 0, z));
     }
   }
 
   spawn(name, position) {
-    const animal = new Animal(this.species.get(name), position);
+    const animal = new Animal(this.species.get(name), position, this.world);
     this.scene.add(animal.root);
     this.animals.push(animal);
     return animal;
