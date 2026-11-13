@@ -48,6 +48,32 @@ export class Sfx {
     });
   }
 
+  // Mag release at the start of a swap.
+  reloadStart() {
+    this.play({
+      osc: { type: 'triangle', from: 380, to: 140, sweep: 0.05, gain: 0.16, fade: 0.07, length: 0.08 },
+      noise: { length: 0.045, gain: 0.22, fade: 0.05 },
+    });
+  }
+
+  // Mag insert + rounds seating when the spare is locked in.
+  reloadSeat() {
+    this.play({
+      osc: { type: 'square', from: 320, to: 180, sweep: 0.04, gain: 0.2, fade: 0.06, length: 0.07 },
+      noise: { length: 0.05, gain: 0.28, fade: 0.05 },
+    });
+    this.play({
+      delay: 0.09,
+      osc: { type: 'triangle', from: 640, to: 220, sweep: 0.05, gain: 0.22, fade: 0.07, length: 0.08 },
+      noise: { length: 0.035, gain: 0.24, fade: 0.04 },
+    });
+    this.play({
+      delay: 0.18,
+      osc: { type: 'square', from: 900, to: 360, sweep: 0.025, gain: 0.14, fade: 0.04, length: 0.045 },
+      noise: { length: 0.02, gain: 0.18, fade: 0.025 },
+    });
+  }
+
   pickup() {
     this.play({
       osc: { type: 'sine', from: 680, to: 620, sweep: 0.07, gain: 0.16, fade: 0.08, length: 0.09 },
