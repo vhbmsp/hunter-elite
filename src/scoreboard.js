@@ -27,11 +27,13 @@ function defaultBoard() {
 /**
  * In-memory per-mission top-10 boards. Resets when the page reloads.
  * Each mission starts with the same default names and scores.
+ * `playerBests` tracks the local player's best cleared run (not board #1).
  */
 export class Scoreboard {
   constructor() {
     this.boards = new Map();
     this.completed = new Set();
+    this.playerBests = new Map();
     for (const mission of MISSIONS) this.ensure(mission.id);
   }
 
@@ -45,8 +47,15 @@ export class Scoreboard {
     return this.ensure(missionId).map((entry) => ({ ...entry }));
   }
 
+  /** Board #1 (may be a default placeholder entry). */
   best(missionId) {
     return this.list(missionId)[0] ?? null;
+  }
+
+  /** Local player's best cleared score for the mission list. */
+  playerBest(missionId) {
+    const entry = this.playerBests.get(missionId);
+    return entry ? { ...entry } : null;
   }
 
   isCompleted(missionId) {
@@ -55,6 +64,26 @@ export class Scoreboard {
 
   markCompleted(missionId) {
     this.completed.add(missionId);
+  }
+
+  /**
+   * Keeps the highest score the local player earned on a cleared run.
+   * Optional name updates when this run is best (or ties the best).
+   */
+  recordPlayerBest(missionId, score, name = null) {
+    const nextScore = Math.round(Number(score) || 0);
+    const safeName = String(name ?? '').trim().slice(0, 16);
+    const prev = this.playerBests.get(missionId);
+    if (!prev || nextScore > prev.score) {
+      this.playerBests.set(missionId, {
+        name: safeName || prev?.name || 'You',
+        score: nextScore,
+      });
+      return;
+    }
+    if (nextScore === prev.score && safeName) {
+      this.playerBests.set(missionId, { name: safeName, score: nextScore });
+    }
   }
 
   /** True when score beats the current 10th place (strictly greater). */

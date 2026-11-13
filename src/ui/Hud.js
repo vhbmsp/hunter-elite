@@ -116,11 +116,12 @@ export class Hud {
 
       if (board?.isCompleted(mission.id)) {
         button.classList.add('is-completed');
-        const best = board.best(mission.id);
+        // Show the local player's best cleared run, not the default board #1.
+        const best = board.playerBest(mission.id);
         const meta = document.createElement('span');
         meta.className = 'mission-meta';
         meta.textContent = best
-          ? `Completed · Best ${formatScore(best.score)} · ${best.name}`
+          ? `Completed · Your best ${formatScore(best.score)} · ${best.name}`
           : 'Completed';
         button.append(meta);
       }
@@ -404,12 +405,17 @@ export class Hud {
   presentMissionEnd(payload) {
     this._pendingResults = payload;
     const { mission, score, success } = payload;
-    if (success) this.scoreboard?.markCompleted(mission.id);
+    if (success) {
+      this.scoreboard?.markCompleted(mission.id);
+      // Record immediately so a non-qualifying clear still shows Your best on the menu.
+      this.scoreboard?.recordPlayerBest(mission.id, score);
+    }
 
     if (this.scoreboard?.qualifies(mission.id, score)) {
       this.el.menu.hidden = true;
       this.el.results.hidden = true;
       this.el.quitConfirm.hidden = true;
+      this.el.boardView.hidden = true;
       this.el.nameEntry.hidden = false;
       this.el.nameDetail.textContent = `Score ${formatScore(score)} made the board. Enter a name to save it.`;
       this.el.nameInput.value = '';
@@ -426,6 +432,7 @@ export class Hud {
     if (!pending || this.el.nameEntry.hidden) return;
     const name = this.el.nameInput.value;
     this.scoreboard?.submit(pending.mission.id, name, pending.score);
+    if (pending.success) this.scoreboard?.recordPlayerBest(pending.mission.id, pending.score, name);
     pending.highlightName = String(name ?? '').trim().slice(0, 16) || 'Hunter';
     pending.highlightScore = Math.round(Number(pending.score) || 0);
     this.el.nameEntry.hidden = true;
