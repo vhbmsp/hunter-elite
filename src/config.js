@@ -149,7 +149,7 @@ export const WEAPON = {
   terrainRayStep: 0.75,
   // Bolt-action magazine. Spares are full magazines, not loose rounds.
   magazineSize: 5,
-  spareMagazines: 2,
+  spareMagazines: 5,
   // Lockout after each shot while the bolt cycles (s).
   boltCycle: 0.85,
   // Magazine swap (s). Rounds left in the seated magazine are discarded.
@@ -350,16 +350,16 @@ export const GRASS = {
   wind: { strength: 0.12, speed: 1.6 },
 };
 
-// Supply crates. A few drop per session on a timer, drift down under a
-// parachute, then sit on the ground until they are shot or they expire.
+// Supply crates. One drop per session on a timer, drifts down under a
+// parachute, then sits on the ground until it is shot or expires.
 export const LOOT = {
   // How many crates spawn after the level finishes loading.
-  perSession: 3,
-  // Seconds from load until the first drop, then between drops.
-  firstDelay: 6,
+  perSession: 1,
+  // Seconds from load until the drop (only one per session).
+  firstDelay: 45,
   interval: 25,
   // Landed crates vanish after this long if they are not shot (s).
-  groundLifetime: 28,
+  groundLifetime: 45,
   // Start this far above the terrain (m). fallSpeed is m/s, so a drop is in
   // the air for dropHeight / fallSpeed seconds (about 6.5s).
   dropHeight: 42,
@@ -382,8 +382,8 @@ export const LOOT = {
   chuteRadius: 1.85,
   // Canopy rim height above the crate centre (m).
   chuteHeight: 2.35,
-  // Granted on a hit. A spare magazine, not loose rounds.
-  spareMagazines: 1,
+  // Granted on a hit. Spare magazines, not loose rounds.
+  spareMagazines: 2,
   points: 50,
   crateColor: 0xa56b3c,
   bandColor: 0x3a2918,
