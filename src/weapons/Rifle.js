@@ -3,13 +3,14 @@ import { hitscan } from './ballistics.js';
 import { MuzzleFlash } from './muzzle.js';
 
 export class Rifle {
-  constructor(camera, animals, world, impacts, sfx, loot) {
+  constructor(camera, animals, world, impacts, sfx, loot, orchard = null) {
     this.camera = camera;
     this.animals = animals;
     this.world = world;
     this.impacts = impacts;
     this.sfx = sfx;
     this.loot = loot;
+    this.orchard = orchard;
     this.rounds = WEAPON.magazineSize;
     this.spares = WEAPON.spareMagazines;
     this.boltTimer = 0;
@@ -39,6 +40,7 @@ export class Rifle {
   /**
    * Fires one shot when the rifle is ready and the magazine has a round.
    * Returns { type: 'kill', animal, zone, distance, points },
+   * { type: 'apple', distance, points } for a tutorial orchard hit,
    * { type: 'loot', distance, points, magazines } when a supply crate is hit,
    * { type: 'cover', surface, distance } when terrain or solid scenery stops it,
    * { type: 'miss' }, { type: 'locked' } during the bolt cycle or a reload,
@@ -58,11 +60,13 @@ export class Rifle {
     this.muzzle.flash();
     this.onChange?.();
 
+    const orchardSolids = this.orchard?.active ? this.orchard.solids : [];
     const hit = hitscan(this.camera, {
       targets: this.animals.liveHitboxes(),
-      solids: this.world.solids,
+      solids: [...(this.world.solids ?? []), ...orchardSolids],
       heightfield: this.world.heightfield,
       loot: this.loot.hitMeshes(),
+      apples: this.orchard?.hitMeshes() ?? [],
     });
     if (!hit) return { type: 'miss' };
 
@@ -72,6 +76,14 @@ export class Rifle {
       this.grantSpares(grant.magazines);
       this.sfx.pickup();
       return { type: 'loot', distance: hit.distance, points: grant.points, magazines: grant.magazines };
+    }
+
+    if (hit.kind === 'apple') {
+      const apple = hit.object.userData.apple;
+      if (!apple?.collect()) return { type: 'miss' };
+      this.sfx.pickup();
+      const points = scoreFor(hit.distance, 'body', 1);
+      return { type: 'apple', distance: hit.distance, points };
     }
 
     if (hit.kind === 'cover') {

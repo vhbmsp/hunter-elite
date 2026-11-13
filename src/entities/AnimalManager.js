@@ -57,12 +57,17 @@ export class AnimalManager {
     this.spawn(name, new THREE.Vector3(x, 0, z));
   }
 
-  /** Drops every animal and duck, then spawns the usual population again. */
-  respawn() {
+  /** Removes every animal and duck without spawning replacements. */
+  clear() {
     for (const animal of [...this.animals, ...this.ducks]) animal.dispose();
     this.animals = [];
     this.ducks = [];
     this.flockTime = 0;
+  }
+
+  /** Drops every animal and duck, then spawns the usual population again. */
+  respawn() {
+    this.clear();
     this.spawnInitial();
   }
 

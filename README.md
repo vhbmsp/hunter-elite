@@ -44,14 +44,17 @@ Kill score is `baseScore + min(distance, distanceBonusCap)` (`WEAPON` in `src/co
 
 The game opens on a mission list. Each level names an objective (species, count, and a minimum distance) and runs a countdown. Clearing the objective ends the level immediately and opens the results. Running the clock out fails the level.
 
-A shot counts only when it hits the objective species strictly farther than the minimum. Shooting any other animal, or the right species that is not over that distance, subtracts 50 from the score and does not count. The animal still drops. The HUD states that rule for the level you are on. Misses and shots stopped by cover are not that penalty; they do count as shots when accuracy is hits / shots. Shooting a supply crate is not that penalty and does not count toward the objective. It does count as a shot fired.
+The first level is a **Tutorial**: three apple trees in the valley between the stands. Eight apples face Tower S, six face Tower A, and six face Tower D (`TUTORIAL_ORCHARD` in `src/config.js`). There are no animals and no supply crates. Practice firing, reloading (R), and switching towers (A / S / D) to shoot every apple within 5:00. Any apple hit counts — there is no distance penalty.
 
-The results screen shows success or failure, accuracy (hits / shots), the longest shot that hit an animal, time left and time used, the level score, and how many penalties landed.
+On hunting levels, a shot counts only when it hits the objective species strictly farther than the minimum. Shooting any other animal, or the right species that is not over that distance, subtracts 50 from the score and does not count. The animal still drops. The HUD states that rule for the level you are on. Misses and shots stopped by cover are not that penalty; they do count as shots when accuracy is hits / shots. Shooting a supply crate is not that penalty and does not count toward the objective. It does count as a shot fired.
+
+The results screen shows success or failure, accuracy (hits / shots), the longest shot that hit an animal (or apple in the tutorial), time left and time used, the level score, and how many penalties landed.
 
 Free play skips missions and keeps the sandbox: no timer, no objective, and no wrong-target penalty. Each mission and each free-play start loads a full rifle (5 rounds and 5 spare magazines). The bolt, reload, and muzzle flash are unchanged.
 
 | Level | Objective | Time |
 | --- | --- | --- |
+| Tutorial | Shoot all 20 apples | 5:00 |
 | Valley deer | 2 deer over 70 m | 2:30 |
 | Ridge elk | 1 elk over 110 m | 2:30 |
 | Brush foxes | 3 foxes over 40 m | 2:30 |
@@ -130,7 +133,7 @@ src/
   core/                Game composition root, glTF asset loading, renderer, scene + lights, input, frame loop
   player/              camera + PointerLockControls, scope zoom
   weapons/             rifle (firing, ammo, bolt, reload, muzzle flash, zone scoring) and hitscan ballistics
-  entities/            species prep (scale, clips, hitbox sizes), animated Animal, flying ducks, parachute crates, hitbox zones, manager
+  entities/            species prep (scale, clips, hitbox sizes), animated Animal, flying ducks, parachute crates, tutorial apple orchard, hitbox zones, manager
   world/               heightmap terrain, hunting stand, instanced scenery, grass, World facade
   audio/               procedural WebAudio sound effects
   ui/                  HUD DOM bindings
