@@ -383,11 +383,19 @@ body {
 }
 
 .mission,
+.mission-board,
 .actions button,
 #free-play {
   font: inherit;
   color: inherit;
   cursor: pointer;
+}
+
+.mission-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: stretch;
 }
 
 .mission {
@@ -400,6 +408,20 @@ body {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
+}
+
+.mission-board {
+  align-self: stretch;
+  min-width: 4.5rem;
+  padding: 8px 10px;
+  border: 1px solid rgba(215, 181, 109, 0.35);
+  border-radius: 6px;
+  background: rgba(61, 79, 40, 0.65);
+  color: #f3ebe0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .mission.is-completed {
@@ -436,6 +458,7 @@ body {
 }
 
 .mission:hover:not(:disabled),
+.mission-board:hover:not(:disabled),
 .actions button:hover,
 #free-play:hover:not(:disabled) {
   border-color: rgba(215, 181, 109, 0.7);
@@ -443,6 +466,7 @@ body {
 }
 
 .mission:disabled,
+.mission-board:disabled,
 #free-play:disabled {
   opacity: 0.55;
   cursor: default;

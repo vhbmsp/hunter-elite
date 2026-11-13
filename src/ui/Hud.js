@@ -72,6 +72,10 @@ export class Hud {
       nameInput: $('name-entry-input'),
       nameSubmit: $('name-entry-submit'),
       quitConfirm: $('quit-confirm'),
+      boardView: $('board-view'),
+      boardViewKicker: $('board-view-kicker'),
+      boardViewList: $('board-view-list'),
+      boardViewClose: $('board-view-close'),
     };
     this._compassDeg = null;
     this._ammoKey = '';
@@ -88,6 +92,9 @@ export class Hud {
     list.replaceChildren();
     const board = this.scoreboard;
     MISSIONS.forEach((mission, index) => {
+      const row = document.createElement('div');
+      row.className = 'mission-row';
+
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'mission';
@@ -122,13 +129,33 @@ export class Hud {
         button.blur();
         this.handlers.onMission?.(index);
       });
-      list.append(button);
+
+      const topTen = document.createElement('button');
+      topTen.type = 'button';
+      topTen.className = 'mission-board';
+      topTen.textContent = 'Top 10';
+      topTen.disabled = !this.ready;
+      topTen.title = `View top 10 for ${mission.title}`;
+      topTen.addEventListener('click', (event) => {
+        event.stopPropagation();
+        topTen.blur();
+        this.showBoardView(mission);
+      });
+
+      row.append(button, topTen);
+      list.append(row);
     });
   }
 
   bindOverlay() {
     const stop = (event) => event.stopPropagation();
-    for (const overlay of [this.el.menu, this.el.results, this.el.nameEntry, this.el.quitConfirm]) {
+    for (const overlay of [
+      this.el.menu,
+      this.el.results,
+      this.el.nameEntry,
+      this.el.quitConfirm,
+      this.el.boardView,
+    ]) {
       overlay.addEventListener('click', stop);
       overlay.addEventListener('mousedown', stop);
     }
@@ -158,6 +185,10 @@ export class Hud {
         event.preventDefault();
         this.submitNameEntry();
       }
+    });
+    this.el.boardViewClose.addEventListener('click', () => {
+      this.el.boardViewClose.blur();
+      this.hideBoardView();
     });
   }
 
@@ -253,7 +284,26 @@ export class Hud {
   hideTransientOverlays() {
     this.el.nameEntry.hidden = true;
     this.el.quitConfirm.hidden = true;
+    this.el.boardView.hidden = true;
     this._pendingResults = null;
+  }
+
+  showBoardView(mission) {
+    this.el.boardViewKicker.textContent = mission.title;
+    this.fillScoreBoard(this.el.boardViewList, mission.id);
+    this.el.menu.hidden = true;
+    this.el.results.hidden = true;
+    this.el.nameEntry.hidden = true;
+    this.el.quitConfirm.hidden = true;
+    this.el.boardView.hidden = false;
+    this.setOverlay(true);
+  }
+
+  hideBoardView() {
+    this.el.boardView.hidden = true;
+    this.el.menu.hidden = false;
+    this.renderMissions();
+    this.setOverlay(true);
   }
 
   showMenu() {
@@ -298,6 +348,7 @@ export class Hud {
     this.el.menu.hidden = true;
     this.el.results.hidden = true;
     this.el.nameEntry.hidden = true;
+    this.el.boardView.hidden = true;
     this.setOverlay(true);
   }
 
@@ -315,25 +366,22 @@ export class Hud {
     this.el.timer.textContent = `Time: ${formatClock(seconds)}`;
   }
 
-  renderScoreBoard(missionId, highlightName = null, highlightScore = null) {
-    const board = this.el.resultsBoard;
-    board.replaceChildren();
+  fillScoreBoard(container, missionId, highlightName = null, highlightScore = null) {
+    container.replaceChildren();
     const heading = document.createElement('p');
     heading.className = 'score-board-title';
     heading.textContent = 'Top 10';
-    board.append(heading);
+    container.append(heading);
 
     const rows = this.scoreboard?.list(missionId) ?? [];
     const table = document.createElement('ol');
     table.className = 'score-board-list';
+    const highlightAt = rows.findIndex(
+      (row) => row.name === highlightName && row.score === highlightScore,
+    );
     rows.forEach((entry, index) => {
       const li = document.createElement('li');
-      const isHighlight =
-        highlightName != null
-        && entry.name === highlightName
-        && entry.score === highlightScore
-        && index === rows.findIndex((row) => row.name === highlightName && row.score === highlightScore);
-      if (isHighlight) li.classList.add('is-player');
+      if (highlightName != null && index === highlightAt) li.classList.add('is-player');
       const rank = document.createElement('span');
       rank.className = 'score-rank';
       rank.textContent = String(index + 1);
@@ -346,7 +394,7 @@ export class Hud {
       li.append(rank, name, points);
       table.append(li);
     });
-    board.append(table);
+    container.append(table);
   }
 
   /**
@@ -424,7 +472,7 @@ export class Hud {
     this.el.resultsScore.textContent = formatScore(score);
     this.el.penalties.textContent = formatPenalties(penalties);
     this.el.next.hidden = !hasNext;
-    this.renderScoreBoard(mission.id, highlightName, highlightScore);
+    this.fillScoreBoard(this.el.resultsBoard, mission.id, highlightName, highlightScore);
     this.setOverlay(true);
   }
 

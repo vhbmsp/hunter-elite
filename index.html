@@ -105,6 +105,17 @@
         <p class="lede">Press <strong>Y</strong> to quit to the mission list, or <strong>N</strong> to keep playing.</p>
       </div>
     </div>
+    <div id="board-view" class="overlay" hidden>
+      <div class="panel">
+        <p id="board-view-kicker" class="kicker"></p>
+        <h1>Top 10</h1>
+        <p class="lede">In-memory for this session. Reloading the page resets every board.</p>
+        <div id="board-view-list" class="score-board" aria-label="Top 10"></div>
+        <div class="actions">
+          <button id="board-view-close" type="button">Back</button>
+        </div>
+      </div>
+    </div>
   </div>
   <script type="module" src="/src/main.js"></script>
 </body>
