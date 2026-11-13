@@ -38,7 +38,7 @@ After each shot the bolt cycles for about 0.85s and the rifle will not fire agai
 
 Supply crates are collected by shooting them (LMB or Space). The hunter stands still, so there is no close-range pickup. See [Supply drops](#supply-drops).
 
-Head shots score 1.5× (`WEAPON.zoneMultiplier` in `src/config.js`). The Premium pig multiplies that whole score by 5 (`scoreMultiplier` on the boar entry), so a head shot is 7.5× the distance term. A Premium kill reads "Premium" on the distance line, with the points just earned.
+Kill score is `baseScore + min(distance, distanceBonusCap)` (`WEAPON` in `src/config.js`), so farther shots earn more up to the cap. Head shots score 1.5× (`WEAPON.zoneMultiplier`). The Premium pig multiplies that whole score by 5 (`scoreMultiplier` on the boar entry), so a head shot is 7.5× the distance term. A Premium kill reads "Premium" on the distance line, with the points just earned.
 
 ## Missions
 
