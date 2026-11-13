@@ -35,11 +35,42 @@ export class Sfx {
     });
   }
 
-  // Dry fire: a short click, no report.
+  // Dry fire: sharp metallic click so an empty magazine is obvious (reload needed).
   empty() {
     this.play({
-      osc: { type: 'square', from: 210, to: 110, sweep: 0.012, gain: 0.1, fade: 0.02, length: 0.025 },
-      noise: { length: 0.012, gain: 0.16, fade: 0.012 },
+      osc: { type: 'square', from: 1800, to: 420, sweep: 0.018, gain: 0.28, fade: 0.03, length: 0.035 },
+      noise: { length: 0.02, gain: 0.32, fade: 0.02 },
+    });
+    this.play({
+      delay: 0.028,
+      osc: { type: 'triangle', from: 520, to: 160, sweep: 0.03, gain: 0.18, fade: 0.04, length: 0.045 },
+      noise: { length: 0.018, gain: 0.2, fade: 0.02 },
+    });
+  }
+
+  // Mag release at the start of a swap.
+  reloadStart() {
+    this.play({
+      osc: { type: 'triangle', from: 380, to: 140, sweep: 0.05, gain: 0.16, fade: 0.07, length: 0.08 },
+      noise: { length: 0.045, gain: 0.22, fade: 0.05 },
+    });
+  }
+
+  // Mag insert + rounds seating when the spare is locked in.
+  reloadSeat() {
+    this.play({
+      osc: { type: 'square', from: 320, to: 180, sweep: 0.04, gain: 0.2, fade: 0.06, length: 0.07 },
+      noise: { length: 0.05, gain: 0.28, fade: 0.05 },
+    });
+    this.play({
+      delay: 0.09,
+      osc: { type: 'triangle', from: 640, to: 220, sweep: 0.05, gain: 0.22, fade: 0.07, length: 0.08 },
+      noise: { length: 0.035, gain: 0.24, fade: 0.04 },
+    });
+    this.play({
+      delay: 0.18,
+      osc: { type: 'square', from: 900, to: 360, sweep: 0.025, gain: 0.14, fade: 0.04, length: 0.045 },
+      noise: { length: 0.02, gain: 0.18, fade: 0.025 },
     });
   }
 

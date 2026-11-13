@@ -96,6 +96,7 @@ export class Rifle {
     if (this.spares <= 0) return false;
     if (this.rounds >= WEAPON.magazineSize) return false;
     this.reloadTimer = WEAPON.reloadTime;
+    this.sfx.reloadStart();
     this.onChange?.();
     return true;
   }
@@ -111,6 +112,7 @@ export class Rifle {
     this.reloadTimer = 0;
     this.rounds = WEAPON.magazineSize;
     this.spares -= 1;
+    this.sfx.reloadSeat();
     this.onChange?.();
   }
 

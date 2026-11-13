@@ -32,9 +32,9 @@ You start on Tower S facing north. From that view Tower A is on the left (west) 
 
 **World north is −Z** (east = +X, south = +Z, west = −X). See `NORTH_AXIS` / `FACING_YAW` in `src/config.js`.
 
-The rifle is a bolt-action with a 5-round magazine (`WEAPON` in `src/config.js`). You start with one magazine loaded and 5 spare magazines. The HUD shows rounds left in the magazine and spare magazines.
+The rifle is a bolt-action with a 5-round magazine (`WEAPON` in `src/config.js`). You start with one magazine loaded and 5 spare magazines. The HUD shows an ammo rack beside the scoreboard: live/spent bullet icons for the seated magazine, and one magazine icon per spare (`public/ui/`).
 
-After each shot the bolt cycles for about 0.85s and the rifle will not fire again until it closes. R starts a 2s reload when the magazine is empty or partial and a spare remains: the spare replaces the seated magazine, and any rounds left in the old one are discarded. Reload does nothing with no spare magazines, or when the current one is already full. The trigger on an empty, ready rifle clicks and does not fire. No shot is fired while the bolt is cycling or a reload is in progress.
+After each shot the bolt cycles for about 0.85s and the rifle will not fire again until it closes. R starts a 2s reload when the magazine is empty or partial and a spare remains: the spare replaces the seated magazine, and any rounds left in the old one are discarded. Reload plays a mag-release click at the start and a seating sound when the rounds lock in. Reload does nothing with no spare magazines, or when the current one is already full. The trigger on an empty, ready rifle clicks and does not fire. No shot is fired while the bolt is cycling or a reload is in progress.
 
 Supply crates are collected by shooting them (LMB or Space). The hunter stands still, so there is no close-range pickup. See [Supply drops](#supply-drops).
 

@@ -111,10 +111,18 @@ body {
   transform: translate(-50%, -50%);
 }
 
-#hud {
+#hud-cluster {
   position: absolute;
   top: 20px;
   left: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  pointer-events: none;
+  z-index: 11;
+}
+
+#hud {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -126,6 +134,58 @@ body {
   padding: 10px 14px;
   border-radius: 6px;
   pointer-events: auto;
+}
+
+#ammo-rack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 140px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+}
+
+.ammo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.ammo-bullet,
+.ammo-mag {
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.75));
+  user-select: none;
+  pointer-events: none;
+}
+
+.ammo-bullet {
+  width: 14px;
+  height: 36px;
+}
+
+.ammo-bullet.is-spent {
+  opacity: 0.55;
+}
+
+.ammo-mag {
+  width: 22px;
+  height: 30px;
+}
+
+.ammo-status {
+  font-size: 12px;
+  color: #f0d2a0;
+  letter-spacing: 0.02em;
+}
+
+#ui.overlay-open #hud-cluster {
+  visibility: hidden;
 }
 
 #objective {
@@ -245,7 +305,6 @@ body {
   text-shadow: 0 1px 2px #000;
 }
 
-#ui.overlay-open #hud,
 #ui.overlay-open #compass,
 #ui.overlay-open #crosshair,
 #ui.overlay-open #instructions {
