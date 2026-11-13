@@ -35,11 +35,16 @@ export class Sfx {
     });
   }
 
-  // Dry fire: a short click, no report.
+  // Dry fire: sharp metallic click so an empty magazine is obvious (reload needed).
   empty() {
     this.play({
-      osc: { type: 'square', from: 210, to: 110, sweep: 0.012, gain: 0.1, fade: 0.02, length: 0.025 },
-      noise: { length: 0.012, gain: 0.16, fade: 0.012 },
+      osc: { type: 'square', from: 1800, to: 420, sweep: 0.018, gain: 0.28, fade: 0.03, length: 0.035 },
+      noise: { length: 0.02, gain: 0.32, fade: 0.02 },
+    });
+    this.play({
+      delay: 0.028,
+      osc: { type: 'triangle', from: 520, to: 160, sweep: 0.03, gain: 0.18, fade: 0.04, length: 0.045 },
+      noise: { length: 0.018, gain: 0.2, fade: 0.02 },
     });
   }
 
