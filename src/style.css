@@ -414,10 +414,10 @@ body {
   align-self: stretch;
   min-width: 4.5rem;
   padding: 8px 10px;
-  border: 1px solid rgba(215, 181, 109, 0.35);
+  border: 1px solid rgba(120, 120, 120, 0.55);
   border-radius: 6px;
-  background: rgba(61, 79, 40, 0.65);
-  color: #f3ebe0;
+  background: #c8c8c8;
+  color: #2a2a2a;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -458,11 +458,15 @@ body {
 }
 
 .mission:hover:not(:disabled),
-.mission-board:hover:not(:disabled),
 .actions button:hover,
 #free-play:hover:not(:disabled) {
   border-color: rgba(215, 181, 109, 0.7);
   background: rgba(215, 181, 109, 0.1);
+}
+
+.mission-board:hover:not(:disabled) {
+  border-color: rgba(90, 90, 90, 0.7);
+  background: #d8d8d8;
 }
 
 .mission:disabled,
