@@ -137,6 +137,7 @@ src/
   entities/            species prep (scale, clips, hitbox sizes), animated Animal, flying ducks, parachute crates, tutorial apple orchard, hitbox zones, manager
   world/               heightmap terrain, hunting stand, instanced scenery, grass, World facade
   audio/               procedural WebAudio sound effects
+  scoreboard.js        in-memory per-mission top 10 boards
   ui/                  HUD DOM bindings
 ```
 
