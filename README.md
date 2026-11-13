@@ -26,6 +26,7 @@ Opening `index.html` directly from disk no longer works; use the dev server or a
 - D: Tower D (faces west)
 - T: toggle hitbox debug (body, neck, and head zones, drawn on top of the models)
 - Esc: release the pointer
+- Q: quit prompt (Y confirm / N cancel) back to the mission list
 - M: leave a mission or free play and return to the mission list
 
 You start on Tower S facing north. From that view Tower A is on the left (west) and Tower D on the right (east). Looking left toward A reads west on the compass; looking right toward D reads east. A, S, and D move the camera to that stand immediately and set the look yaw to the stand's facing (A → east, S → north, D → west). They do not fire or reload. Pointer lock, scope zoom, and shooting keep working after a switch. The HUD shows the active tower name. A compass dial in the top-right tracks camera look yaw live (N/E/S/W).
@@ -48,7 +49,7 @@ The first level is a **Tutorial**: three apple trees in the valley between the s
 
 On hunting levels, a shot counts only when it hits the objective species strictly farther than the minimum. Shooting any other animal, or the right species that is not over that distance, subtracts 50 from the score and does not count. The animal still drops. The HUD states that rule for the level you are on. Misses and shots stopped by cover are not that penalty; they do count as shots when accuracy is hits / shots. Shooting a supply crate is not that penalty and does not count toward the objective. It does count as a shot fired.
 
-The results screen shows success or failure, accuracy (hits / shots), the longest shot that hit an animal (or apple in the tutorial), time left and time used, the level score, and how many penalties landed.
+The results screen shows success or failure, accuracy (hits / shots), the longest shot that hit an animal (or apple in the tutorial), time left and time used, the level score, how many penalties landed, and that mission’s top 10 board. Each mission starts with the same default names and scores from 2000 down to 200 (`src/scoreboard.js`). Boards live in memory only and reset when the page reloads. If a finished run beats 10th place, the game asks for a player name before showing results. Cleared missions are marked Completed on the mission list with **your** best cleared score and name (not the default board #1). Each mission row also has a **Top 10** button to open that board from the menu.
 
 Free play skips missions and keeps the sandbox: no timer, no objective, and no wrong-target penalty. Each mission and each free-play start loads a full rifle (5 rounds and 5 spare magazines). The bolt, reload, and muzzle flash are unchanged.
 
@@ -136,6 +137,7 @@ src/
   entities/            species prep (scale, clips, hitbox sizes), animated Animal, flying ducks, parachute crates, tutorial apple orchard, hitbox zones, manager
   world/               heightmap terrain, hunting stand, instanced scenery, grass, World facade
   audio/               procedural WebAudio sound effects
+  scoreboard.js        in-memory per-mission top 10 boards
   ui/                  HUD DOM bindings
 ```
 

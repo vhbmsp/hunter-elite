@@ -28,6 +28,7 @@ export class Hud {
     this.handlers = handlers;
     this.ready = false;
     this.mission = null;
+    this.scoreboard = handlers.scoreboard ?? null;
     const $ = (id) => root.getElementById(id);
     this.el = {
       ui: $('ui'),
@@ -61,13 +62,24 @@ export class Hud {
       time: $('results-time'),
       resultsScore: $('results-score'),
       penalties: $('results-penalties'),
+      resultsBoard: $('results-board'),
       retry: $('results-retry'),
       next: $('results-next'),
       menuButton: $('results-menu'),
       resultsFree: $('results-free'),
+      nameEntry: $('name-entry'),
+      nameDetail: $('name-entry-detail'),
+      nameInput: $('name-entry-input'),
+      nameSubmit: $('name-entry-submit'),
+      quitConfirm: $('quit-confirm'),
+      boardView: $('board-view'),
+      boardViewKicker: $('board-view-kicker'),
+      boardViewList: $('board-view-list'),
+      boardViewClose: $('board-view-close'),
     };
     this._compassDeg = null;
     this._ammoKey = '';
+    this._pendingResults = null;
     this.instructionsText = this.el.instructions.textContent;
     this.renderMissions();
     this.bindOverlay();
@@ -78,7 +90,11 @@ export class Hud {
   renderMissions() {
     const list = this.el.missionList;
     list.replaceChildren();
+    const board = this.scoreboard;
     MISSIONS.forEach((mission, index) => {
+      const row = document.createElement('div');
+      row.className = 'mission-row';
+
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'mission';
@@ -97,17 +113,50 @@ export class Hud {
       time.textContent = formatClock(mission.seconds);
 
       button.append(title, objective, time);
+
+      if (board?.isCompleted(mission.id)) {
+        button.classList.add('is-completed');
+        // Show the local player's best cleared run, not the default board #1.
+        const best = board.playerBest(mission.id);
+        const meta = document.createElement('span');
+        meta.className = 'mission-meta';
+        meta.textContent = best
+          ? `Completed · Your best ${formatScore(best.score)} · ${best.name}`
+          : 'Completed';
+        button.append(meta);
+      }
+
       button.addEventListener('click', () => {
         button.blur();
         this.handlers.onMission?.(index);
       });
-      list.append(button);
+
+      const topTen = document.createElement('button');
+      topTen.type = 'button';
+      topTen.className = 'mission-board';
+      topTen.textContent = 'Top 10';
+      topTen.disabled = !this.ready;
+      topTen.title = `View top 10 for ${mission.title}`;
+      topTen.addEventListener('click', (event) => {
+        event.stopPropagation();
+        topTen.blur();
+        this.showBoardView(mission);
+      });
+
+      row.append(button, topTen);
+      list.append(row);
     });
   }
 
   bindOverlay() {
     const stop = (event) => event.stopPropagation();
-    for (const overlay of [this.el.menu, this.el.results]) {
+    for (const overlay of [
+      this.el.menu,
+      this.el.results,
+      this.el.nameEntry,
+      this.el.quitConfirm,
+      this.el.boardView,
+    ]) {
       overlay.addEventListener('click', stop);
       overlay.addEventListener('mousedown', stop);
     }
@@ -130,6 +179,17 @@ export class Hud {
     this.el.resultsFree.addEventListener('click', () => {
       this.el.resultsFree.blur();
       this.handlers.onFreePlay?.();
+    });
+    this.el.nameSubmit.addEventListener('click', () => this.submitNameEntry());
+    this.el.nameInput.addEventListener('keydown', (event) => {
+      if (event.code === 'Enter') {
+        event.preventDefault();
+        this.submitNameEntry();
+      }
+    });
+    this.el.boardViewClose.addEventListener('click', () => {
+      this.el.boardViewClose.blur();
+      this.hideBoardView();
     });
   }
 
@@ -222,18 +282,46 @@ export class Hud {
     this.el.distance.textContent = `Penalty −${MISSION_PENALTY} · ${distance.toFixed(1)} m is not over ${mission.minDistance} m · does not count`;
   }
 
+  hideTransientOverlays() {
+    this.el.nameEntry.hidden = true;
+    this.el.quitConfirm.hidden = true;
+    this.el.boardView.hidden = true;
+    this._pendingResults = null;
+  }
+
+  showBoardView(mission) {
+    this.el.boardViewKicker.textContent = mission.title;
+    this.fillScoreBoard(this.el.boardViewList, mission.id);
+    this.el.menu.hidden = true;
+    this.el.results.hidden = true;
+    this.el.nameEntry.hidden = true;
+    this.el.quitConfirm.hidden = true;
+    this.el.boardView.hidden = false;
+    this.setOverlay(true);
+  }
+
+  hideBoardView() {
+    this.el.boardView.hidden = true;
+    this.el.menu.hidden = false;
+    this.renderMissions();
+    this.setOverlay(true);
+  }
+
   showMenu() {
     this.mission = null;
+    this.hideTransientOverlays();
     this.el.menu.hidden = false;
     this.el.results.hidden = true;
     this.el.objective.hidden = true;
     this.el.timer.hidden = true;
     this.el.rule.hidden = true;
+    this.renderMissions();
     this.setOverlay(true);
   }
 
   showMission(mission, progress, timeLeft) {
     this.mission = mission;
+    this.hideTransientOverlays();
     this.el.menu.hidden = true;
     this.el.results.hidden = true;
     this.el.objective.hidden = false;
@@ -247,11 +335,26 @@ export class Hud {
 
   showFreePlay() {
     this.mission = null;
+    this.hideTransientOverlays();
     this.el.menu.hidden = true;
     this.el.results.hidden = true;
     this.el.objective.hidden = true;
     this.el.timer.hidden = true;
     this.el.rule.hidden = true;
+    this.setOverlay(false);
+  }
+
+  showQuitConfirm() {
+    this.el.quitConfirm.hidden = false;
+    this.el.menu.hidden = true;
+    this.el.results.hidden = true;
+    this.el.nameEntry.hidden = true;
+    this.el.boardView.hidden = true;
+    this.setOverlay(true);
+  }
+
+  hideQuitConfirm() {
+    this.el.quitConfirm.hidden = true;
     this.setOverlay(false);
   }
 
@@ -262,6 +365,85 @@ export class Hud {
 
   setTimer(seconds) {
     this.el.timer.textContent = `Time: ${formatClock(seconds)}`;
+  }
+
+  fillScoreBoard(container, missionId, highlightName = null, highlightScore = null) {
+    container.replaceChildren();
+    const heading = document.createElement('p');
+    heading.className = 'score-board-title';
+    heading.textContent = 'Top 10';
+    container.append(heading);
+
+    const rows = this.scoreboard?.list(missionId) ?? [];
+    const table = document.createElement('ol');
+    table.className = 'score-board-list';
+    const highlightAt = rows.findIndex(
+      (row) => row.name === highlightName && row.score === highlightScore,
+    );
+    rows.forEach((entry, index) => {
+      const li = document.createElement('li');
+      if (highlightName != null && index === highlightAt) li.classList.add('is-player');
+      const rank = document.createElement('span');
+      rank.className = 'score-rank';
+      rank.textContent = String(index + 1);
+      const name = document.createElement('span');
+      name.className = 'score-name';
+      name.textContent = entry.name;
+      const points = document.createElement('span');
+      points.className = 'score-points';
+      points.textContent = formatScore(entry.score);
+      li.append(rank, name, points);
+      table.append(li);
+    });
+    container.append(table);
+  }
+
+  /**
+   * After a mission ends: if the run qualifies for the top 10, ask for a name
+   * first; otherwise open the results panel with the board.
+   */
+  presentMissionEnd(payload) {
+    this._pendingResults = payload;
+    const { mission, score, success } = payload;
+    if (success) {
+      this.scoreboard?.markCompleted(mission.id);
+      // Record immediately so a non-qualifying clear still shows Your best on the menu.
+      this.scoreboard?.recordPlayerBest(mission.id, score);
+    }
+
+    if (this.scoreboard?.qualifies(mission.id, score)) {
+      this.el.menu.hidden = true;
+      this.el.results.hidden = true;
+      this.el.quitConfirm.hidden = true;
+      this.el.boardView.hidden = true;
+      this.el.nameEntry.hidden = false;
+      this.el.nameDetail.textContent = `Score ${formatScore(score)} made the board. Enter a name to save it.`;
+      this.el.nameInput.value = '';
+      this.setOverlay(true);
+      queueMicrotask(() => this.el.nameInput.focus());
+      return;
+    }
+
+    this.flushPendingResults();
+  }
+
+  submitNameEntry() {
+    const pending = this._pendingResults;
+    if (!pending || this.el.nameEntry.hidden) return;
+    const name = this.el.nameInput.value;
+    this.scoreboard?.submit(pending.mission.id, name, pending.score);
+    if (pending.success) this.scoreboard?.recordPlayerBest(pending.mission.id, pending.score, name);
+    pending.highlightName = String(name ?? '').trim().slice(0, 16) || 'Hunter';
+    pending.highlightScore = Math.round(Number(pending.score) || 0);
+    this.el.nameEntry.hidden = true;
+    this.flushPendingResults();
+  }
+
+  flushPendingResults() {
+    const pending = this._pendingResults;
+    if (!pending) return;
+    this._pendingResults = null;
+    this.showResults(pending);
   }
 
   showResults({
@@ -276,8 +458,12 @@ export class Hud {
     score,
     penalties,
     hasNext,
+    highlightName = null,
+    highlightScore = null,
   }) {
     this.el.menu.hidden = true;
+    this.el.nameEntry.hidden = true;
+    this.el.quitConfirm.hidden = true;
     this.el.results.hidden = false;
     this.el.kicker.textContent = mission.title;
     this.el.heading.textContent = success ? 'Success' : 'Failed';
@@ -293,6 +479,7 @@ export class Hud {
     this.el.resultsScore.textContent = formatScore(score);
     this.el.penalties.textContent = formatPenalties(penalties);
     this.el.next.hidden = !hasNext;
+    this.fillScoreBoard(this.el.resultsBoard, mission.id, highlightName, highlightScore);
     this.setOverlay(true);
   }
 
@@ -308,7 +495,7 @@ export class Hud {
     this.el.instructions.textContent = this.instructionsText;
     this.el.menuStatus.hidden = true;
     this.el.freePlay.disabled = false;
-    for (const button of this.el.missionList.querySelectorAll('button')) button.disabled = false;
+    this.renderMissions();
   }
 
   setError(message) {

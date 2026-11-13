@@ -383,11 +383,19 @@ body {
 }
 
 .mission,
+.mission-board,
 .actions button,
 #free-play {
   font: inherit;
   color: inherit;
   cursor: pointer;
+}
+
+.mission-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: stretch;
 }
 
 .mission {
@@ -400,6 +408,24 @@ body {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
+}
+
+.mission-board {
+  align-self: stretch;
+  min-width: 4.5rem;
+  padding: 8px 10px;
+  border: 1px solid rgba(120, 120, 120, 0.55);
+  border-radius: 6px;
+  background: #c8c8c8;
+  color: #2a2a2a;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.mission.is-completed {
+  border-color: rgba(198, 227, 154, 0.35);
 }
 
 .mission-title {
@@ -424,6 +450,13 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.mission-meta {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  color: #c6e39a;
+  font-size: 13px;
+}
+
 .mission:hover:not(:disabled),
 .actions button:hover,
 #free-play:hover:not(:disabled) {
@@ -431,7 +464,13 @@ body {
   background: rgba(215, 181, 109, 0.1);
 }
 
+.mission-board:hover:not(:disabled) {
+  border-color: rgba(90, 90, 90, 0.7);
+  background: #d8d8d8;
+}
+
 .mission:disabled,
+.mission-board:disabled,
 #free-play:disabled {
   opacity: 0.55;
   cursor: default;
@@ -473,6 +512,71 @@ body {
 
 #results-heading.fail {
   color: #f0a090;
+}
+
+.score-board {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.score-board-title {
+  margin: 0 0 8px;
+  color: #d7b56d;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.score-board-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-board-list li {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.score-board-list li.is-player {
+  color: #c6e39a;
+}
+
+.score-rank {
+  color: #b7aa98;
+}
+
+.name-label {
+  display: block;
+  margin: 12px 0 6px;
+  color: #b7aa98;
+  font-size: 13px;
+}
+
+#name-entry-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  font: inherit;
+  color: #f3ebe0;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(215, 181, 109, 0.45);
+  border-radius: 6px;
+}
+
+#name-entry-input:focus {
+  outline: 1px solid rgba(215, 181, 109, 0.8);
 }
 
 .actions {
