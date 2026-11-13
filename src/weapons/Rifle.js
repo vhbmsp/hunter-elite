@@ -124,8 +124,9 @@ export class Rifle {
   }
 }
 
+/** Farther kills score more: base + capped distance, then zone/species multipliers. */
 export function scoreFor(distance, zone = 'body', scoreMultiplier = 1) {
   const cap = WEAPON.distanceBonusCap;
   const multiplier = (WEAPON.zoneMultiplier[zone] ?? 1) * scoreMultiplier;
-  return Math.round((WEAPON.baseScore + (cap - Math.min(distance, cap))) * multiplier);
+  return Math.round((WEAPON.baseScore + Math.min(distance, cap)) * multiplier);
 }

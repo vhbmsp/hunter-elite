@@ -136,8 +136,9 @@ export const SCOPE = {
 };
 
 export const WEAPON = {
-  // Score = (baseScore + (distanceBonusCap - min(distance, distanceBonusCap)))
+  // Score = (baseScore + min(distance, distanceBonusCap))
   //          * zone multiplier * species scoreMultiplier (1, or 5 for Premium).
+  // Farther shots earn more (capped); a point-blank kill is just baseScore.
   baseScore: 80,
   distanceBonusCap: 100,
   zoneMultiplier: { body: 1, head: 1.5 },
