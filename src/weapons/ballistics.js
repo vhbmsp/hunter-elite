@@ -13,15 +13,15 @@ function worldMatrixOf(hit) {
 
 /**
  * Instant-hit ray from the camera through the screen centre, tested against
- * the terrain, solid scenery, supply crates and animal hitboxes. The nearest
- * hit wins, so cover in front of a target stops the shot, and a crate in
- * front of an animal stops it too. The parachute is not part of `loot`.
- * Foliage is never tested.
+ * the terrain, solid scenery, supply crates, tutorial apples, and animal
+ * hitboxes. The nearest hit wins, so cover in front of a target stops the
+ * shot, and a crate in front of an animal stops it too. The parachute is not
+ * part of `loot`. Foliage is never tested.
  *
  * Returns null on a clean miss, otherwise
- * { kind: 'animal' | 'cover' | 'loot', distance, point, normal?, object?, surface }.
+ * { kind: 'animal' | 'cover' | 'loot' | 'apple', distance, point, normal?, object?, surface }.
  */
-export function hitscan(camera, { targets, solids = [], heightfield = null, loot = [] }) {
+export function hitscan(camera, { targets, solids = [], heightfield = null, loot = [], apples = [] }) {
   // Mouse-look may have rotated the camera since the last render refreshed matrixWorld.
   camera.updateMatrixWorld();
   raycaster.setFromCamera(SCREEN_CENTER, camera);
@@ -47,11 +47,23 @@ export function hitscan(camera, { targets, solids = [], heightfield = null, loot
 
   const [targetHit] = targets.length ? raycaster.intersectObjects(targets, false) : [];
   const [lootHit] = loot.length ? raycaster.intersectObjects(loot, false) : [];
-  // One winner. A crate hit does not continue on to an animal behind it.
-  if (lootHit && (!targetHit || lootHit.distance <= targetHit.distance)) {
-    best = { kind: 'loot', surface: 'crate', distance: lootHit.distance, point: lootHit.point, object: lootHit.object };
-  } else if (targetHit) {
-    best = { kind: 'animal', surface: 'animal', distance: targetHit.distance, point: targetHit.point, object: targetHit.object };
+  const [appleHit] = apples.length ? raycaster.intersectObjects(apples, false) : [];
+
+  // One winner among loot / apples / animals. Nearest interactive hit keeps the shot.
+  const candidates = [];
+  if (lootHit) candidates.push({ kind: 'loot', surface: 'crate', hit: lootHit });
+  if (appleHit) candidates.push({ kind: 'apple', surface: 'apple', hit: appleHit });
+  if (targetHit) candidates.push({ kind: 'animal', surface: 'animal', hit: targetHit });
+  candidates.sort((a, b) => a.hit.distance - b.hit.distance);
+  if (candidates.length) {
+    const win = candidates[0];
+    best = {
+      kind: win.kind,
+      surface: win.surface,
+      distance: win.hit.distance,
+      point: win.hit.point,
+      object: win.hit.object,
+    };
   }
 
   raycaster.far = Infinity;

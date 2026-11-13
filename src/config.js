@@ -392,4 +392,54 @@ export const LOOT = {
   ropeColor: 0x241c16,
 };
 
+// Tutorial orchard between the three stands. Each tree sits toward its stand
+// from the valley centre; apples hang on that stand's near side so clearing
+// every fruit means switching towers (A / S / D).
+export const TUTORIAL_ORCHARD = {
+  // Distance from stand centroid toward each tower (m).
+  towardStand: 18,
+  // Keep random scenery out of the firing lanes around each apple tree (m).
+  clearRadius: 14,
+  trunkHeight: 4.6,
+  trunkRadius: 0.38,
+  canopyRadius: 2.35,
+  canopyLift: 5.1,
+  appleRadius: 0.22,
+  trunkColor: 0x5c3a1e,
+  leafColor: 0x3f7a28,
+  appleColor: 0xd12d1f,
+  trees: [
+    { stand: 'Tower S', apples: 8 },
+    { stand: 'Tower A', apples: 6 },
+    { stand: 'Tower D', apples: 6 },
+  ],
+};
+
+/** Ground x/z for each tutorial apple tree (same spots the orchard uses). */
+export function tutorialOrchardSpots() {
+  let cx = 0;
+  let cz = 0;
+  for (const stand of STANDS) {
+    cx += stand.position[0];
+    cz += stand.position[1];
+  }
+  cx /= STANDS.length;
+  cz /= STANDS.length;
+
+  const spots = [];
+  for (const entry of TUTORIAL_ORCHARD.trees) {
+    const stand = STANDS.find((s) => s.label === entry.stand);
+    if (!stand) continue;
+    const [sx, sz] = stand.position;
+    const dx = sx - cx;
+    const dz = sz - cz;
+    const len = Math.hypot(dx, dz) || 1;
+    spots.push({
+      x: cx + (dx / len) * TUTORIAL_ORCHARD.towardStand,
+      z: cz + (dz / len) * TUTORIAL_ORCHARD.towardStand,
+    });
+  }
+  return spots;
+}
+
 export const MAX_FRAME_DELTA = 0.1;

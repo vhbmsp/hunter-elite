@@ -1,6 +1,7 @@
 import { DEFAULT_STAND_INDEX, FACING_YAW, STANDS } from '../config.js';
 import { Sfx } from '../audio/Sfx.js';
 import { AnimalManager } from '../entities/AnimalManager.js';
+import { AppleOrchard } from '../entities/AppleOrchard.js';
 import { LootManager } from '../entities/LootManager.js';
 import { toggleHitboxes } from '../entities/hitbox.js';
 import { MISSION_PENALTY, MISSIONS, gradeKill } from '../missions.js';
@@ -52,7 +53,16 @@ export class Game {
     this.impacts = new ImpactEffects(this.scene);
     this.animals = new AnimalManager(this.scene, this.player.camera, this.world);
     this.loot = new LootManager(this.scene, this.world);
-    this.rifle = new Rifle(this.player.camera, this.animals, this.world, this.impacts, this.sfx, this.loot);
+    this.orchard = new AppleOrchard(this.scene, this.world);
+    this.rifle = new Rifle(
+      this.player.camera,
+      this.animals,
+      this.world,
+      this.impacts,
+      this.sfx,
+      this.loot,
+      this.orchard,
+    );
     this.rifle.onChange = () => this.syncAmmo();
     this.syncAmmo();
     this.syncCompass();
@@ -146,6 +156,7 @@ export class Game {
     this.player.unlock();
     this.scope.setActive(false);
     this.loot.stop();
+    this.orchard.clear();
     this.hud.showMenu();
   }
 
@@ -182,8 +193,17 @@ export class Game {
     this.hud.setScore(0);
     this.hud.setDistance(null);
     this.rifle.reset();
-    this.animals.respawn();
-    this.loot.start();
+    this.orchard.clear();
+    this.applyStandFacing(DEFAULT_STAND_INDEX);
+    if (this.mission?.tutorial) {
+      // Quiet range: orchard only — practice fire, reload, and tower switches.
+      this.animals.clear();
+      this.loot.stop();
+      this.orchard.spawn();
+    } else {
+      this.animals.respawn();
+      this.loot.start();
+    }
     this.scope.setActive(false);
   }
 
@@ -199,6 +219,11 @@ export class Game {
     if (result.type === 'loot') {
       if (this.mode === 'mission') this.shots += 1;
       this.noteLoot(result);
+      return;
+    }
+    if (result.type === 'apple') {
+      if (this.mode === 'mission') this.shots += 1;
+      this.noteApple(result);
       return;
     }
     if (this.mode === 'free') {
@@ -220,6 +245,17 @@ export class Game {
     this.score += result.points;
     this.hud.setScore(this.score);
     this.hud.setPickup(result.points, result.magazines);
+  }
+
+  noteApple(result) {
+    this.hits += 1;
+    if (result.distance > this.longest) this.longest = result.distance;
+    this.score += result.points;
+    this.progress += 1;
+    this.hud.setScore(this.score);
+    this.hud.setDistance(result.distance);
+    this.hud.setProgress(this.progress);
+    if (this.progress >= this.mission.count) this.finishMission(true);
   }
 
   noteFreeShot(result) {
@@ -266,6 +302,7 @@ export class Game {
     this.player.unlock();
     this.scope.setActive(false);
     this.loot.stop();
+    this.orchard.clear();
     this.hud.showResults({
       success,
       mission,

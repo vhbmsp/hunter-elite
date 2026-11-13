@@ -6,6 +6,7 @@
 export const MISSION_PENALTY = 50;
 
 const SPECIES_LABEL = {
+  apple: 'apple',
   deer: 'deer',
   elk: 'elk',
   fox: 'fox',
@@ -15,6 +16,19 @@ const SPECIES_LABEL = {
 };
 
 export const MISSIONS = [
+  {
+    id: 'tutorial-orchard',
+    title: 'Tutorial',
+    objective: 'Shoot all 20 apples',
+    species: 'apple',
+    singular: 'apple',
+    article: 'an',
+    count: 20,
+    minDistance: 0,
+    seconds: 300,
+    // Practice fire, reload, and tower switches. No animals, no loot, no distance penalty.
+    tutorial: true,
+  },
   {
     id: 'valley-deer',
     title: 'Valley deer',
@@ -89,6 +103,9 @@ export function speciesLabel(type) {
 
 /** Standing HUD line for this level. */
 export function penaltyRule(mission) {
+  if (mission.tutorial) {
+    return 'Practice firing, reloading (R), and switching towers (A / S / D). Shoot every apple — 8 face Tower S, 6 face A, 6 face D.';
+  }
   return `Shooting an animal that is not the objective, or ${mission.article} ${mission.singular} not over ${mission.minDistance} m, costs ${MISSION_PENALTY} and does not count.`;
 }
 
@@ -96,9 +113,11 @@ export function penaltyRule(mission) {
  * 'count' adds the kill toward the objective.
  * 'wrong-species' and 'too-close' are penalties.
  * "Over" is strict: a shot at exactly the minimum distance does not count.
+ * Tutorial apple shots always count (any distance).
  */
 export function gradeKill(mission, animalType, distance) {
   if (animalType !== mission.species) return 'wrong-species';
+  if (mission.tutorial) return 'count';
   if (!(distance > mission.minDistance)) return 'too-close';
   return 'count';
 }
