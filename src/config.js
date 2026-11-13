@@ -68,11 +68,12 @@ export const FACING_YAW = {
 // facing: compass heading applied to the camera when the player switches here.
 //
 // From Tower S looking north (-Z): Tower A is west (left of view), Tower D east (right).
-// Spaced so aiming at A reads west and aiming at D reads east on the compass.
+// Spread ~120 m from S so the three stands cover more of the hunting ground;
+// aiming at A still reads west and D east on the compass.
 export const STANDS = [
-  { key: 'KeyA', label: 'Tower A', position: [-20, 55], facing: 'east' },
-  { key: 'KeyS', label: 'Tower S', position: [22, 90], facing: 'north' },
-  { key: 'KeyD', label: 'Tower D', position: [64, 55], facing: 'west' },
+  { key: 'KeyA', label: 'Tower A', position: [-70, 38], facing: 'east' },
+  { key: 'KeyS', label: 'Tower S', position: [22, 118], facing: 'north' },
+  { key: 'KeyD', label: 'Tower D', position: [114, 38], facing: 'west' },
 ];
 
 // Player spawn: Tower S, facing north (-Z).

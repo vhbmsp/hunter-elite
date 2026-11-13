@@ -104,10 +104,10 @@ bones on that entry.
 (gentle hills, soft ridges, a raised rim) and exposes `getHeightAt(x, z)`, which
 matches the mesh triangles. Slope and height tint the vertices from grass to
 dirt to rock. Three raised wooden stands share one model (`STAND` / `STANDS`
-in `src/config.js`). Each is seated with `getHeightAt`, and each hangs a labeled
-sign just under the deck facing the other towers. World north is −Z.
-The player starts on Tower S facing north; A / S / D switch stands and apply
-that stand's facing yaw.
+in `src/config.js`), spaced about 120 m from Tower S so they cover more ground.
+Each is seated with `getHeightAt`, and each hangs a labeled sign just under the
+deck facing the other towers. World north is −Z. The player starts on Tower S
+facing north; A / S / D switch stands and apply that stand's facing yaw.
 
 Animals, trees, rocks, bushes and logs are planted on that surface. Animals
 pitch to the slope, slow down uphill, and turn away from grades steeper than
