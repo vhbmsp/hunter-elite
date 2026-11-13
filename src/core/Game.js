@@ -147,13 +147,6 @@ export class Game {
         this.scope.setActive(active);
       },
       toggleHitboxes: () => toggleHitboxes(),
-      menu: () => {
-        if (this.mode === 'quit-confirm') {
-          this.answerQuit(false);
-          return;
-        }
-        if (this.playing) this.showMenu();
-      },
       quit: () => this.requestQuit(),
       quitYes: () => this.answerQuit(true),
       quitNo: () => this.answerQuit(false),
