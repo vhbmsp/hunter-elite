@@ -1,3 +1,4 @@
+import { WEAPON } from '../config.js';
 import {
   MISSION_PENALTY,
   MISSIONS,
@@ -10,6 +11,12 @@ import {
   penaltyRule,
   speciesLabel,
 } from '../missions.js';
+
+const asset = (file) => `${import.meta.env.BASE_URL}ui/${file}`;
+
+const BULLET_LIVE = asset('bullet-live.svg');
+const BULLET_SPENT = asset('bullet-spent.svg');
+const MAGAZINE = asset('magazine.svg');
 
 function compassCardinal(deg) {
   const wedge = ((deg + 45) % 360) / 90;
@@ -25,7 +32,9 @@ export class Hud {
     this.el = {
       ui: $('ui'),
       score: $('score'),
-      ammo: $('ammo'),
+      ammoRounds: $('ammo-rounds'),
+      ammoMags: $('ammo-mags'),
+      ammoStatus: $('ammo-status'),
       distance: $('distance'),
       zoom: $('zoom'),
       stand: $('stand'),
@@ -58,10 +67,12 @@ export class Hud {
       resultsFree: $('results-free'),
     };
     this._compassDeg = null;
+    this._ammoKey = '';
     this.instructionsText = this.el.instructions.textContent;
     this.renderMissions();
     this.bindOverlay();
     this.setOverlay(true);
+    this.setAmmo(WEAPON.magazineSize, WEAPON.spareMagazines, false);
   }
 
   renderMissions() {
@@ -130,9 +141,47 @@ export class Hud {
     this.el.score.textContent = `Score: ${formatScore(score)}`;
   }
 
+  /**
+   * Visual ammo rack to the right of the scoreboard.
+   * Live/spent bullet icons for the seated magazine; one magazine icon per spare.
+   * Reload removes a spare from the right; loot grants append spares again.
+   */
   setAmmo(rounds, spares, reloading) {
-    const prefix = reloading ? 'Reloading… · ' : '';
-    this.el.ammo.textContent = `${prefix}Rounds: ${rounds} · Spare mags: ${spares}`;
+    const capacity = WEAPON.magazineSize;
+    const live = Math.max(0, Math.min(capacity, rounds | 0));
+    const spareCount = Math.max(0, spares | 0);
+    const key = `${live}/${capacity}:${spareCount}:${reloading ? 1 : 0}`;
+    if (key === this._ammoKey) return;
+    this._ammoKey = key;
+
+    const roundsRow = this.el.ammoRounds;
+    roundsRow.replaceChildren();
+    for (let i = 0; i < capacity; i++) {
+      const img = document.createElement('img');
+      const spent = i >= live;
+      img.className = spent ? 'ammo-bullet is-spent' : 'ammo-bullet';
+      img.src = spent ? BULLET_SPENT : BULLET_LIVE;
+      img.alt = spent ? 'Spent round' : 'Round';
+      img.width = 14;
+      img.height = 36;
+      img.draggable = false;
+      roundsRow.append(img);
+    }
+
+    const magsRow = this.el.ammoMags;
+    magsRow.replaceChildren();
+    for (let i = 0; i < spareCount; i++) {
+      const img = document.createElement('img');
+      img.className = 'ammo-mag';
+      img.src = MAGAZINE;
+      img.alt = 'Spare magazine';
+      img.width = 22;
+      img.height = 30;
+      img.draggable = false;
+      magsRow.append(img);
+    }
+
+    this.el.ammoStatus.hidden = !reloading;
   }
 
   setPickup(points, magazines) {

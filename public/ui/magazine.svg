@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 56" width="40" height="56">
+  <defs>
+    <linearGradient id="mag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a5560"/>
+      <stop offset="55%" stop-color="#2f3640"/>
+      <stop offset="100%" stop-color="#1c2228"/>
+    </linearGradient>
+    <linearGradient id="lip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7a8490"/>
+      <stop offset="100%" stop-color="#4a5560"/>
+    </linearGradient>
+  </defs>
+  <!-- Slightly curved rifle magazine -->
+  <path d="M10 6 H30 Q34 6 34 10 V42 Q34 50 26 52 H14 Q6 50 6 42 V10 Q6 6 10 6 Z" fill="url(#mag)" stroke="#0e1216" stroke-width="1.5"/>
+  <path d="M10 6 H30 Q34 6 34 10 V14 H6 V10 Q6 6 10 6 Z" fill="url(#lip)"/>
+  <rect x="12" y="18" width="16" height="3" rx="1" fill="#1a2026" opacity="0.7"/>
+  <rect x="12" y="26" width="16" height="3" rx="1" fill="#1a2026" opacity="0.7"/>
+  <rect x="12" y="34" width="16" height="3" rx="1" fill="#1a2026" opacity="0.7"/>
+  <circle cx="20" cy="46" r="2.2" fill="#c9a227" stroke="#5a4310" stroke-width="0.8"/>
+</svg>

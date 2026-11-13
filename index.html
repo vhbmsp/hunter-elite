@@ -20,15 +20,21 @@
       <div class="dot" style="transform: translate(-50%, -50%) translateX(30px);"></div>
       <div class="dot" style="transform: translate(-50%, -50%) translateX(60px);"></div>
     </div>
-    <div id="hud">
-      <div id="objective" hidden></div>
-      <div id="timer" hidden></div>
-      <div id="rule" hidden></div>
-      <div id="score">Score: 0</div>
-      <div id="ammo">Rounds: 5 · Spare mags: 5</div>
-      <div id="distance">Distance: —</div>
-      <div id="zoom">Zoom: 1x</div>
-      <div id="stand">Tower S</div>
+    <div id="hud-cluster">
+      <div id="hud">
+        <div id="objective" hidden></div>
+        <div id="timer" hidden></div>
+        <div id="rule" hidden></div>
+        <div id="score">Score: 0</div>
+        <div id="distance">Distance: —</div>
+        <div id="zoom">Zoom: 1x</div>
+        <div id="stand">Tower S</div>
+      </div>
+      <div id="ammo-rack" aria-label="Ammunition">
+        <div id="ammo-rounds" class="ammo-row" aria-label="Rounds in magazine"></div>
+        <div id="ammo-mags" class="ammo-row" aria-label="Spare magazines"></div>
+        <div id="ammo-status" class="ammo-status" hidden>Reloading…</div>
+      </div>
     </div>
     <div id="compass" aria-label="Aiming compass">
       <div class="compass-bezel">
