@@ -27,7 +27,6 @@ Opening `index.html` directly from disk no longer works; use the dev server or a
 - T: toggle hitbox debug (body, neck, and head zones, drawn on top of the models)
 - Esc: release the pointer
 - Q: quit prompt (Y confirm / N cancel) back to the mission list
-- M: leave a mission or free play and return to the mission list
 
 You start on Tower S facing north. From that view Tower A is on the left (west) and Tower D on the right (east). Looking left toward A reads west on the compass; looking right toward D reads east. A, S, and D move the camera to that stand immediately and set the look yaw to the stand's facing (A → east, S → north, D → west). They do not fire or reload. Pointer lock, scope zoom, and shooting keep working after a switch. The HUD shows the active tower name. A compass dial in the top-right tracks camera look yaw live (N/E/S/W).
 
