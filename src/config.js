@@ -21,19 +21,20 @@ export const TERRAIN = {
   // Grid cells per side (size / segments ≈ 2.5 m per cell).
   segments: 96,
   seed: 1337,
-  // Rolling hills: fractal simplex octaves. scale = wavelength (m), amp = height (m).
+  // Gentler rolling hills so stands stay visible across the valley.
+  // scale = wavelength (m), amp = height (m).
   octaves: [
-    { scale: 170, amp: 11 },
-    { scale: 70, amp: 4.5 },
-    { scale: 28, amp: 1.4 },
-    { scale: 9, amp: 0.3 },
+    { scale: 170, amp: 5 },
+    { scale: 70, amp: 2.2 },
+    { scale: 28, amp: 0.7 },
+    { scale: 9, amp: 0.15 },
   ],
-  // A few sharp ridges: ridged noise, only where a low-frequency mask is high.
-  ridges: { scale: 120, amp: 9, sharpness: 2.5, maskScale: 260, maskThreshold: 0.1 },
+  // Softer ridges: ridged noise, only where a low-frequency mask is high.
+  ridges: { scale: 120, amp: 3.2, sharpness: 2.2, maskScale: 260, maskThreshold: 0.18 },
   // Raised rim so the map edge is hidden behind hills.
-  rim: { start: 175, amp: 28 },
+  rim: { start: 180, amp: 16 },
   // Gentle knoll under the player so the view over the valleys stays open.
-  knoll: { radius: 10, falloff: 45, lift: 3 },
+  knoll: { radius: 10, falloff: 45, lift: 1.5 },
   colors: {
     grass: 0x4f7a28,
     lushGrass: 0x3b6b1f,
@@ -44,8 +45,8 @@ export const TERRAIN = {
   // Slope (rise/run) where dirt starts and where bare rock takes over.
   dirtSlope: 0.45,
   rockSlope: 0.85,
-  // Height (m) above which grass turns dry.
-  dryHeight: 12,
+  // Height (m) above which grass turns dry (scaled with the flatter amp).
+  dryHeight: 6,
 };
 
 // World north is -Z (east = +X, south = +Z, west = -X). Compass heading and
@@ -63,7 +64,7 @@ export const FACING_YAW = {
 
 // Elevated wooden hunting stands. Ground x/z only; y comes from getHeightAt.
 // Keys select them in order: A, S, D. Each site sees the other two and the valley.
-// label is painted on a foot-level signboard facing the other stands.
+// label is painted on a signboard hung under the deck, facing the other stands.
 // facing: compass heading applied to the camera when the player switches here.
 //
 // From Tower S looking north (-Z): Tower A is west (left of view), Tower D east (right).
@@ -86,16 +87,17 @@ export const STAND = {
   // Switch aim blends from the other stands' eye midpoint down toward the ground
   // so the other towers and the valley share the frame.
   aimDrop: 0.15,
-  // Foot signboard: wood board with canvas text, parked on the outward leg.
+  // Deck signboard: wood board with canvas text, hung just under the platform
+  // facing the other stands so hills between towers do not hide a ground sign.
   // Sized to stay readable from the other stands (~70–80 m) under scope.
   sign: {
     width: 1.7,
     height: 0.8,
     thickness: 0.06,
-    // Board center height above the stand's ground anchor (m).
-    boardY: 0.85,
-    // Extra push past the chosen leg along the facing direction (m).
-    outward: 0.32,
+    // Gap from platform underside to the top of the board (m).
+    underDeck: 0.08,
+    // Extra push past the platform edge along the facing direction (m).
+    outward: 0.12,
     woodColor: 0x6e4a24,
     textColor: '#f3e6c8',
   },
