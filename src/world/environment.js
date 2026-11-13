@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ENVIRONMENT, PLAYER, STANDS } from '../config.js';
+import { ENVIRONMENT, STANDS } from '../config.js';
 
 const randomRange = ([min, max]) => min + Math.random() * (max - min);
 const UP = new THREE.Vector3(0, 1, 0);
@@ -14,6 +14,21 @@ export function environmentModelUrls() {
   return Object.values(ENVIRONMENT).flatMap((kind) => kind.models);
 }
 
+/**
+ * Quaternius Simple Nature meshes are open shells (logs, trunks, leaves) with
+ * FrontSide materials, so grazing angles and cut ends read as hollow holes.
+ * Clone and draw both sides so cover looks solid in the world.
+ */
+function prepareSceneryMaterial(material) {
+  const fix = (mat) => {
+    const next = mat.clone();
+    next.side = THREE.DoubleSide;
+    if (next.alphaTest > 0) next.depthWrite = true;
+    return next;
+  };
+  return Array.isArray(material) ? material.map(fix) : fix(material);
+}
+
 /** Template, its rest bounds, and each mesh part's transform relative to the template root. */
 function prepareTemplate(gltf) {
   const template = gltf.scene;
@@ -21,7 +36,12 @@ function prepareTemplate(gltf) {
   const size = new THREE.Box3().setFromObject(template).getSize(new THREE.Vector3());
   const parts = [];
   template.traverse((child) => {
-    if (child.isMesh) parts.push({ geometry: child.geometry, material: child.material, matrix: child.matrixWorld.clone() });
+    if (!child.isMesh) return;
+    parts.push({
+      geometry: child.geometry,
+      material: prepareSceneryMaterial(child.material),
+      matrix: child.matrixWorld.clone(),
+    });
   });
   return { size, parts };
 }
@@ -50,7 +70,9 @@ function spotClear(x, z, kind) {
 }
 
 function pickSpot(heightfield, kind, placed) {
-  const [px, , pz] = PLAYER.position;
+  // Anchor on a random stand so Towers A and D get cover, not only Tower S.
+  const stand = STANDS[Math.floor(Math.random() * STANDS.length)];
+  const [px, pz] = stand.position;
   for (let attempt = 0; attempt < 30; attempt++) {
     let x;
     let z;

@@ -32,7 +32,7 @@ You start on Tower S facing north. From that view Tower A is on the left (west) 
 
 **World north is −Z** (east = +X, south = +Z, west = −X). See `NORTH_AXIS` / `FACING_YAW` in `src/config.js`.
 
-The rifle is a bolt-action with a 5-round magazine (`WEAPON` in `src/config.js`). You start with one magazine loaded and 2 spare magazines. The HUD shows rounds left in the magazine and spare magazines.
+The rifle is a bolt-action with a 5-round magazine (`WEAPON` in `src/config.js`). You start with one magazine loaded and 5 spare magazines. The HUD shows rounds left in the magazine and spare magazines.
 
 After each shot the bolt cycles for about 0.85s and the rifle will not fire again until it closes. R starts a 2s reload when the magazine is empty or partial and a spare remains: the spare replaces the seated magazine, and any rounds left in the old one are discarded. Reload does nothing with no spare magazines, or when the current one is already full. The trigger on an empty, ready rifle clicks and does not fire. No shot is fired while the bolt is cycling or a reload is in progress.
 
@@ -48,7 +48,7 @@ A shot counts only when it hits the objective species strictly farther than the 
 
 The results screen shows success or failure, accuracy (hits / shots), the longest shot that hit an animal, time left and time used, the level score, and how many penalties landed.
 
-Free play skips missions and keeps the sandbox: no timer, no objective, and no wrong-target penalty. Each mission and each free-play start loads a full rifle (5 rounds and 2 spare magazines). The bolt, reload, and muzzle flash are unchanged.
+Free play skips missions and keeps the sandbox: no timer, no objective, and no wrong-target penalty. Each mission and each free-play start loads a full rifle (5 rounds and 5 spare magazines). The bolt, reload, and muzzle flash are unchanged.
 
 | Level | Objective | Time |
 | --- | --- | --- |
@@ -63,9 +63,9 @@ Elk uses the stag model, bear uses the wolf, and the Premium pig is the boar spe
 
 ## Supply drops
 
-Crates parachute in during a mission and during free play (`LOOT` in `src/config.js`). Each round drops three: the first 6 seconds after the round starts, then one every 25 seconds. Each starts 42 m above the ground, falls at 6.5 m/s (about 6.5 seconds in the air), and drifts sideways at 1.35 m/s with a small sway. They spawn ahead of the stand, 24 m to 48 m out, on ground that is not too steep. Leaving for the mission list or the results screen clears them, and the next round starts a new set.
+Crates parachute in during a mission and during free play (`LOOT` in `src/config.js`). Each round drops one crate, 45 seconds after the round starts. It starts 42 m above the ground, falls at 6.5 m/s (about 6.5 seconds in the air), and drifts sideways at 1.35 m/s with a small sway. It spawns ahead of the stand, 24 m to 48 m out, on ground that is not too steep. Leaving for the mission list or the results screen clears it, and the next round starts a new set.
 
-On touchdown the parachute collapses and the crate sits for 28 seconds. If it is not shot it disappears. A hit spends the round in the chamber and grants one spare magazine plus 50 points. The ammo line, the score, and the status line (`Loot: +1 spare mag · +50`) all update.
+On touchdown the parachute collapses and the crate sits for 45 seconds. If it is not shot it disappears. A hit spends the round in the chamber and grants two spare magazines plus 50 points. The ammo line, the score, and the status line (`Loot: +2 spare mags · +50`) all update.
 
 Only the wooden crate stops a bullet. The canopy and the ropes do not, so the cloth does not silently eat shots aimed past it. Crates are tested on the same ray as animals and solid cover, and the nearest hit wins: a shot that hits the crate does not also kill an animal behind it, and a crate behind an animal or behind a tree is not collected. The crate and parachute are built-in meshes, not a downloaded model.
 
