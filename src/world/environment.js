@@ -14,6 +14,21 @@ export function environmentModelUrls() {
   return Object.values(ENVIRONMENT).flatMap((kind) => kind.models);
 }
 
+/**
+ * Quaternius Simple Nature meshes are open shells (logs, trunks, leaves) with
+ * FrontSide materials, so grazing angles and cut ends read as hollow holes.
+ * Clone and draw both sides so cover looks solid in the world.
+ */
+function prepareSceneryMaterial(material) {
+  const fix = (mat) => {
+    const next = mat.clone();
+    next.side = THREE.DoubleSide;
+    if (next.alphaTest > 0) next.depthWrite = true;
+    return next;
+  };
+  return Array.isArray(material) ? material.map(fix) : fix(material);
+}
+
 /** Template, its rest bounds, and each mesh part's transform relative to the template root. */
 function prepareTemplate(gltf) {
   const template = gltf.scene;
@@ -21,7 +36,12 @@ function prepareTemplate(gltf) {
   const size = new THREE.Box3().setFromObject(template).getSize(new THREE.Vector3());
   const parts = [];
   template.traverse((child) => {
-    if (child.isMesh) parts.push({ geometry: child.geometry, material: child.material, matrix: child.matrixWorld.clone() });
+    if (!child.isMesh) return;
+    parts.push({
+      geometry: child.geometry,
+      material: prepareSceneryMaterial(child.material),
+      matrix: child.matrixWorld.clone(),
+    });
   });
   return { size, parts };
 }
