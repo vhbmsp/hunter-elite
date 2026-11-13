@@ -40,27 +40,21 @@ function createSignTexture(label) {
 }
 
 /**
- * Signboard at the foot of the outward leg, yawed so its face looks along (dirX, dirZ).
- * Local space of the stand group (origin on the ground under the platform center).
+ * Signboard hung just under the platform edge, yawed so its face looks along
+ * (dirX, dirZ). Local space of the stand group (origin on the ground under the
+ * platform center). Stays above intervening hills better than a foot sign.
  */
-function createFootSign(label, dirX, dirZ) {
-  const { platformSize } = STAND;
-  const { width, height, thickness, boardY, outward, woodColor } = STAND.sign;
-  const half = platformSize / 2 - 0.06;
+function createDeckSign(label, dirX, dirZ) {
+  const { height: standH, platformSize } = STAND;
+  const { width, height, thickness, underDeck, outward, woodColor } = STAND.sign;
   const len = Math.hypot(dirX, dirZ) || 1;
   const nx = dirX / len;
   const nz = dirZ / len;
 
-  // Prefer the leg that already sits toward the other towers.
-  let best = [-1, -1];
-  let bestDot = -Infinity;
-  for (const leg of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-    const dot = leg[0] * nx + leg[1] * nz;
-    if (dot > bestDot) {
-      bestDot = dot;
-      best = leg;
-    }
-  }
+  // Platform slab is 0.08 m thick and centered on y = standH.
+  const platformHalf = 0.04;
+  const boardY = standH - platformHalf - underDeck - height / 2;
+  const edge = platformSize / 2;
 
   const wood = new THREE.MeshLambertMaterial({ color: woodColor });
   const face = new THREE.MeshLambertMaterial({ map: createSignTexture(label) });
@@ -72,20 +66,21 @@ function createFootSign(label, dirX, dirZ) {
   board.castShadow = true;
   board.receiveShadow = true;
 
-  // Short post so the board sits on the ground rather than floating.
-  const postH = boardY - height / 2;
-  const post = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, Math.max(postH, 0.08), 0.08),
-    wood,
-  );
-  post.position.y = -boardY + postH / 2;
-  post.castShadow = true;
-  post.receiveShadow = true;
+  // Short hangers from the deck underside to the board top.
+  const hangerH = Math.max(underDeck, 0.06);
+  const hangerY = boardY + height / 2 + hangerH / 2;
+  const hangers = [-width * 0.35, width * 0.35].map((ox) => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.06, hangerH, 0.06), wood);
+    post.position.set(ox, hangerY - boardY, 0);
+    post.castShadow = true;
+    post.receiveShadow = true;
+    return post;
+  });
 
   const sign = new THREE.Group();
   sign.name = 'stand-sign';
-  sign.add(board, post);
-  sign.position.set(best[0] * half + nx * outward, boardY, best[1] * half + nz * outward);
+  sign.add(board, ...hangers);
+  sign.position.set(nx * (edge + outward), boardY, nz * (edge + outward));
   sign.rotation.y = Math.atan2(-nx, -nz);
   return sign;
 }
@@ -117,7 +112,7 @@ export function createStand(x, groundY, z, options = {}) {
   }
 
   if (options.label && Number.isFinite(options.faceX) && Number.isFinite(options.faceZ)) {
-    group.add(createFootSign(options.label, options.faceX - x, options.faceZ - z));
+    group.add(createDeckSign(options.label, options.faceX - x, options.faceZ - z));
   }
 
   group.position.set(x, groundY, z);

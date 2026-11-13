@@ -20,7 +20,7 @@ export class World {
     this.stands = STANDS.map((stand, index) => {
       const [x, z] = stand.position;
       const groundY = this.heightfield.getHeightAt(x, z);
-      // Aim the foot sign at the midpoint of the other stands for cross-tower reads.
+      // Aim the under-deck sign at the midpoint of the other stands for cross-tower reads.
       let faceX = 0;
       let faceZ = 0;
       let faceCount = 0;

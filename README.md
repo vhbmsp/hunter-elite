@@ -101,10 +101,11 @@ bones on that entry.
 ## World
 
 `src/world/terrain.js` builds the ground from seeded layered simplex noise
-(hills, ridged noise, a raised rim) and exposes `getHeightAt(x, z)`, which
+(gentle hills, soft ridges, a raised rim) and exposes `getHeightAt(x, z)`, which
 matches the mesh triangles. Slope and height tint the vertices from grass to
 dirt to rock. Three raised wooden stands share one model (`STAND` / `STANDS`
-in `src/config.js`). Each is seated with `getHeightAt`. World north is −Z.
+in `src/config.js`). Each is seated with `getHeightAt`, and each hangs a labeled
+sign just under the deck facing the other towers. World north is −Z.
 The player starts on Tower S facing north; A / S / D switch stands and apply
 that stand's facing yaw.
 
