@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ENVIRONMENT, PLAYER, STANDS } from '../config.js';
+import { ENVIRONMENT, STANDS } from '../config.js';
 
 const randomRange = ([min, max]) => min + Math.random() * (max - min);
 const UP = new THREE.Vector3(0, 1, 0);
@@ -70,7 +70,9 @@ function spotClear(x, z, kind) {
 }
 
 function pickSpot(heightfield, kind, placed) {
-  const [px, , pz] = PLAYER.position;
+  // Anchor on a random stand so Towers A and D get cover, not only Tower S.
+  const stand = STANDS[Math.floor(Math.random() * STANDS.length)];
+  const [px, pz] = stand.position;
   for (let attempt = 0; attempt < 30; attempt++) {
     let x;
     let z;

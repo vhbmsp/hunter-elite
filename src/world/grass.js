@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GRASS, PLAYER, STANDS } from '../config.js';
+import { GRASS, STANDS } from '../config.js';
 
 /**
  * One tuft of crossed tapered blades (one triangle each), 1 m tall in model
@@ -57,6 +57,17 @@ function createGrassMaterial(uniforms) {
 
 const randomRange = ([min, max]) => min + Math.random() * (max - min);
 
+/** Distance LOD relative to the nearest hunting stand (not only Tower S). */
+function nearestStandDist(x, z) {
+  let best = Infinity;
+  for (const stand of STANDS) {
+    const [sx, sz] = stand.position;
+    const d = Math.hypot(x - sx, z - sz);
+    if (d < best) best = d;
+  }
+  return best;
+}
+
 function densityAt(distance) {
   if (distance < GRASS.clearRadius) return 0;
   for (const [radius, density] of GRASS.densityBands) {
@@ -75,7 +86,7 @@ function onStandPad(x, z) {
 /**
  * Chunked instanced grass. Each chunk is its own InstancedMesh with a tight
  * bounding sphere, so chunks outside the (scoped) view are frustum-culled.
- * Density drops with distance from the stand (distance LOD).
+ * Density drops with distance from the nearest stand (distance LOD).
  */
 export class Grass {
   constructor(heightfield, noise) {
@@ -86,14 +97,26 @@ export class Grass {
 
     const geometry = createTuftGeometry();
     const material = createGrassMaterial(this.uniforms);
-    const [px, , pz] = PLAYER.position;
     const outer = GRASS.densityBands.at(-1)[0];
     const { chunkSize } = GRASS;
     const dummy = new THREE.Object3D();
 
-    for (let cz = pz - outer; cz < pz + outer; cz += chunkSize) {
-      for (let cx = px - outer; cx < px + outer; cx += chunkSize) {
-        const centerDist = Math.hypot(cx + chunkSize / 2 - px, cz + chunkSize / 2 - pz);
+    // Cover a bbox around every stand so A and D get the same meadow as S.
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    for (const stand of STANDS) {
+      const [sx, sz] = stand.position;
+      minX = Math.min(minX, sx - outer);
+      maxX = Math.max(maxX, sx + outer);
+      minZ = Math.min(minZ, sz - outer);
+      maxZ = Math.max(maxZ, sz + outer);
+    }
+
+    for (let cz = minZ; cz < maxZ; cz += chunkSize) {
+      for (let cx = minX; cx < maxX; cx += chunkSize) {
+        const centerDist = nearestStandDist(cx + chunkSize / 2, cz + chunkSize / 2);
         const density = densityAt(centerDist);
         if (density === 0 && centerDist > GRASS.clearRadius + chunkSize) continue;
 
@@ -102,7 +125,7 @@ export class Grass {
         for (let a = 0; a < attempts; a++) {
           const x = cx + Math.random() * chunkSize;
           const z = cz + Math.random() * chunkSize;
-          const d = Math.hypot(x - px, z - pz);
+          const d = nearestStandDist(x, z);
           if (onStandPad(x, z)) continue;
           if (Math.random() * GRASS.densityBands[0][1] > densityAt(d)) continue;
           if (heightfield.getSlopeAt(x, z) > GRASS.maxSlope) continue;

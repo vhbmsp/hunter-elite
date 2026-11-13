@@ -295,9 +295,10 @@ export const DUCKS = {
 // maxSlope: skip spots steeper than this grade. sink: push into the ground (m) to hide gaps on slopes.
 // alignToGround: tilt to the terrain normal (rocks, logs) instead of standing upright (trees).
 export const ENVIRONMENT = {
+  // Counts are sized for three stands (~120 m apart); spawns pick a random stand.
   trees: {
     models: ['nature/tree-1.glb', 'nature/tree-2.glb', 'nature/tree-3.glb'].map(model),
-    count: 36, minDistance: 16, distanceRange: 170,
+    count: 72, minDistance: 16, distanceRange: 130,
     // Target height range (m).
     height: [6, 12],
     solid: true, castShadow: true, maxSlope: 0.5, sink: 0.3,
@@ -306,20 +307,20 @@ export const ENVIRONMENT = {
   },
   rocks: {
     models: ['nature/rock-1.glb', 'nature/rock-3.glb', 'nature/rock-5.glb', 'nature/rock-moss-2.glb', 'nature/rock-moss-4.glb'].map(model),
-    count: 24, minDistance: 12, distanceRange: 170,
+    count: 48, minDistance: 12, distanceRange: 120,
     height: [0.8, 3.2],
     solid: true, castShadow: true, maxSlope: 1.2, sink: 0.25, alignToGround: true,
   },
   logs: {
     models: ['nature/wood-log.glb', 'nature/wood-log-moss.glb'].map(model),
-    count: 14, minDistance: 10, distanceRange: 140,
+    count: 28, minDistance: 10, distanceRange: 110,
     // Logs are sized by length along their long axis instead of height.
     length: [3, 4.5],
     solid: true, castShadow: true, maxSlope: 0.35, sink: 0.1, alignToGround: true,
   },
   bushes: {
     models: ['nature/bush-1.glb', 'nature/bush-2.glb'].map(model),
-    count: 90, minDistance: 9, distanceRange: 160,
+    count: 160, minDistance: 9, distanceRange: 120,
     height: [0.8, 1.9],
     // Bushes grow in clumps: this share of bushes spawns next to an earlier one.
     clumping: 0.6, clumpRadius: 4,
@@ -333,7 +334,7 @@ export const GRASS = {
   chunkSize: 40,
   // Keep the area right around each stand clear.
   clearRadius: 7,
-  // Distance LOD: tufts per m² inside each radius band (m).
+  // Distance LOD from the nearest stand: tufts per m² inside each radius band (m).
   densityBands: [[40, 0.55], [75, 0.22], [115, 0.08]],
   // Low-frequency patch mask: tall meadows where noise > threshold, short turf elsewhere.
   patchScale: 45,
