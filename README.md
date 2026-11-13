@@ -44,7 +44,7 @@ Kill score is `baseScore + min(distance, distanceBonusCap)` (`WEAPON` in `src/co
 
 The game opens on a mission list. Each level names an objective (species, count, and a minimum distance) and runs a countdown. Clearing the objective ends the level immediately and opens the results. Running the clock out fails the level.
 
-The first level is a **Tutorial**: three apple trees in the valley between the stands. Eight apples face Tower S, six face Tower A, and six face Tower D (`TUTORIAL_ORCHARD` in `src/config.js`). There are no animals and no supply crates. Practice firing, reloading (R), and switching towers (A / S / D) to shoot every apple within 5:00. Any apple hit counts — there is no distance penalty.
+The first level is a **Tutorial**: three apple trees in the valley between the stands. Eight apples face Tower S, six face Tower A, and six face Tower D (`TUTORIAL_ORCHARD` in `src/config.js`). Random scenery stays clear of those spots so shots are not blocked. There are no animals and no supply crates. Practice firing, reloading (R), and switching towers (A / S / D) to shoot every apple within 5:00. Any apple hit counts — there is no distance penalty.
 
 On hunting levels, a shot counts only when it hits the objective species strictly farther than the minimum. Shooting any other animal, or the right species that is not over that distance, subtracts 50 from the score and does not count. The animal still drops. The HUD states that rule for the level you are on. Misses and shots stopped by cover are not that penalty; they do count as shots when accuracy is hits / shots. Shooting a supply crate is not that penalty and does not count toward the objective. It does count as a shot fired.
 

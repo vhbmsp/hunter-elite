@@ -1,29 +1,7 @@
 import * as THREE from 'three';
-import { STANDS, TUTORIAL_ORCHARD } from '../config.js';
+import { STANDS, TUTORIAL_ORCHARD, tutorialOrchardSpots } from '../config.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
-
-function centroidOfStands() {
-  let x = 0;
-  let z = 0;
-  for (const stand of STANDS) {
-    x += stand.position[0];
-    z += stand.position[1];
-  }
-  return { x: x / STANDS.length, z: z / STANDS.length };
-}
-
-/** Point between a stand and the valley centre, where that stand's apple tree sits. */
-function treeSpot(stand, center, towardStand) {
-  const [sx, sz] = stand.position;
-  const dx = sx - center.x;
-  const dz = sz - center.z;
-  const len = Math.hypot(dx, dz) || 1;
-  return {
-    x: center.x + (dx / len) * towardStand,
-    z: center.z + (dz / len) * towardStand,
-  };
-}
 
 function createTreeMeshes() {
   const { trunkColor, leafColor, trunkHeight, trunkRadius, canopyRadius, canopyLift } = TUTORIAL_ORCHARD;
@@ -62,20 +40,10 @@ function createTreeMeshes() {
     root.add(cluster);
   }
 
-  // Solid backboard on the far side of the canopy. From other towers the board
-  // (and trunk) stop the shot before it reaches apples on this tree's near side.
-  const shield = new THREE.Mesh(
-    new THREE.BoxGeometry(canopyRadius * 2.4, canopyRadius * 2.0, 0.4),
-    leafMat,
-  );
-  shield.position.set(0, canopyLift, -canopyRadius * 0.25);
-  shield.castShadow = true;
-  shield.userData.surface = 'tree';
-
-  root.add(trunk, canopy, shield);
+  root.add(trunk, canopy);
   return {
     root,
-    solids: [trunk, shield],
+    solids: [trunk],
     canopyCenter: new THREE.Vector3(0, canopyLift, 0),
     canopyRadius,
   };
@@ -158,13 +126,12 @@ export class AppleOrchard {
   spawn() {
     this.clear();
     this.ensureShared();
-    const center = centroidOfStands();
-    const { towardStand, trees } = TUTORIAL_ORCHARD;
+    const spots = tutorialOrchardSpots();
 
-    for (const entry of trees) {
+    TUTORIAL_ORCHARD.trees.forEach((entry, index) => {
       const stand = STANDS.find((s) => s.label === entry.stand);
-      if (!stand) continue;
-      const spot = treeSpot(stand, center, towardStand);
+      const spot = spots[index];
+      if (!stand || !spot) return;
       const groundY = this.world.getHeightAt(spot.x, spot.z);
       const tree = createTreeMeshes();
       tree.root.position.set(spot.x, groundY, spot.z);
@@ -176,7 +143,7 @@ export class AppleOrchard {
       this.apples.push(...apples);
       this.solids.push(...tree.solids);
       this.group.add(tree.root);
-    }
+    });
 
     this.group.visible = true;
     this.active = true;

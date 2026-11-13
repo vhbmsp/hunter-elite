@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ENVIRONMENT, STANDS } from '../config.js';
+import { ENVIRONMENT, STANDS, TUTORIAL_ORCHARD, tutorialOrchardSpots } from '../config.js';
 
 const randomRange = ([min, max]) => min + Math.random() * (max - min);
 const UP = new THREE.Vector3(0, 1, 0);
@@ -59,6 +59,11 @@ function spotClear(x, z, kind) {
   for (const stand of STANDS) {
     const [sx, sz] = stand.position;
     if (Math.hypot(x - sx, z - sz) < kind.minDistance) return false;
+  }
+  // Keep random trees/rocks out of the tutorial orchard firing lanes.
+  const orchardClear = TUTORIAL_ORCHARD.clearRadius;
+  for (const spot of tutorialOrchardSpots()) {
+    if (Math.hypot(x - spot.x, z - spot.z) < orchardClear) return false;
   }
   if (!kind.sightClear) return true;
   for (let i = 0; i < STANDS.length; i++) {
