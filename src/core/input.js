@@ -1,6 +1,9 @@
 /**
  * Maps raw DOM events to game actions.
- * actions: { lock, shoot, reload, scope(active), toggleHitboxes, menu, standIndex(code), switchStand(index), isLocked() }
+ * actions: {
+ *   lock, shoot, reload, scope(active), toggleHitboxes, menu,
+ *   quit, quitYes, quitNo, standIndex(code), switchStand(index), isLocked()
+ * }
  */
 export function bindInput(actions, target = document) {
   const listeners = {
@@ -14,6 +17,24 @@ export function bindInput(actions, target = document) {
       if (e.button === 2) actions.scope(false);
     },
     keydown: (e) => {
+      // Typing a high-score name: ignore game hotkeys while an input is focused.
+      const tag = e.target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+      if (e.code === 'KeyY' && !e.repeat) {
+        actions.quitYes?.();
+        return;
+      }
+      if (e.code === 'KeyN' && !e.repeat) {
+        actions.quitNo?.();
+        return;
+      }
+      if (e.code === 'KeyQ' && !e.repeat) {
+        e.preventDefault();
+        actions.quit?.();
+        return;
+      }
+
       const standIndex = actions.standIndex(e.code);
       if (standIndex >= 0) {
         e.preventDefault();

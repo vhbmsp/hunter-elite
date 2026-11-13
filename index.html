@@ -48,12 +48,12 @@
       </div>
       <div id="compass-label">N</div>
     </div>
-    <div id="instructions">Click to aim · Hold RMB for scope · LMB or Space to shoot · R to reload · A / S / D switch stand · M mission menu · Shoot a supply crate for a spare mag and points</div>
+    <div id="instructions">Click to aim · Hold RMB for scope · LMB or Space to shoot · R to reload · A / S / D switch stand · Q quit · M mission menu · Shoot a supply crate for a spare mag and points</div>
     <div id="menu" class="overlay">
       <div class="panel">
         <p class="kicker">Hunter Elite</p>
         <h1>Missions</h1>
-        <p class="lede">Each level has an objective and a countdown. Clear it before the time runs out.</p>
+        <p class="lede">Each level has an objective and a countdown. Clear it before the time runs out. Top 10 boards reset when you reload the page.</p>
         <p id="menu-status" class="hint">Loading models…</p>
         <div id="mission-list"></div>
         <button id="free-play" type="button" disabled>Free play</button>
@@ -78,12 +78,31 @@
           <dt>Penalties</dt>
           <dd id="results-penalties"></dd>
         </dl>
+        <div id="results-board" class="score-board" aria-label="Top 10"></div>
         <div class="actions">
           <button id="results-retry" type="button">Retry</button>
           <button id="results-next" type="button" hidden>Next mission</button>
           <button id="results-menu" type="button">Mission select</button>
           <button id="results-free" type="button">Free play</button>
         </div>
+      </div>
+    </div>
+    <div id="name-entry" class="overlay" hidden>
+      <div class="panel">
+        <p class="kicker">Top 10</p>
+        <h1>New high score</h1>
+        <p id="name-entry-detail" class="lede"></p>
+        <label class="name-label" for="name-entry-input">Your name</label>
+        <input id="name-entry-input" type="text" maxlength="16" autocomplete="off" spellcheck="false" />
+        <div class="actions">
+          <button id="name-entry-submit" type="button">Save score</button>
+        </div>
+      </div>
+    </div>
+    <div id="quit-confirm" class="overlay" hidden>
+      <div class="panel">
+        <h1>Quit mission?</h1>
+        <p class="lede">Press <strong>Y</strong> to quit to the mission list, or <strong>N</strong> to keep playing.</p>
       </div>
     </div>
   </div>

@@ -7,6 +7,7 @@ import { toggleHitboxes } from '../entities/hitbox.js';
 import { MISSION_PENALTY, MISSIONS, gradeKill } from '../missions.js';
 import { Player } from '../player/Player.js';
 import { Scope } from '../player/Scope.js';
+import { Scoreboard } from '../scoreboard.js';
 import { Hud } from '../ui/Hud.js';
 import { ImpactEffects } from '../weapons/impacts.js';
 import { Rifle } from '../weapons/Rifle.js';
@@ -31,10 +32,13 @@ export class Game {
     this.hits = 0;
     this.longest = 0;
     this.penalties = 0;
+    this.resumeMode = null;
+    this.scoreboard = new Scoreboard();
 
     this.renderer = createRenderer(container);
     this.scene = createScene();
     this.hud = new Hud({
+      scoreboard: this.scoreboard,
       onMission: (index) => this.startMission(index),
       onFreePlay: () => this.startFreePlay(),
       onRetry: () => this.startMission(this.missionIndex),
@@ -144,15 +148,51 @@ export class Game {
       },
       toggleHitboxes: () => toggleHitboxes(),
       menu: () => {
+        if (this.mode === 'quit-confirm') {
+          this.answerQuit(false);
+          return;
+        }
         if (this.playing) this.showMenu();
       },
+      quit: () => this.requestQuit(),
+      quitYes: () => this.answerQuit(true),
+      quitNo: () => this.answerQuit(false),
       standIndex: (code) => STANDS.findIndex((stand) => stand.key === code),
       switchStand: (index) => this.switchStand(index),
     });
   }
 
+  /** Q while playing: pause and ask to return to the mission list. */
+  requestQuit() {
+    if (!this.playing) return;
+    this.resumeMode = this.mode;
+    this.mode = 'quit-confirm';
+    this.player.unlock();
+    this.scope.setActive(false);
+    this.hud.showQuitConfirm();
+  }
+
+  answerQuit(yes) {
+    if (this.mode !== 'quit-confirm') return;
+    if (yes) {
+      this.resumeMode = null;
+      this.showMenu();
+      return;
+    }
+    const resume = this.resumeMode === 'free' ? 'free' : 'mission';
+    this.resumeMode = null;
+    this.mode = resume;
+    this.hud.hideQuitConfirm();
+    if (resume === 'mission' && this.mission) {
+      this.hud.showMission(this.mission, this.progress, this.timeLeft);
+    } else {
+      this.hud.showFreePlay();
+    }
+  }
+
   showMenu() {
     this.mode = 'menu';
+    this.resumeMode = null;
     this.player.unlock();
     this.scope.setActive(false);
     this.loot.stop();
@@ -208,6 +248,7 @@ export class Game {
   }
 
   switchStand(index) {
+    if (!this.playing) return;
     if (!this.world.stands[index]) return;
     this.applyStandFacing(index);
   }
@@ -299,11 +340,12 @@ export class Game {
     const timeLeft = Math.max(0, this.timeLeft);
     const timeUsed = Math.max(0, mission.seconds - timeLeft);
     this.mode = 'results';
+    this.resumeMode = null;
     this.player.unlock();
     this.scope.setActive(false);
     this.loot.stop();
     this.orchard.clear();
-    this.hud.showResults({
+    this.hud.presentMissionEnd({
       success,
       mission,
       progress: this.progress,

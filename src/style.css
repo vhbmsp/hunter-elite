@@ -402,6 +402,10 @@ body {
   border-radius: 6px;
 }
 
+.mission.is-completed {
+  border-color: rgba(198, 227, 154, 0.35);
+}
+
 .mission-title {
   grid-column: 1;
   color: #d7b56d;
@@ -422,6 +426,13 @@ body {
   grid-row: 1 / span 2;
   align-self: center;
   font-variant-numeric: tabular-nums;
+}
+
+.mission-meta {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  color: #c6e39a;
+  font-size: 13px;
 }
 
 .mission:hover:not(:disabled),
@@ -473,6 +484,71 @@ body {
 
 #results-heading.fail {
   color: #f0a090;
+}
+
+.score-board {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.score-board-title {
+  margin: 0 0 8px;
+  color: #d7b56d;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.score-board-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-board-list li {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.score-board-list li.is-player {
+  color: #c6e39a;
+}
+
+.score-rank {
+  color: #b7aa98;
+}
+
+.name-label {
+  display: block;
+  margin: 12px 0 6px;
+  color: #b7aa98;
+  font-size: 13px;
+}
+
+#name-entry-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  font: inherit;
+  color: #f3ebe0;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(215, 181, 109, 0.45);
+  border-radius: 6px;
+}
+
+#name-entry-input:focus {
+  outline: 1px solid rgba(215, 181, 109, 0.8);
 }
 
 .actions {
