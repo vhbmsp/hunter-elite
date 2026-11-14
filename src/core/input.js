@@ -1,7 +1,7 @@
 /**
  * Maps raw DOM events to game actions.
  * actions: {
- *   lock, shoot, reload, scope(active), toggleHitboxes,
+ *   lock, shoot, reload, scope(active), scopeZoom(delta), toggleHitboxes,
  *   quit, quitYes, quitNo, standIndex(code), switchStand(index), isLocked()
  * }
  */
@@ -15,6 +15,12 @@ export function bindInput(actions, target = document) {
     },
     mouseup: (e) => {
       if (e.button === 2) actions.scope(false);
+    },
+    wheel: (e) => {
+      if (!actions.isLocked()) return;
+      // Scroll up = zoom in. Prevent page scroll while pointer-locked.
+      e.preventDefault();
+      actions.scopeZoom?.(Math.sign(-e.deltaY));
     },
     keydown: (e) => {
       // Typing a high-score name: ignore game hotkeys while an input is focused.
@@ -47,12 +53,26 @@ export function bindInput(actions, target = document) {
       }
       if (e.code === 'KeyR' && !e.repeat && actions.isLocked()) actions.reload();
       if (e.code === 'KeyT' && !e.repeat) actions.toggleHitboxes();
+      // Clear magnification steps while scoped (same ladder as the mouse wheel).
+      if ((e.code === 'Equal' || e.code === 'NumpadAdd') && !e.repeat && actions.isLocked()) {
+        actions.scopeZoom?.(1);
+      }
+      if ((e.code === 'Minus' || e.code === 'NumpadSubtract') && !e.repeat && actions.isLocked()) {
+        actions.scopeZoom?.(-1);
+      }
     },
     contextmenu: (e) => e.preventDefault(),
   };
 
-  for (const [type, fn] of Object.entries(listeners)) target.addEventListener(type, fn);
+  for (const [type, fn] of Object.entries(listeners)) {
+    // Wheel needs passive:false so preventDefault can block page scroll.
+    const opts = type === 'wheel' ? { passive: false } : undefined;
+    target.addEventListener(type, fn, opts);
+  }
   return () => {
-    for (const [type, fn] of Object.entries(listeners)) target.removeEventListener(type, fn);
+    for (const [type, fn] of Object.entries(listeners)) {
+      const opts = type === 'wheel' ? { passive: false } : undefined;
+      target.removeEventListener(type, fn, opts);
+    }
   };
 }

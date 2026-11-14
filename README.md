@@ -18,7 +18,8 @@ Opening `index.html` directly from disk no longer works; use the dev server or a
 ## Controls
 
 - Click: lock the pointer (mouse look)
-- RMB (hold): scope zoom
+- RMB (hold): raise scope (starts at 4×)
+- Mouse wheel or +/- while scoped: cycle magnification (4× / 8× / 12×)
 - LMB or Space: shoot
 - R: reload
 - A: Tower A (faces east)
@@ -28,7 +29,7 @@ Opening `index.html` directly from disk no longer works; use the dev server or a
 - Esc: release the pointer
 - Q: quit prompt (Y confirm / N cancel) back to the mission list
 
-You start on Tower S facing north. From that view Tower A is on the left (west) and Tower D on the right (east). Looking left toward A reads west on the compass; looking right toward D reads east. A, S, and D move the camera to that stand immediately and set the look yaw to the stand's facing (A → east, S → north, D → west). They do not fire or reload. Pointer lock, scope zoom, and shooting keep working after a switch. The HUD shows the active tower name. A compass dial in the top-right tracks camera look yaw live (N/E/S/W).
+You start on Tower S facing north. From that view Tower A is on the left (west) and Tower D on the right (east). Looking left toward A reads west on the compass; looking right toward D reads east. A, S, and D move the camera to that stand immediately and set the look yaw to the stand's facing (A → east, S → north, D → west). They do not fire or reload. Pointer lock, scope zoom, and shooting keep working after a switch. Holding RMB opens the scope at 4×; scroll the mouse wheel (or press +/-) to step through 4× / 8× / 12×. The current magnification is shown inside the scope ring and on the HUD zoom line. Look sensitivity scales down with magnification so higher zoom stays controllable. The HUD shows the active tower name. A compass dial in the top-right tracks camera look yaw live (N/E/S/W).
 
 **World north is −Z** (east = +X, south = +Z, west = −X). See `NORTH_AXIS` / `FACING_YAW` in `src/config.js`.
 
@@ -131,7 +132,7 @@ src/
   config.js            all tuning constants (FOVs, spawn counts, scoring, asset paths)
   missions.js          mission list, distance check, penalty and results formatting
   core/                Game composition root, glTF asset loading, renderer, scene + lights, input, frame loop
-  player/              camera + PointerLockControls, scope zoom
+  player/              camera + PointerLockControls, multi-level scope zoom
   weapons/             rifle (firing, ammo, bolt, reload, muzzle flash, zone scoring) and hitscan ballistics
   entities/            species prep (scale, clips, hitbox sizes), animated Animal, flying ducks, parachute crates, tutorial apple orchard, hitbox zones, manager
   world/               heightmap terrain, hunting stand, instanced scenery, grass, World facade

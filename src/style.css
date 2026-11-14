@@ -88,6 +88,22 @@ body {
   pointer-events: none;
 }
 
+/* Magnification readout inside the dark scope ring (lower-right of the clear circle). */
+#scope-zoom {
+  position: absolute;
+  top: calc(50% + min(34vmin, 180px));
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: clamp(18px, 2.4vmin, 28px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(240, 245, 235, 0.92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  user-select: none;
+}
+
 #crosshair::before,
 #crosshair::after {
   content: '';
