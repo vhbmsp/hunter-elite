@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ENVIRONMENT, STANDS, TUTORIAL_ORCHARD, tutorialOrchardSpots } from '../config.js';
+import { prepareSceneryGeometry } from './scenerySeal.js';
 
 const randomRange = ([min, max]) => min + Math.random() * (max - min);
 const UP = new THREE.Vector3(0, 1, 0);
@@ -15,9 +16,8 @@ export function environmentModelUrls() {
 }
 
 /**
- * Quaternius Simple Nature meshes are open shells (logs, trunks, leaves) with
- * FrontSide materials, so grazing angles and cut ends read as hollow holes.
- * Clone and draw both sides so cover looks solid in the world.
+ * Leaves and other open shells still need both sides. Tree/Wood trunks are also
+ * sealed in prepareSceneryGeometry so cut ends are closed solids.
  */
 function prepareSceneryMaterial(material) {
   const fix = (mat) => {
@@ -29,6 +29,18 @@ function prepareSceneryMaterial(material) {
   return Array.isArray(material) ? material.map(fix) : fix(material);
 }
 
+function preparePartGeometry(geometry, material) {
+  if (Array.isArray(material)) {
+    // Multi-material meshes are rare in nature packs; seal if any part is Tree/Wood.
+    for (const mat of material) {
+      const sealed = prepareSceneryGeometry(geometry, mat);
+      if (sealed !== geometry) return sealed;
+    }
+    return geometry;
+  }
+  return prepareSceneryGeometry(geometry, material);
+}
+
 /** Template, its rest bounds, and each mesh part's transform relative to the template root. */
 function prepareTemplate(gltf) {
   const template = gltf.scene;
@@ -37,9 +49,10 @@ function prepareTemplate(gltf) {
   const parts = [];
   template.traverse((child) => {
     if (!child.isMesh) return;
+    const material = prepareSceneryMaterial(child.material);
     parts.push({
-      geometry: child.geometry,
-      material: prepareSceneryMaterial(child.material),
+      geometry: preparePartGeometry(child.geometry, child.material),
+      material,
       matrix: child.matrixWorld.clone(),
     });
   });
