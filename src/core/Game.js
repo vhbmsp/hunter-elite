@@ -53,7 +53,7 @@ export class Game {
     this.applyStandFacing(DEFAULT_STAND_INDEX);
     // The muzzle flash is parented to the camera, so the camera has to live in the scene.
     this.scene.add(this.player.camera);
-    this.scope = new Scope(this.player.camera, this.hud);
+    this.scope = new Scope(this.player.camera, this.hud, this.player.controls);
     this.impacts = new ImpactEffects(this.scene);
     this.animals = new AnimalManager(this.scene, this.player.camera, this.world);
     this.loot = new LootManager(this.scene, this.world);
@@ -145,6 +145,10 @@ export class Game {
       scope: (active) => {
         if (!this.playing) return;
         this.scope.setActive(active);
+      },
+      scopeZoom: (delta) => {
+        if (!this.playing) return;
+        this.scope.adjustZoom(delta);
       },
       toggleHitboxes: () => toggleHitboxes(),
       quit: () => this.requestQuit(),

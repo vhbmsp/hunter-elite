@@ -38,6 +38,7 @@ export class Hud {
       ammoStatus: $('ammo-status'),
       distance: $('distance'),
       zoom: $('zoom'),
+      scopeZoom: $('scope-zoom'),
       stand: $('stand'),
       compass: $('compass'),
       compassDial: $('compass-dial'),
@@ -506,7 +507,10 @@ export class Hud {
   }
 
   setZoom(zoom) {
-    this.el.zoom.textContent = `Zoom: ${zoom.toFixed(1)}x`;
+    const rounded = Math.round(zoom * 10) / 10;
+    const label = Number.isInteger(rounded) ? `${rounded}x` : `${rounded.toFixed(1)}x`;
+    this.el.zoom.textContent = `Zoom: ${label}`;
+    if (this.el.scopeZoom) this.el.scopeZoom.textContent = label;
   }
 
   setStand(label) {
@@ -526,9 +530,15 @@ export class Hud {
     this.el.compassLabel.textContent = compassCardinal(deg);
   }
 
-  setScoped(scoped) {
+  setScoped(scoped, magnification = null) {
     this.el.scope.classList.toggle('active', scoped);
     this.el.crosshair.classList.toggle('hidden', scoped);
+    if (this.el.scopeZoom) {
+      this.el.scopeZoom.hidden = !scoped;
+      if (scoped && magnification != null) {
+        this.el.scopeZoom.textContent = `${magnification}x`;
+      }
+    }
   }
 
   setLocked(locked) {

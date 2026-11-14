@@ -133,9 +133,16 @@ export const PLAYER = {
 
 export const SCOPE = {
   normalFov: 75,
-  scopedFov: 18,
+  // Discrete riflescope magnifications while holding RMB. FOV = normalFov / mag.
+  // 4× matches the old single scoped FOV (~18°); 8× / 12× are further steps.
+  zoomLevels: [4, 8, 12],
+  // Index into zoomLevels when first raising the scope each hold.
+  defaultZoomIndex: 0,
   // Exponential approach rate (1/s). 9.75/s ≈ the old 0.15-per-frame lerp at 60 fps.
   zoomRate: 9.75,
+  // Hip-fire look scale for PointerLockControls.pointerSpeed. While scoped,
+  // speed is divided by the live magnification so higher zoom stays controllable.
+  lookSensitivity: 1,
 };
 
 export const WEAPON = {

@@ -13,6 +13,8 @@ export class Player {
     this.camera.rotation.order = 'YXZ';
     this.camera.position.set(...PLAYER.position);
     this.controls = new PointerLockControls(this.camera, domElement);
+    // Scope scales pointerSpeed by magnification; keep the hip-fire baseline here.
+    this.controls.pointerSpeed = SCOPE.lookSensitivity;
   }
 
   get isLocked() {
