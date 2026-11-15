@@ -25,7 +25,7 @@ function createZone(zone, animal) {
   return mesh;
 }
 
-/** One small sphere. Ducks use this; T toggles the same material as the other zones. */
+/** One small sphere. Flying geese use this; T toggles the same material as the other zones. */
 export function createHitSphere(animal, radius, zone = 'body') {
   const mesh = createZone(zone, animal);
   mesh.scale.setScalar(radius);

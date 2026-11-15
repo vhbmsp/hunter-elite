@@ -85,9 +85,9 @@ export class Bird {
     this.fallSpeed = 0;
     this.flapPhase = Math.random() * Math.PI * 2;
     this.velocity = new THREE.Vector3();
-    // Gobkit wings are the Hand bones; idle barely moves them, so we flap after the mixer.
-    this.leftWing = this.model.getObjectByName('LeftHand');
-    this.rightWing = this.model.getObjectByName('RightHand');
+    this.leftWing = this.model.getObjectByName(config.leftWing ?? 'LeftHand');
+    this.rightWing = this.model.getObjectByName(config.rightWing ?? 'RightHand');
+    this.flapAxis = config.flapAxis ?? 'x';
     this.play(config.flyClip);
   }
 
@@ -140,12 +140,13 @@ export class Bird {
     this.velocity.set(pose.forwardX * this.config.speed, 0, pose.forwardZ * this.config.speed);
   }
 
-  /** Additive wing beat on LeftHand / RightHand after the idle clip writes those bones. */
+  /** Soft additive beat on wing bones after the fly clip writes them. */
   flapWings(flockTime) {
     if (!this.leftWing || !this.rightWing) return;
     const beat = Math.sin(flockTime * this.config.flapHz * Math.PI * 2 + this.flapPhase) * this.config.flapAmp;
-    this.leftWing.rotation.x += beat;
-    this.rightWing.rotation.x -= beat;
+    const axis = this.flapAxis;
+    this.leftWing.rotation[axis] += beat;
+    this.rightWing.rotation[axis] -= beat;
   }
 
   fall(delta) {
