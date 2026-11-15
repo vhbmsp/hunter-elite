@@ -7,6 +7,7 @@ export const MISSION_PENALTY = 50;
 
 const SPECIES_LABEL = {
   apple: 'apple',
+  rabbit: 'rabbit',
   deer: 'deer',
   elk: 'elk',
   fox: 'fox',
