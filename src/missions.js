@@ -129,9 +129,9 @@ export const MISSIONS = [
   {
     id: 'wetland-birds',
     title: 'Wetland birds',
-    objective: '2 ducks over 35 m',
-    species: 'duck',
-    singular: 'duck',
+    objective: '2 geese over 35 m',
+    species: 'goose',
+    singular: 'goose',
     article: 'a',
     count: 2,
     minDistance: 35,

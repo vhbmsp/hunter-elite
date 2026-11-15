@@ -62,7 +62,7 @@ Free play skips missions and keeps the sandbox: no timer, no objective, and no w
 | Timber wolves | 1 wolf over 75 m | 2:15 | wolf, fox, deer |
 | Timber bear | 1 bear over 85 m | 2:00 | bear, wolf, deer |
 | Mountain cougar | 1 cougar over 80 m | 2:10 | cougar, goat, deer |
-| Wetland birds | 2 ducks over 35 m | 1:40 | ducks, geese, rabbit |
+| Wetland birds | 2 geese over 35 m | 1:40 | ducks, geese, rabbit |
 | Upland birds | 2 turkeys over 45 m | 2:15 | turkey, pheasant, rabbit |
 | Trophy moose | 1 moose over 100 m | 2:30 | moose, elk, deer |
 | Plains bison | 1 Premium bison over 90 m | 2:20 | bison, Premium pig, elk, deer |
@@ -80,8 +80,9 @@ Only the wooden crate stops a bullet. The canopy and the ropes do not, so the cl
 ## Assets
 
 Ground animals and scenery are low-poly glTF models by Quaternius, Gobkit, and
-Pixor (all CC0) in `public/models/`. Sources, licenses and species substitutions
-are listed in [`public/models/CREDITS.md`](public/models/CREDITS.md).
+Pixor (all CC0) in `public/models/`. Flying geese use a CC0 OpenGameArt pigeon
+recolored as Canada geese (see credits). Sources, licenses and species
+substitutions are listed in [`public/models/CREDITS.md`](public/models/CREDITS.md).
 
 - Each GLB is loaded once with `GLTFLoader` (meshopt-compressed, decoded with
   three's bundled `MeshoptDecoder`). Animals are cloned per instance with
@@ -97,9 +98,10 @@ are listed in [`public/models/CREDITS.md`](public/models/CREDITS.md).
   A neck hit scores as a body shot; the skull stays a head shot. Sizes come
   from the rig. Ultimate-pack animals use `Back`, `Torso3`, `Neck3` and `Head`.
   Bear, boar, and Gobkit animals override those names.
-- Ducks and geese fly V formations on separate circles (Gobkit idle + procedural
-  wing flap on the Hand bones). A hit plays `dead` and the bird falls. Hitboxes
-  are forgiving spheres; `T` toggles them with the others.
+- Ducks and geese fly V formations on separate circles. Ducks use Gobkit idle plus
+  a procedural Hand-bone flap. Geese use an OpenGameArt flap clip on wing bones
+  plus a light additive beat. A hit plays `dead` and the bird falls. Hitboxes are
+  forgiving spheres; `T` toggles them with the others.
 
 To swap a model, drop a GLB into `public/models/animals/` and point the species
 entry in `src/config.js` at it. A different rig can name its own spine and head
@@ -137,7 +139,7 @@ src/
   core/                Game composition root, glTF asset loading, renderer, scene + lights, input, frame loop
   player/              camera + PointerLockControls, multi-level scope zoom
   weapons/             rifle (firing, ammo, bolt, reload, muzzle flash, zone scoring) and hitscan ballistics
-  entities/            species prep (scale, clips, hitbox sizes), animated Animal, flying ducks, parachute crates, tutorial apple orchard, hitbox zones, manager
+  entities/            species prep (scale, clips, hitbox sizes), animated Animal, flying geese, parachute crates, tutorial apple orchard, hitbox zones, manager
   world/               heightmap terrain, hunting stand, instanced scenery, grass, World facade
   audio/               procedural WebAudio sound effects
   scoreboard.js        in-memory per-mission top 10 boards

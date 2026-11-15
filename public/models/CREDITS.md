@@ -2,7 +2,8 @@
 
 Ground animals and scenery are by **[Quaternius](https://quaternius.com)**,
 **[Gobkit](https://gobkit.com/freebies)**, and **[Pixor](https://pixor.art)**.
-Every file below is
+The flying geese are adapted from an OpenGameArt pigeon (see below). Every file
+below is
 **[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/)** (public domain).
 No attribution is required; it is given here anyway.
 
@@ -57,7 +58,6 @@ Sources (all CC0-1.0):
 - <https://gobkit.com/freebies/animal007/Quail.glb>
 - <https://gobkit.com/freebies/animal006/Lion.glb>
 - <https://gobkit.com/freebies/animal/Duck.glb>
-- <https://gobkit.com/freebies/animal006/Goose.glb>
 
 Gobkit ground animals share bones `Head` / `Spine` / `Hips` and clips idle / walk / dead
 (no Gallop; run reuses walk). Attack is unused. Some Vol.9 meshes ship with hashed
@@ -71,12 +71,17 @@ joint names; those were renamed to the shared Gobkit names before meshopt.
 | `animals/turkey.glb` | `BrahmaChicken` | turkey | **Substitute**: no CC0 animated wild turkey. Gobkit Brahma chicken, bones renamed, about 0.7 m |
 | `animals/pheasant.glb` | `Quail` | pheasant | **Substitute**: no CC0 animated pheasant. Gobkit quail, about 0.45 m |
 | `animals/cougar.glb` | `Lion` | cougar | **Substitute**: no CC0 animated mountain lion / lynx. Gobkit lion as mountain lion, about 0.9 m |
-| `animals/duck.glb` | `Duck` | duck | Flying flock. About 0.55 m tall; hit sphere 0.28 m |
-| `animals/goose.glb` | `Goose` | goose | Flying flock on a wider/higher circle. About 0.72 m; hit sphere 0.34 m |
+| `animals/duck.glb` | `Duck` | duck | Flying flock. About 0.55 m tall; hit sphere 0.28 m. Idle + procedural `LeftHand` / `RightHand` flap |
 
-Still no free animated duck or goose with a clear CC0 fly/flap clip. Flocks play
-`idle` in the air, add a procedural wing beat on `LeftHand` / `RightHand`, and
-play `dead` when shot.
+## Flying geese
+
+Source: [Low poly 3D Pigeon model (rigged + animated)](https://opengameart.org/content/low-poly-3d-pigeon-model-rigged-animated-untextured) by mujtaba-io on OpenGameArt. License: CC0-1.0.
+
+Gobkit / Quaternius ducks and geese lacked a clear fly/flap clip (idle/attack/dead/walk only). This pigeon ships a real flap animation on `left-wing-1` / `right-wing-1`. The mesh was recolored in Blender to a Canada-goose palette, clips renamed to `flap` / `idle` / `dead`, and meshopt-compressed. Geese fly a wider/higher V than the Gobkit ducks, play `flap` airborne with a light additive wing beat, and play `dead` when shot.
+
+| File | Upstream model | Game type | Notes |
+| --- | --- | --- | --- |
+| `animals/goose.glb` | OGA pigeon (recolored) | goose | CC0. About 0.55 m body height / ~1.4 m wingspan; hit sphere 0.36 m |
 
 ## Animals: Farm Animal Pack (Premium wild boar)
 
@@ -101,7 +106,7 @@ while expanding the roster. Skipped for this change:
 
 - **Coyote** — use wolf instead (direct Quaternius match)
 - **True moose / bison / turkey / pheasant / mountain goat / mountain lion / lynx** — only substitutes above
-- **Heron / crane** — no suitable CC0 animated glTF found
+- **Heron / crane** — no suitable CC0 animated glTF found; flying geese use the OGA pigeon above
 - **Lynx** as its own species — covered by the cougar (lion) stand-in
 
 ## Scenery

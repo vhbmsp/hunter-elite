@@ -334,8 +334,18 @@ const BIRD_SLOTS_V = [
   { right: 0, back: 4.8 },
 ];
 
-// Flying flocks. No CC0 bird with a fly/flap clip turned up, so Gobkit birds stay:
-// idle while airborne with a procedural wing flap on LeftHand/RightHand, then dead.
+// Wider V for the larger Canada-goose silhouette.
+const BIRD_SLOTS_GOOSE = [
+  { right: 0, back: 0 },
+  { right: -2.8, back: 2.6 },
+  { right: 2.8, back: 2.6 },
+  { right: -5.4, back: 5.2 },
+  { right: 5.4, back: 5.2 },
+  { right: 0, back: 5.6 },
+];
+
+// Flying flocks. Ducks stay Gobkit (idle + Hand-bone flap). Geese use an
+// OpenGameArt pigeon recolored as Canada geese with a real flap clip.
 export const BIRDS = {
   duck: {
     name: 'duck',
@@ -353,24 +363,32 @@ export const BIRDS = {
     flyPitch: 0.22,
     flapHz: 3.2,
     flapAmp: 0.7,
+    leftWing: 'LeftHand',
+    rightWing: 'RightHand',
+    flapAxis: 'x',
     slots: BIRD_SLOTS_V,
   },
   goose: {
     name: 'goose',
     model: model('animals/goose.glb'),
-    height: 0.72,
+    // Body height (m). Source mesh is ~0.24 m tall with wings out → ~1.4 m wingspan.
+    height: 0.55,
     // Wider, higher circle so geese do not sit on top of the duck path.
     radius: 48,
     speed: 6.2,
     altitude: 11,
-    hitRadius: 0.34,
+    hitRadius: 0.36,
     gravity: 18,
-    flyClip: 'idle',
+    flyClip: 'flap',
     deathClip: 'dead',
-    flyPitch: 0.18,
-    flapHz: 2.6,
-    flapAmp: 0.75,
-    slots: BIRD_SLOTS_V,
+    // Source pose is already wings-out; light nose-down for travel.
+    flyPitch: 0.12,
+    flapHz: 2.8,
+    flapAmp: 0.18,
+    leftWing: 'left-wing-1',
+    rightWing: 'right-wing-1',
+    flapAxis: 'z',
+    slots: BIRD_SLOTS_GOOSE,
   },
 };
 
