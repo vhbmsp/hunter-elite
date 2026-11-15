@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { ANIMALS, DUCKS } from '../config.js';
+import { ANIMALS, BIRDS, FREE_PLAY_FAUNA } from '../config.js';
 import { Animal } from './Animal.js';
-import { Duck, prepareDucks } from './Duck.js';
+import { Bird, prepareBird } from './Duck.js';
 import { prepareSpecies } from './species.js';
 
 export class AnimalManager {
@@ -12,11 +12,14 @@ export class AnimalManager {
     this.animals = [];
     this.ducks = [];
     this.species = new Map();
+    this.birdTemplates = new Map();
     this.flockTime = 0;
   }
 
   static modelUrls() {
-    return [...ANIMALS.types.map((t) => t.model), DUCKS.model];
+    const ground = ANIMALS.types.map((t) => t.model);
+    const birds = Object.values(BIRDS).map((b) => b.model);
+    return [...ground, ...birds];
   }
 
   /** Builds per-species templates from already-loaded glTFs. */
@@ -24,21 +27,51 @@ export class AnimalManager {
     for (const type of ANIMALS.types) {
       this.species.set(type.name, prepareSpecies(type, assets.get(type.model)));
     }
-    this.duckTemplate = prepareDucks(assets.get(DUCKS.model));
+    for (const bird of Object.values(BIRDS)) {
+      this.birdTemplates.set(bird.name, prepareBird(assets.get(bird.model), bird));
+    }
   }
 
+  /** Spawns the free-play mix (used once at load before the menu). */
   spawnInitial() {
-    const pooled = ANIMALS.types.filter((type) => type.spawns == null);
-    const { count } = ANIMALS;
-    for (let i = 0; i < count; i++) this.spawnOnTerrain(pooled[i % pooled.length].name, i, count);
-    for (const type of ANIMALS.types) {
-      if (type.spawns == null) continue;
-      for (let i = 0; i < type.spawns; i++) this.spawnOnTerrain(type.name, i + 1, type.spawns + 1);
+    this.spawnFauna(FREE_PLAY_FAUNA);
+  }
+
+  /**
+   * Clears the field and spawns a fauna table.
+   * @param {{ ground?: Record<string, number>, birds?: string[] } | null | undefined} fauna
+   */
+  respawn(fauna = FREE_PLAY_FAUNA) {
+    this.clear();
+    this.spawnFauna(fauna ?? FREE_PLAY_FAUNA);
+  }
+
+  spawnFauna(fauna) {
+    const ground = fauna?.ground ?? {};
+    const roster = [];
+    for (const [name, count] of Object.entries(ground)) {
+      if (!this.species.has(name)) {
+        throw new Error(`Unknown ground species in fauna table: ${name}`);
+      }
+      const n = Math.max(0, Number(count) || 0);
+      for (let i = 0; i < n; i++) roster.push(name);
     }
-    for (const slot of DUCKS.slots) {
-      const duck = new Duck(this.duckTemplate, slot, this.world);
-      this.scene.add(duck.root);
-      this.ducks.push(duck);
+    const total = Math.max(roster.length, 1);
+    for (let i = 0; i < roster.length; i++) {
+      this.spawnOnTerrain(roster[i], i, total);
+    }
+
+    for (const birdName of fauna?.birds ?? []) {
+      const config = BIRDS[birdName];
+      const prepared = this.birdTemplates.get(birdName);
+      if (!config || !prepared) {
+        throw new Error(`Unknown bird flock in fauna table: ${birdName}`);
+      }
+      for (const slot of config.slots) {
+        const bird = new Bird(prepared, slot, this.world, config);
+        this.scene.add(bird.root);
+        this.ducks.push(bird);
+      }
     }
   }
 
@@ -57,18 +90,12 @@ export class AnimalManager {
     this.spawn(name, new THREE.Vector3(x, 0, z));
   }
 
-  /** Removes every animal and duck without spawning replacements. */
+  /** Removes every animal and bird without spawning replacements. */
   clear() {
     for (const animal of [...this.animals, ...this.ducks]) animal.dispose();
     this.animals = [];
     this.ducks = [];
     this.flockTime = 0;
-  }
-
-  /** Drops every animal and duck, then spawns the usual population again. */
-  respawn() {
-    this.clear();
-    this.spawnInitial();
   }
 
   spawn(name, position) {
@@ -78,7 +105,7 @@ export class AnimalManager {
     return animal;
   }
 
-  /** Hitbox zones of animals and ducks that can still be shot. */
+  /** Hitbox zones of animals and birds that can still be shot. */
   liveHitboxes() {
     return [...this.animals, ...this.ducks].filter((a) => a.alive).flatMap((a) => a.hitboxes);
   }
@@ -95,10 +122,10 @@ export class AnimalManager {
     }
     this.flockTime += delta;
     for (let i = this.ducks.length - 1; i >= 0; i--) {
-      const duck = this.ducks[i];
-      duck.update(delta, this.flockTime);
-      if (duck.expired) {
-        duck.dispose();
+      const bird = this.ducks[i];
+      bird.update(delta, this.flockTime);
+      if (bird.expired) {
+        bird.dispose();
         this.ducks.splice(i, 1);
       }
     }

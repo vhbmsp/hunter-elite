@@ -238,7 +238,7 @@ export class Game {
       this.loot.stop();
       this.orchard.spawn();
     } else {
-      this.animals.respawn();
+      this.animals.respawn(this.mission?.fauna);
       this.loot.start();
     }
     this.scope.setActive(false);
