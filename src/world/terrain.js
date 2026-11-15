@@ -182,7 +182,17 @@ export class Heightfield {
     mesh.name = 'terrain';
     mesh.userData.surface = 'terrain';
     mesh.matrixAutoUpdate = false;
+    this.mesh = mesh;
     return mesh;
+  }
+
+  /** Rebuild vertex colours from a colour table (used for winter snow ground). */
+  recolor(colors) {
+    if (!this.mesh) return;
+    this.config = { ...this.config, colors: { ...this.config.colors, ...colors } };
+    const attr = this.mesh.geometry.attributes.color;
+    attr.array.set(this.vertexColors(this.mesh.geometry));
+    attr.needsUpdate = true;
   }
 
   /** Height/slope based blend: lush valleys, grass, dry tops, dirt then rock on steep faces. */

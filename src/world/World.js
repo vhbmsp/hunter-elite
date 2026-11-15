@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { DEFAULT_STAND_INDEX, PLAYER, STAND, STANDS } from '../config.js';
+import { THEMES, tintGroup } from '../theme.js';
 import { createEnvironment } from './environment.js';
 import { Grass } from './grass.js';
 import { createStand } from './stand.js';
@@ -15,6 +16,8 @@ export class World {
     this.heightfield = new Heightfield();
     this.terrain = this.heightfield.createMesh();
     scene.add(this.terrain);
+    this.themeId = 'default';
+    this._foliageTintCache = new Map();
 
     this.standHeight = STAND.enabled ? STAND.height : 0;
     this.stands = STANDS.map((stand, index) => {
@@ -61,6 +64,19 @@ export class World {
     this.solids = solids;
     this.grass = new Grass(this.heightfield, this.heightfield.noise);
     this.scene.add(group, this.grass.group);
+    this.applyTheme(this.themeId);
+  }
+
+  /**
+   * Snow / default ground look. Recolours terrain, tints grass + foliage.
+   * Sky and lights are applied separately via applySceneTheme in Game.
+   */
+  applyTheme(themeId = 'default') {
+    const theme = THEMES[themeId] ?? THEMES.default;
+    this.themeId = theme.id;
+    this.heightfield.recolor(theme.terrainColors);
+    this.grass?.setTint(theme.grassTint);
+    tintGroup(this.environment, theme.foliageTint, this._foliageTintCache);
   }
 
   get eyePosition() {

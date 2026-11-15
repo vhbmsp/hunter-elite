@@ -392,10 +392,61 @@ body {
   margin-top: 8px;
 }
 
+.unlock-progress {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(215, 181, 109, 0.28);
+  border-radius: 6px;
+  background: rgba(215, 181, 109, 0.08);
+  color: #e6d7b0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 #mission-list {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+
+.mission-pack {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+}
+
+.mission-pack-title {
+  margin: 4px 0 0;
+  color: #d7b56d;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mission-pack-hint {
+  margin: -2px 0 2px;
+  color: #b7aa98;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.mission.is-locked {
+  opacity: 0.72;
+  border-color: rgba(160, 160, 160, 0.22);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.mission.is-locked .mission-title {
+  color: #a89b86;
+}
+
+.mission-lock-hint {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  color: #c4b49a;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .mission,

@@ -8,7 +8,9 @@ import { MISSION_PENALTY, MISSIONS, gradeKill } from '../missions.js';
 import { Player } from '../player/Player.js';
 import { Scope } from '../player/Scope.js';
 import { Scoreboard } from '../scoreboard.js';
+import { applySceneTheme, themeForMission } from '../theme.js';
 import { Hud } from '../ui/Hud.js';
+import { isMissionUnlocked, nextUnlockedIndex } from '../unlocks.js';
 import { ImpactEffects } from '../weapons/impacts.js';
 import { Rifle } from '../weapons/Rifle.js';
 import { environmentModelUrls } from '../world/environment.js';
@@ -36,13 +38,18 @@ export class Game {
     this.scoreboard = new Scoreboard();
 
     this.renderer = createRenderer(container);
-    this.scene = createScene();
+    const { scene, lights } = createScene();
+    this.scene = scene;
+    this.lights = lights;
     this.hud = new Hud({
       scoreboard: this.scoreboard,
       onMission: (index) => this.startMission(index),
       onFreePlay: () => this.startFreePlay(),
       onRetry: () => this.startMission(this.missionIndex),
-      onNext: () => this.startMission(this.missionIndex + 1),
+      onNext: () => {
+        const next = nextUnlockedIndex(this.missionIndex, this.scoreboard);
+        if (next >= 0) this.startMission(next);
+      },
       onMenu: () => this.showMenu(),
     });
     this.sfx = new Sfx();
@@ -194,13 +201,24 @@ export class Game {
     this.scope.setActive(false);
     this.loot.stop();
     this.orchard.clear();
+    this.applyTheme('default');
     this.hud.showMenu();
+  }
+
+  applyTheme(themeId) {
+    const theme = themeForMission({ theme: themeId });
+    applySceneTheme(this.scene, this.lights, theme);
+    this.world.applyTheme(theme.id);
   }
 
   startMission(index) {
     if (!this.loaded) return;
     const mission = MISSIONS[index];
     if (!mission) return;
+    if (!isMissionUnlocked(mission, this.scoreboard)) {
+      this.hud.showMenu();
+      return;
+    }
     this.mode = 'mission';
     this.mission = mission;
     this.missionIndex = index;
@@ -231,6 +249,7 @@ export class Game {
     this.hud.setDistance(null);
     this.rifle.reset();
     this.orchard.clear();
+    this.applyTheme(this.mission?.theme ?? 'default');
     this.applyStandFacing(DEFAULT_STAND_INDEX);
     if (this.mission?.tutorial) {
       // Quiet range: orchard only — practice fire, reload, and tower switches.
@@ -353,7 +372,7 @@ export class Game {
       timeUsed,
       score: this.score,
       penalties: this.penalties,
-      hasNext: success && this.missionIndex < MISSIONS.length - 1,
+      hasNext: success && nextUnlockedIndex(this.missionIndex, this.scoreboard) >= 0,
     });
   }
 

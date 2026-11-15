@@ -54,8 +54,9 @@
       <div class="panel">
         <p class="kicker">Hunter Elite</p>
         <h1>Missions</h1>
-        <p class="lede">Each level has an objective and a countdown. Clear it before the time runs out. Top 10 boards reset when you reload the page.</p>
+        <p class="lede">Each level has an objective and a countdown. Clear it before the time runs out. Top 10 boards are saved in this browser.</p>
         <p id="menu-status" class="hint">Loading models…</p>
+        <p id="unlock-progress" class="unlock-progress" hidden></p>
         <div id="mission-list"></div>
         <button id="free-play" type="button" disabled>Free play</button>
         <p class="hint">Skips missions and opens the sandbox. No timer, no objective, and no wrong-target penalty.</p>
@@ -110,7 +111,7 @@
       <div class="panel">
         <p id="board-view-kicker" class="kicker"></p>
         <h1>Top 10</h1>
-        <p class="lede">In-memory for this session. Reloading the page resets every board.</p>
+        <p class="lede">Saved in this browser. Reloading keeps your scores.</p>
         <div id="board-view-list" class="score-board" aria-label="Top 10"></div>
         <div class="actions">
           <button id="board-view-close" type="button">Back</button>

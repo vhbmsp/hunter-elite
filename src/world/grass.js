@@ -97,6 +97,7 @@ export class Grass {
 
     const geometry = createTuftGeometry();
     const material = createGrassMaterial(this.uniforms);
+    this.material = material;
     const outer = GRASS.densityBands.at(-1)[0];
     const { chunkSize } = GRASS;
     const dummy = new THREE.Object3D();
@@ -149,6 +150,12 @@ export class Grass {
         this.instanceCount += matrices.length;
       }
     }
+  }
+
+  /** Multiply vertex colours (winter frost tint). */
+  setTint(hex) {
+    if (!this.material?.color) return;
+    this.material.color.setHex(hex);
   }
 
   update(delta) {

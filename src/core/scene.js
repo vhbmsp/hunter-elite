@@ -7,8 +7,10 @@ export function createScene() {
   scene.fog = new THREE.Fog(WORLD.skyColor, WORLD.fogNear, WORLD.fogFar);
 
   const { ambient, hemisphere, sun } = LIGHTS;
-  scene.add(new THREE.AmbientLight(ambient.color, ambient.intensity));
-  scene.add(new THREE.HemisphereLight(hemisphere.sky, hemisphere.ground, hemisphere.intensity));
+  const ambientLight = new THREE.AmbientLight(ambient.color, ambient.intensity);
+  const hemisphereLight = new THREE.HemisphereLight(hemisphere.sky, hemisphere.ground, hemisphere.intensity);
+  scene.add(ambientLight);
+  scene.add(hemisphereLight);
 
   const sunLight = new THREE.DirectionalLight(sun.color, sun.intensity);
   sunLight.position.set(...sun.position);
@@ -25,5 +27,12 @@ export function createScene() {
   }
   scene.add(sunLight);
 
-  return scene;
+  return {
+    scene,
+    lights: {
+      ambient: ambientLight,
+      hemisphere: hemisphereLight,
+      sun: sunLight,
+    },
+  };
 }
