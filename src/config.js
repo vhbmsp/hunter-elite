@@ -196,9 +196,13 @@ export const ANIMAL_CLIPS = {
   death: 'Death',
 };
 
+// Shared Gobkit Free Animal Pack rig (rabbit, goat, moose, turkey, pheasant, cougar, …).
+const GOBKIT_GROUND = {
+  bones: { neck: 'Spine', rump: 'Hips', chest: 'Spine' },
+  clips: { idle: ['idle'], walk: 'walk', run: 'walk', death: 'dead' },
+};
+
 export const ANIMALS = {
-  // Five ground species, three of each. Premium boar uses its own spawn count.
-  count: 15,
   minSpawnDistance: 30,
   spawnDistanceRange: 120,
   // Animals stop approaching once this close to the player.
@@ -221,13 +225,13 @@ export const ANIMALS = {
   showHitboxes: false,
   // height: standing height to the top of the head/ears (m). Speeds in m/s.
   // walkClipSpeed/runClipSpeed: ground speed at which the clip plays at timeScale 1.
+  // Spawn counts come from each mission's `fauna` table (or FREE_PLAY_FAUNA).
   types: [
     // Gobkit Hare. Clips are lowercase idle / walk / dead; no Gallop, so run reuses walk.
     {
       name: 'rabbit', model: model('animals/rabbit.glb'), height: 0.5,
       walkSpeed: 0.8, runSpeed: 7, walkClipSpeed: 0.7, runClipSpeed: 4.5,
-      bones: { neck: 'Spine', rump: 'Hips', chest: 'Spine' },
-      clips: { idle: ['idle'], walk: 'walk', run: 'walk', death: 'dead' },
+      ...GOBKIT_GROUND,
       bodyFit: { width: 1.2, height: 1.6, length: 1.1, drop: 0.35 },
     },
     {
@@ -243,6 +247,14 @@ export const ANIMALS = {
       // Antlers widen the bounds; keep the head sphere on the skull.
       headRadiusFactor: 0.6,
     },
+    // Substitute: no CC0 animated moose. Gobkit Eland (bones renamed to Head/Spine/Hips).
+    {
+      name: 'moose', model: model('animals/moose.glb'), height: 2.35,
+      walkSpeed: 1.35, runSpeed: 10, walkClipSpeed: 0.9, runClipSpeed: 5.5,
+      ...GOBKIT_GROUND,
+      headRadiusFactor: 0.7,
+      bodyFit: { width: 1.35, height: 1.8, length: 1.3, drop: 0.35 },
+    },
     // Pixor CC0 bear. Idle ships with the model; Idle_2 / Eating / Walk / Gallop /
     // Death were authored on that rig for the game. Bones: Head / Neck / Chest / Hips.
     {
@@ -253,14 +265,45 @@ export const ANIMALS = {
       bodyFit: { width: 1.45, height: 1.9, length: 1.2, drop: 0.4 },
     },
     {
+      name: 'wolf', model: model('animals/wolf.glb'), height: 0.95,
+      walkSpeed: 1.5, runSpeed: 11, walkClipSpeed: 1.3, runClipSpeed: 7,
+    },
+    // Substitute: Gobkit Lion as a mountain lion / cougar. Rare predator missions only.
+    {
+      name: 'cougar', model: model('animals/cougar.glb'), height: 0.9,
+      walkSpeed: 1.3, runSpeed: 12, walkClipSpeed: 0.85, runClipSpeed: 5.5,
+      ...GOBKIT_GROUND,
+      bodyFit: { width: 1.25, height: 1.5, length: 1.35, drop: 0.3 },
+    },
+    {
       name: 'fox', model: model('animals/fox.glb'), height: 0.6,
       walkSpeed: 1.1, runSpeed: 8, walkClipSpeed: 0.9, runClipSpeed: 5,
     },
-    // Premium. Substitute: no CC0 animated wild boar. A Quaternius farm pig, scaled
-    // to a large boar. Only two spawn. scoreMultiplier stacks with the head-shot
-    // multiplier (body ×5, head ×7.5 versus the distance term).
+    // Gobkit Goat — mountain goat / chamois stand-in with a direct goat mesh.
     {
-      name: 'boar', premium: true, label: 'Premium', scoreMultiplier: 5, spawns: 2,
+      name: 'goat', model: model('animals/goat.glb'), height: 0.95,
+      walkSpeed: 1.0, runSpeed: 8, walkClipSpeed: 0.75, runClipSpeed: 4.5,
+      ...GOBKIT_GROUND,
+      bodyFit: { width: 1.15, height: 1.55, length: 1.15, drop: 0.3 },
+    },
+    // Substitute: Gobkit Brahma chicken as wild turkey (hashed bones renamed).
+    {
+      name: 'turkey', model: model('animals/turkey.glb'), height: 0.7,
+      walkSpeed: 0.7, runSpeed: 5, walkClipSpeed: 0.55, runClipSpeed: 3.2,
+      ...GOBKIT_GROUND,
+      bodyFit: { width: 1.3, height: 1.5, length: 1.15, drop: 0.25 },
+    },
+    // Substitute: Gobkit Quail as pheasant.
+    {
+      name: 'pheasant', model: model('animals/pheasant.glb'), height: 0.45,
+      walkSpeed: 0.6, runSpeed: 6, walkClipSpeed: 0.5, runClipSpeed: 3.5,
+      ...GOBKIT_GROUND,
+      bodyFit: { width: 1.1, height: 1.4, length: 1.2, drop: 0.25 },
+    },
+    // Premium. Substitute: no CC0 animated wild boar. A Quaternius farm pig, scaled
+    // to a large boar. scoreMultiplier stacks with the head-shot multiplier.
+    {
+      name: 'boar', premium: true, label: 'Premium', scoreMultiplier: 5,
       model: model('animals/pig.glb'), height: 1.05,
       walkSpeed: 1.0, runSpeed: 8, walkClipSpeed: 0.85, runClipSpeed: 4.5,
       bones: { neck: 'Neck', rump: 'Body', chest: 'Neck' },
@@ -271,42 +314,90 @@ export const ANIMALS = {
       // Rounder than the deer the default ellipsoid was tuned on.
       bodyFit: { width: 1.5, height: 2.4, length: 1.25, drop: 0.2 },
     },
+    // Premium rare. Substitute: Quaternius Bull as American bison (Ultimate pack, same rig).
+    {
+      name: 'bison', premium: true, label: 'Premium', scoreMultiplier: 5,
+      model: model('animals/bison.glb'), height: 2.05,
+      walkSpeed: 1.2, runSpeed: 9, walkClipSpeed: 1.4, runClipSpeed: 8,
+      headRadiusFactor: 0.75,
+      bodyFit: { width: 1.55, height: 1.85, length: 1.35, drop: 0.35 },
+    },
   ],
 };
 
-// Flying flock. No CC0 duck with a fly/flap clip turned up (Gobkit, Quaternius,
-// Kenney, Poly Pizza, Pixor, Sketchfab CC0, OpenGameArt), so the Gobkit duck
-// stays: idle while airborne with a procedural wing flap on LeftHand/RightHand,
-// then dead as they fall.
-export const DUCKS = {
-  model: model('animals/duck.glb'),
-  // Standing height (m). The source file is hundreds of units tall.
-  // Slightly larger than real so the silhouette reads at scoped range.
-  height: 0.55,
-  count: 6,
-  // Circle around the map centre. radius in m, speed in m/s, altitude above the ground.
-  // Tuned so Tower A sees ~29–39 m passes and a scoped shot can lead the flock.
-  radius: 34,
-  speed: 5.5,
-  altitude: 8.5,
-  // Forgiving bird sphere without making hits trivial.
-  hitRadius: 0.28,
-  gravity: 18,
-  flyClip: 'idle',
-  deathClip: 'dead',
-  // Nose-down flight attitude (rad) and wing beat on the Hand bones.
-  flyPitch: 0.22,
-  flapHz: 3.2,
-  flapAmp: 0.7,
-  // V formation, metres to the right and behind the leader.
-  slots: [
-    { right: 0, back: 0 },
-    { right: -2.4, back: 2.2 },
-    { right: 2.4, back: 2.2 },
-    { right: -4.6, back: 4.4 },
-    { right: 4.6, back: 4.4 },
-    { right: 0, back: 4.8 },
-  ],
+const BIRD_SLOTS_V = [
+  { right: 0, back: 0 },
+  { right: -2.4, back: 2.2 },
+  { right: 2.4, back: 2.2 },
+  { right: -4.6, back: 4.4 },
+  { right: 4.6, back: 4.4 },
+  { right: 0, back: 4.8 },
+];
+
+// Flying flocks. No CC0 bird with a fly/flap clip turned up, so Gobkit birds stay:
+// idle while airborne with a procedural wing flap on LeftHand/RightHand, then dead.
+export const BIRDS = {
+  duck: {
+    name: 'duck',
+    model: model('animals/duck.glb'),
+    // Standing height (m). Slightly larger than real so the silhouette reads at range.
+    height: 0.55,
+    // Circle around the map centre. radius in m, speed in m/s, altitude above the ground.
+    radius: 34,
+    speed: 5.5,
+    altitude: 8.5,
+    hitRadius: 0.28,
+    gravity: 18,
+    flyClip: 'idle',
+    deathClip: 'dead',
+    flyPitch: 0.22,
+    flapHz: 3.2,
+    flapAmp: 0.7,
+    slots: BIRD_SLOTS_V,
+  },
+  goose: {
+    name: 'goose',
+    model: model('animals/goose.glb'),
+    height: 0.72,
+    // Wider, higher circle so geese do not sit on top of the duck path.
+    radius: 48,
+    speed: 6.2,
+    altitude: 11,
+    hitRadius: 0.34,
+    gravity: 18,
+    flyClip: 'idle',
+    deathClip: 'dead',
+    flyPitch: 0.18,
+    flapHz: 2.6,
+    flapAmp: 0.75,
+    slots: BIRD_SLOTS_V,
+  },
+};
+
+/** @deprecated Prefer BIRDS.duck — kept for any leftover imports. */
+export const DUCKS = BIRDS.duck;
+
+/**
+ * Default sandbox population for free play: a sample of every species, not a
+ * full dump of every mission table.
+ */
+export const FREE_PLAY_FAUNA = {
+  ground: {
+    rabbit: 2,
+    deer: 2,
+    elk: 1,
+    moose: 1,
+    bear: 1,
+    wolf: 1,
+    cougar: 1,
+    fox: 2,
+    goat: 2,
+    turkey: 2,
+    pheasant: 2,
+    boar: 1,
+    bison: 1,
+  },
+  birds: ['duck', 'goose'],
 };
 
 // Scattered scenery, rendered as one InstancedMesh per model part.

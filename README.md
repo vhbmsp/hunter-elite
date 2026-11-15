@@ -53,17 +53,21 @@ The results screen shows success or failure, accuracy (hits / shots), the longes
 
 Free play skips missions and keeps the sandbox: no timer, no objective, and no wrong-target penalty. Each mission and each free-play start loads a full rifle (5 rounds and 5 spare magazines). The bolt, reload, and muzzle flash are unchanged.
 
-| Level | Objective | Time |
-| --- | --- | --- |
-| Tutorial | Shoot all 20 apples | 5:00 |
-| Valley deer | 2 deer over 70 m | 2:30 |
-| Ridge elk | 1 elk over 110 m | 2:30 |
-| Brush foxes | 3 foxes over 40 m | 2:30 |
-| Timber bear | 1 bear over 85 m | 2:00 |
-| Premium pig | 1 Premium pig over 55 m | 2:00 |
-| Passing ducks | 2 ducks over 35 m | 1:30 |
+| Level | Objective | Time | Habitat fauna |
+| --- | --- | --- | --- |
+| Tutorial | Shoot all 20 apples | 5:00 | none (orchard only) |
+| Valley deer | 2 deer over 70 m | 2:30 | deer, fox, rabbit |
+| Brush foxes | 3 foxes over 40 m | 2:30 | fox, rabbit, deer |
+| Ridge goats | 2 goats over 60 m | 2:30 | goat, rabbit, fox |
+| Timber wolves | 1 wolf over 75 m | 2:15 | wolf, fox, deer |
+| Timber bear | 1 bear over 85 m | 2:00 | bear, wolf, deer |
+| Mountain cougar | 1 cougar over 80 m | 2:10 | cougar, goat, deer |
+| Wetland birds | 2 ducks over 35 m | 1:40 | ducks, geese, rabbit |
+| Upland birds | 2 turkeys over 45 m | 2:15 | turkey, pheasant, rabbit |
+| Trophy moose | 1 moose over 100 m | 2:30 | moose, elk, deer |
+| Plains bison | 1 Premium bison over 90 m | 2:20 | bison, Premium pig, elk, deer |
 
-Elk uses the stag model, and the Premium pig is the boar species, same as free play.
+Each hunting mission uses its own `fauna` spawn table in `src/missions.js` — not every species appears on every map. Free play uses `FREE_PLAY_FAUNA` in `src/config.js`. Elk uses the stag model; moose is a Gobkit eland stand-in; Premium pig is the boar species; Premium bison is a Quaternius bull stand-in.
 
 ## Supply drops
 
@@ -76,29 +80,26 @@ Only the wooden crate stops a bullet. The canopy and the ropes do not, so the cl
 ## Assets
 
 Ground animals and scenery are low-poly glTF models by Quaternius, Gobkit, and
-Pixor (all CC0) in `public/models/`. Sources, licenses and the remaining species
-substitutions (stag for elk, Premium pig for wild boar) are listed in
-[`public/models/CREDITS.md`](public/models/CREDITS.md).
+Pixor (all CC0) in `public/models/`. Sources, licenses and species substitutions
+are listed in [`public/models/CREDITS.md`](public/models/CREDITS.md).
 
 - Each GLB is loaded once with `GLTFLoader` (meshopt-compressed, decoded with
   three's bundled `MeshoptDecoder`). Animals are cloned per instance with
   `SkeletonUtils.clone` and driven by their own `AnimationMixer`
   (Idle/Idle_2/Eating while idle, or Idle/Idle_Eating for the Premium boar, or
-  idle for the rabbit; Walk; Gallop, or Run for the boar, or walk again for the
-  rabbit; Death / dead on a kill when that clip exists).
+  idle for Gobkit ground animals; Walk; Gallop, or Run for the boar, or walk
+  again for Gobkit animals; Death / dead on a kill when that clip exists).
 - Real-world sizes, speeds, clip names and bone names are set per species in
-  `src/config.js`. Models are scaled at load time from their bounds. Two Premium
-  boars spawn; the other species share the ground count.
+  `src/config.js`. Models are scaled at load time from their bounds. Mission
+  spawn counts come from each level's `fauna` table.
 - Hitboxes follow the skeleton: a body ellipsoid along the spine, cylinders and
   joint spheres along the neck bones, and a head sphere on the head bone.
   A neck hit scores as a body shot; the skull stays a head shot. Sizes come
-  from the rig. The Ultimate-pack animals use `Back`, `Torso3`, `Neck3` and
-  `Head`. The bear, rabbit and boar override those names. Foxes use the same
-  neck chain.
-- Ducks fly a closer, slower circle in a V (~8.5 m up) on the Gobkit idle clip
-  plus a procedural wing flap on the Hand bones (no CC0 fly clip was available).
-  A hit plays `dead` and the bird falls. Their hitbox is one forgiving sphere,
-  and `T` toggles it with the others.
+  from the rig. Ultimate-pack animals use `Back`, `Torso3`, `Neck3` and `Head`.
+  Bear, boar, and Gobkit animals override those names.
+- Ducks and geese fly V formations on separate circles (Gobkit idle + procedural
+  wing flap on the Hand bones). A hit plays `dead` and the bird falls. Hitboxes
+  are forgiving spheres; `T` toggles them with the others.
 
 To swap a model, drop a GLB into `public/models/animals/` and point the species
 entry in `src/config.js` at it. A different rig can name its own spine and head

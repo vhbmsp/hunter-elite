@@ -2,6 +2,10 @@
 // A shot counts only when it is the objective species strictly over the minimum
 // distance. Any other animal that drops is a penalty: it costs score and does
 // not count toward the objective.
+//
+// Each hunting mission sets `fauna` so only that habitat's species spawn.
+// Tutorial has no fauna (orchard only). Free play uses FREE_PLAY_FAUNA in config.
+// Ten hunting missions + tutorial = eleven entries total.
 
 export const MISSION_PENALTY = 50;
 
@@ -10,10 +14,18 @@ const SPECIES_LABEL = {
   rabbit: 'rabbit',
   deer: 'deer',
   elk: 'elk',
+  moose: 'moose',
   fox: 'fox',
+  goat: 'goat',
+  wolf: 'wolf',
   bear: 'bear',
+  cougar: 'cougar',
+  turkey: 'turkey',
+  pheasant: 'pheasant',
   boar: 'Premium pig',
+  bison: 'Premium bison',
   duck: 'duck',
+  goose: 'goose',
 };
 
 export const MISSIONS = [
@@ -40,17 +52,9 @@ export const MISSIONS = [
     count: 2,
     minDistance: 70,
     seconds: 150,
-  },
-  {
-    id: 'ridge-elk',
-    title: 'Ridge elk',
-    objective: '1 elk over 110 m',
-    species: 'elk',
-    singular: 'elk',
-    article: 'an',
-    count: 1,
-    minDistance: 110,
-    seconds: 150,
+    fauna: {
+      ground: { deer: 6, fox: 3, rabbit: 4 },
+    },
   },
   {
     id: 'brush-foxes',
@@ -62,6 +66,37 @@ export const MISSIONS = [
     count: 3,
     minDistance: 40,
     seconds: 150,
+    fauna: {
+      ground: { fox: 6, rabbit: 4, deer: 2 },
+    },
+  },
+  {
+    id: 'ridge-goats',
+    title: 'Ridge goats',
+    objective: '2 goats over 60 m',
+    species: 'goat',
+    singular: 'goat',
+    article: 'a',
+    count: 2,
+    minDistance: 60,
+    seconds: 150,
+    fauna: {
+      ground: { goat: 6, rabbit: 3, fox: 2 },
+    },
+  },
+  {
+    id: 'timber-wolves',
+    title: 'Timber wolves',
+    objective: '1 wolf over 75 m',
+    species: 'wolf',
+    singular: 'wolf',
+    article: 'a',
+    count: 1,
+    minDistance: 75,
+    seconds: 135,
+    fauna: {
+      ground: { wolf: 4, fox: 3, deer: 3 },
+    },
   },
   {
     id: 'timber-bear',
@@ -73,28 +108,81 @@ export const MISSIONS = [
     count: 1,
     minDistance: 85,
     seconds: 120,
+    fauna: {
+      ground: { bear: 3, wolf: 2, deer: 3 },
+    },
   },
   {
-    id: 'premium-pig',
-    title: 'Premium pig',
-    objective: '1 Premium pig over 55 m',
-    species: 'boar',
-    singular: 'Premium pig',
+    id: 'mountain-cougar',
+    title: 'Mountain cougar',
+    objective: '1 cougar over 80 m',
+    species: 'cougar',
+    singular: 'cougar',
     article: 'a',
     count: 1,
-    minDistance: 55,
-    seconds: 120,
+    minDistance: 80,
+    seconds: 130,
+    fauna: {
+      ground: { cougar: 2, goat: 3, deer: 3 },
+    },
   },
   {
-    id: 'passing-ducks',
-    title: 'Passing ducks',
+    id: 'wetland-birds',
+    title: 'Wetland birds',
     objective: '2 ducks over 35 m',
     species: 'duck',
     singular: 'duck',
     article: 'a',
     count: 2,
     minDistance: 35,
-    seconds: 90,
+    seconds: 100,
+    fauna: {
+      ground: { rabbit: 2 },
+      birds: ['duck', 'goose'],
+    },
+  },
+  {
+    id: 'upland-birds',
+    title: 'Upland birds',
+    objective: '2 turkeys over 45 m',
+    species: 'turkey',
+    singular: 'turkey',
+    article: 'a',
+    count: 2,
+    minDistance: 45,
+    seconds: 135,
+    fauna: {
+      ground: { turkey: 5, pheasant: 5, rabbit: 3 },
+    },
+  },
+  {
+    id: 'trophy-moose',
+    title: 'Trophy moose',
+    objective: '1 moose over 100 m',
+    species: 'moose',
+    singular: 'moose',
+    article: 'a',
+    count: 1,
+    minDistance: 100,
+    seconds: 150,
+    fauna: {
+      ground: { moose: 3, elk: 3, deer: 2 },
+    },
+  },
+  {
+    id: 'plains-bison',
+    title: 'Plains bison',
+    objective: '1 Premium bison over 90 m',
+    species: 'bison',
+    singular: 'Premium bison',
+    article: 'a',
+    count: 1,
+    minDistance: 90,
+    seconds: 140,
+    fauna: {
+      // Rare premium bison with a Premium pig distractor and open-plain ungulates.
+      ground: { bison: 2, boar: 2, elk: 2, deer: 3 },
+    },
   },
 ];
 
