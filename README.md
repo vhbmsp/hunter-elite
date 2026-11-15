@@ -63,7 +63,7 @@ Free play skips missions and keeps the sandbox: no timer, no objective, and no w
 | Premium pig | 1 Premium pig over 55 m | 2:00 |
 | Passing ducks | 2 ducks over 35 m | 1:30 |
 
-Elk uses the stag model, bear uses the wolf, and the Premium pig is the boar species, same as free play.
+Elk uses the stag model, and the Premium pig is the boar species, same as free play.
 
 ## Supply drops
 
@@ -75,16 +75,17 @@ Only the wooden crate stops a bullet. The canopy and the ropes do not, so the cl
 
 ## Assets
 
-Ground animals and scenery are low-poly glTF models by Quaternius (CC0) in
-`public/models/`. The flying ducks are a CC0 Gobkit duck. Sources, licenses
-and the species substitutions (stag for elk, Premium pig for wild boar, wolf
-for bear) are listed in [`public/models/CREDITS.md`](public/models/CREDITS.md).
+Ground animals and scenery are low-poly glTF models by Quaternius, Gobkit, and
+Pixor (all CC0) in `public/models/`. Sources, licenses and the remaining species
+substitutions (stag for elk, Premium pig for wild boar) are listed in
+[`public/models/CREDITS.md`](public/models/CREDITS.md).
 
 - Each GLB is loaded once with `GLTFLoader` (meshopt-compressed, decoded with
   three's bundled `MeshoptDecoder`). Animals are cloned per instance with
   `SkeletonUtils.clone` and driven by their own `AnimationMixer`
-  (Idle/Idle_2/Eating while idle, or Idle/Idle_Eating for the Premium boar; Walk;
-  Gallop, or Run for the boar; Death on a kill when that clip exists).
+  (Idle/Idle_2/Eating while idle, or Idle/Idle_Eating for the Premium boar, or
+  idle for the rabbit; Walk; Gallop, or Run for the boar, or walk again for the
+  rabbit; Death / dead on a kill when that clip exists).
 - Real-world sizes, speeds, clip names and bone names are set per species in
   `src/config.js`. Models are scaled at load time from their bounds. Two Premium
   boars spawn; the other species share the ground count.
@@ -92,7 +93,8 @@ for bear) are listed in [`public/models/CREDITS.md`](public/models/CREDITS.md).
   joint spheres along the neck bones, and a head sphere on the head bone.
   A neck hit scores as a body shot; the skull stays a head shot. Sizes come
   from the rig. The Ultimate-pack animals use `Back`, `Torso3`, `Neck3` and
-  `Head`. The boar overrides those names. Foxes use the same neck chain.
+  `Head`. The bear, rabbit and boar override those names. Foxes use the same
+  neck chain.
 - Ducks fly a closer, slower circle in a V (~8.5 m up) on the Gobkit idle clip
   plus a procedural wing flap on the Hand bones (no CC0 fly clip was available).
   A hit plays `dead` and the bird falls. Their hitbox is one forgiving sphere,

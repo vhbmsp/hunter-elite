@@ -197,8 +197,8 @@ export const ANIMAL_CLIPS = {
 };
 
 export const ANIMALS = {
-  // Four ground species, four of each. Premium boar uses its own spawn count.
-  count: 16,
+  // Five ground species, three of each. Premium boar uses its own spawn count.
+  count: 15,
   minSpawnDistance: 30,
   spawnDistanceRange: 120,
   // Animals stop approaching once this close to the player.
@@ -222,6 +222,14 @@ export const ANIMALS = {
   // height: standing height to the top of the head/ears (m). Speeds in m/s.
   // walkClipSpeed/runClipSpeed: ground speed at which the clip plays at timeScale 1.
   types: [
+    // Gobkit Hare. Clips are lowercase idle / walk / dead; no Gallop, so run reuses walk.
+    {
+      name: 'rabbit', model: model('animals/rabbit.glb'), height: 0.5,
+      walkSpeed: 0.8, runSpeed: 7, walkClipSpeed: 0.7, runClipSpeed: 4.5,
+      bones: { neck: 'Spine', rump: 'Hips', chest: 'Spine' },
+      clips: { idle: ['idle'], walk: 'walk', run: 'walk', death: 'dead' },
+      bodyFit: { width: 1.2, height: 1.6, length: 1.1, drop: 0.35 },
+    },
     {
       name: 'deer', model: model('animals/deer.glb'), height: 1.55,
       walkSpeed: 1.4, runSpeed: 11, walkClipSpeed: 1.3, runClipSpeed: 9,
@@ -235,10 +243,14 @@ export const ANIMALS = {
       // Antlers widen the bounds; keep the head sphere on the skull.
       headRadiusFactor: 0.6,
     },
-    // Substitute: no CC0 animated bear was obtainable; a grey wolf (wild predator) stands in.
+    // Pixor CC0 bear. Idle ships with the model; Idle_2 / Eating / Walk / Gallop /
+    // Death were authored on that rig for the game. Bones: Head / Neck / Chest / Hips.
     {
-      name: 'bear', model: model('animals/wolf.glb'), height: 1.05,
-      walkSpeed: 1.5, runSpeed: 10, walkClipSpeed: 1.3, runClipSpeed: 7,
+      name: 'bear', model: model('animals/bear.glb'), height: 1.35,
+      walkSpeed: 1.4, runSpeed: 9, walkClipSpeed: 1.2, runClipSpeed: 6.5,
+      bones: { neck: 'Neck', rump: 'Hips', chest: 'Chest' },
+      // Bulkier than the deer the default ellipsoid was tuned on.
+      bodyFit: { width: 1.45, height: 1.9, length: 1.2, drop: 0.4 },
     },
     {
       name: 'fox', model: model('animals/fox.glb'), height: 0.6,

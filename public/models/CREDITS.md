@@ -1,7 +1,8 @@
 # 3D model credits
 
-Ground animals and scenery are by **[Quaternius](https://quaternius.com)**.
-The duck is by **[Gobkit](https://gobkit.com/freebies)**. Every file below is
+Ground animals and scenery are by **[Quaternius](https://quaternius.com)**,
+**[Gobkit](https://gobkit.com/freebies)**, and **[Pixor](https://pixor.art)**.
+Every file below is
 **[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/)** (public domain).
 No attribution is required; it is given here anyway.
 
@@ -11,7 +12,8 @@ mirror (`public/glb/`), whose `LICENSES.md` lists each pack as CC0-1.0. The farm
 pig (wild boar stand-in) is not in that mirror; it is the Pig model from
 Quaternius's Farm Animal Pack. Every file was then renamed and compressed with
 `gltf-transform meshopt` (`EXT_meshopt_compression` + `KHR_mesh_quantization`).
-Geometry, rigs and animation clips are otherwise unchanged.
+Geometry, rigs and animation clips are otherwise unchanged unless a note below
+says otherwise.
 
 ## Animals: Ultimate Animated Animal Pack
 
@@ -22,9 +24,34 @@ Source: <https://quaternius.com/packs/ultimateanimatedanimals.html>. License: CC
 | `animals/deer.glb` | `Deer` | deer | Direct match |
 | `animals/stag.glb` | `Stag` | elk | **Substitute**: the pack has no elk. The stag is the closest large cervid and uses the same rig. Scaled so the back is about 1.3 m and the antler rack about 2.6 m |
 | `animals/fox.glb` | `Fox` | fox | Direct match |
-| `animals/wolf.glb` | `Wolf` | bear | **Substitute**: no CC0 animated bear was available |
 
 Each Ultimate-pack rig includes the clips Idle, Idle_2, Eating, Walk, Gallop, Death, plus attack, jump and hit-react clips (not used).
+
+## Animals: Bear (Pixor)
+
+Source: <https://pixor.art/library/creatures/bear/>. License: CC0-1.0.
+
+No CC0 animated brown bear with Idle / Walk / Gallop / Death turned up in Quaternius,
+Gobkit free packs, Kenney, or Poly Pizza (checked again for this change). The Pixor
+bear ships with a quadruped rig and an Idle clip. Idle_2, Eating, Walk, Gallop and
+Death were authored on that same rig for this game, then meshopt-compressed like the
+other animals.
+
+| File | Upstream model | Game type | Notes |
+| --- | --- | --- | --- |
+| `animals/bear.glb` | Pixor `bear` | bear | Real bear mesh. Scaled to about 1.35 m at the top of the head. Bones `Head` / `Neck` / `Chest` / `Hips` |
+
+Clips used: Idle, Idle_2, Eating, Walk, Gallop, Death.
+
+## Animals: Rabbit (Gobkit Hare)
+
+Source: <https://gobkit.com/freebies/animal006/Hare.glb> (Gobkit Free Animal Pack Vol.4). License: CC0-1.0.
+
+| File | Upstream model | Game type | Notes |
+| --- | --- | --- | --- |
+| `animals/rabbit.glb` | `Hare` | rabbit | Direct hare/rabbit match. Scaled to about 0.5 m tall. Bones `Head` / `Spine` / `Hips` |
+
+Clips used: idle, walk, dead. There is no Gallop; run reuses walk at a higher timeScale. Attack is unused.
 
 ## Animals: Farm Animal Pack (Premium wild boar)
 
