@@ -60,13 +60,20 @@
     <div id="menu" class="overlay">
       <div class="panel">
         <p class="kicker">Hunter Elite</p>
-        <h1>Missions</h1>
-        <p class="lede">Each level has an objective and a countdown. Clear it before the time runs out. Top 10 boards are saved in this browser.</p>
+        <h1 id="menu-heading">Missions</h1>
+        <p id="menu-lede" class="lede">Choose a tutorial, a pack, or free play. Top 10 boards are saved in this browser.</p>
         <p id="menu-status" class="hint">Loading models…</p>
         <p id="unlock-progress" class="unlock-progress" hidden></p>
-        <div id="mission-list"></div>
-        <button id="free-play" type="button" disabled>Free play</button>
-        <p class="hint">Skips missions and opens the sandbox. Each start rolls summer or winter terrain. No timer, no objective, and no wrong-target penalty.</p>
+        <div id="menu-home">
+          <div id="menu-nav"></div>
+          <p id="free-play-hint" class="hint">Free play skips missions and opens the sandbox. Each start rolls summer or winter terrain. No timer, no objective, and no wrong-target penalty.</p>
+        </div>
+        <div id="menu-pack" hidden>
+          <div id="mission-list"></div>
+          <div class="actions">
+            <button id="menu-back" type="button">Back</button>
+          </div>
+        </div>
       </div>
     </div>
     <div id="results" class="overlay" hidden>

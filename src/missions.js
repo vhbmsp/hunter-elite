@@ -5,7 +5,7 @@
 //
 // Each hunting mission sets `fauna` so only that habitat's species spawn.
 // Tutorial has no fauna (orchard only). Free play uses FREE_PLAY_FAUNA in config.
-// Main pack: tutorial + 10 hunting missions. Winter pack: 5 snow missions.
+// Summer pack: 10 hunting missions (tutorial is separate in the menu). Winter pack: 5 snow missions.
 // Unlock gates: see unlocks.js (tutorial never counts toward top-3 thresholds).
 
 export const MISSION_PENALTY = 50;
