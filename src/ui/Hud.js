@@ -19,6 +19,7 @@ import {
   unlockProgress,
   winterUnlocked,
 } from '../unlocks.js';
+import { Minimap } from './Minimap.js';
 
 const asset = (file) => `${import.meta.env.BASE_URL}ui/${file}`;
 
@@ -64,6 +65,7 @@ export class Hud {
       compass: $('compass'),
       compassDial: $('compass-dial'),
       compassLabel: $('compass-label'),
+      minimap: $('minimap'),
       crosshair: $('crosshair'),
       scope: $('scope'),
       instructions: $('instructions'),
@@ -103,11 +105,17 @@ export class Hud {
     this._compassDeg = null;
     this._ammoKey = '';
     this._pendingResults = null;
+    this.minimap = this.el.minimap ? new Minimap(this.el.minimap) : null;
     this.instructionsText = this.el.instructions.textContent;
     this.renderMissions();
     this.bindOverlay();
     this.setOverlay(true);
     this.setAmmo(WEAPON.magazineSize, WEAPON.spareMagazines, false);
+  }
+
+  /** Bake tower markers + static tree dots after scenery is placed. */
+  initMinimap(treePositions) {
+    this.minimap?.init(treePositions);
   }
 
   renderUnlockProgress() {
@@ -601,19 +609,25 @@ export class Hud {
 
   setStand(label) {
     this.el.stand.textContent = label;
+    this.minimap?.setActiveStand(label);
   }
 
   /**
    * headingRad: 0 = north (-Z), increasing toward east (+X).
    * Rotates the dial so the look direction stays under the top notch.
+   * When x/z are provided, also updates the minimap player wedge.
    */
-  setCompass(headingRad) {
+  setCompass(headingRad, x = null, z = null) {
     const deg = ((headingRad * 180) / Math.PI + 360) % 360;
     const rounded = Math.round(deg);
-    if (rounded === this._compassDeg) return;
-    this._compassDeg = rounded;
-    this.el.compassDial.style.transform = `rotate(${-deg}deg)`;
-    this.el.compassLabel.textContent = compassCardinal(deg);
+    if (rounded !== this._compassDeg) {
+      this._compassDeg = rounded;
+      this.el.compassDial.style.transform = `rotate(${-deg}deg)`;
+      this.el.compassLabel.textContent = compassCardinal(deg);
+    }
+    if (x != null && z != null) {
+      this.minimap?.setPlayer(x, z, headingRad);
+    }
   }
 
   setScoped(scoped, magnification = null) {

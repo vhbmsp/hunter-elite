@@ -18,6 +18,7 @@ export class World {
     scene.add(this.terrain);
     this.themeId = 'default';
     this._foliageTintCache = new Map();
+    this.treePositions = [];
 
     this.standHeight = STAND.enabled ? STAND.height : 0;
     this.stands = STANDS.map((stand, index) => {
@@ -59,9 +60,11 @@ export class World {
 
   /** Builds glTF-based scenery once models are loaded. */
   populate(assets) {
-    const { group, solids } = createEnvironment(this.heightfield, assets);
+    const { group, solids, treePositions } = createEnvironment(this.heightfield, assets);
     this.environment = group;
     this.solids = solids;
+    // Static instance spots for the HUD minimap (drawn once, not per frame).
+    this.treePositions = treePositions;
     this.grass = new Grass(this.heightfield, this.heightfield.noise);
     this.scene.add(group, this.grass.group);
     this.applyTheme(this.themeId);
