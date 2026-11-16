@@ -55,7 +55,7 @@ The results screen shows success or failure, accuracy (hits / shots), the longes
 
 Tutorial is always open and **does not** count toward unlock thresholds. The main pack starts with the first five hunting missions unlocked. Place **top 3** (ranks 1–3) on at least **3** main hunting missions to unlock the other five. Place top 3 on **6** main hunting missions to unlock the **Winter** pack (all five snow missions). The menu shows unlock progress and a separate Winter section; locked rows are not startable and show the unlock hint. Rules live in `src/unlocks.js`.
 
-Free play skips missions and keeps the sandbox: no timer, no objective, and no wrong-target penalty. Each mission and each free-play start loads a full rifle (5 rounds and 5 spare magazines). The bolt, reload, and muzzle flash are unchanged.
+Free play skips missions and keeps the sandbox: no timer, no objective, and no wrong-target penalty. Each free-play start randomly picks summer or winter terrain (same snow theme as the Winter pack via `src/theme.js`); mission packs keep their fixed seasons. Each mission and each free-play start loads a full rifle (5 rounds and 5 spare magazines). The bolt, reload, and muzzle flash are unchanged.
 
 | Level | Pack | Objective | Time | Habitat fauna |
 | --- | --- | --- | --- | --- |
@@ -76,7 +76,7 @@ Free play skips missions and keeps the sandbox: no timer, no objective, and no w
 | Winter elk | Winter | 1 elk over 85 m | 2:20 | elk, moose, deer, wolf |
 | Northern foxes | Winter | 3 foxes over 35 m | 2:10 | fox, rabbit, wolf |
 
-Each hunting mission uses its own `fauna` spawn table in `src/missions.js` — not every species appears on every map. Winter missions use the shared ground with a cooler snow theme (`src/theme.js`). Free play uses `FREE_PLAY_FAUNA` in `src/config.js`. Elk uses the stag model; moose is a Gobkit eland stand-in; Premium pig is the boar species; Premium bison is a Quaternius bull stand-in.
+Each hunting mission uses its own `fauna` spawn table in `src/missions.js` — not every species appears on every map. Winter missions use the shared ground with a cooler snow theme (`src/theme.js`). Free play uses `FREE_PLAY_FAUNA` in `src/config.js` and rolls summer or winter visuals each start. Elk uses the stag model; moose is a Gobkit eland stand-in; Premium pig is the boar species; Premium bison is a Quaternius bull stand-in.
 
 ## Supply drops
 
