@@ -488,29 +488,82 @@ body {
   line-height: 1.4;
 }
 
+#menu-nav,
 #mission-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.mission-pack {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.mission-pack-title {
-  margin: 4px 0 0;
+#menu-pack .actions {
+  margin-top: 14px;
+}
+
+.menu-nav-button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 12px;
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+
+.menu-nav-button:hover:not(:disabled) {
+  border-color: rgba(215, 181, 109, 0.7);
+  background: rgba(215, 181, 109, 0.1);
+}
+
+.menu-nav-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.menu-nav-button.is-locked {
+  opacity: 0.72;
+  border-color: rgba(160, 160, 160, 0.22);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.menu-nav-button.is-completed {
+  border-color: rgba(198, 227, 154, 0.35);
+}
+
+.menu-nav-title {
+  grid-column: 1;
   color: #d7b56d;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+}
+
+.menu-nav-meta {
+  grid-column: 1;
+  margin-top: 4px;
+  color: #d9d0c2;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.menu-nav-button.is-locked .menu-nav-title {
+  color: #a89b86;
+}
+
+.menu-nav-chevron {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #d7b56d;
+  font-size: 18px;
+  line-height: 1;
 }
 
 .mission-pack-hint {
-  margin: -2px 0 2px;
+  margin: 0 0 4px;
   color: #b7aa98;
   font-size: 12px;
   line-height: 1.35;
@@ -537,7 +590,7 @@ body {
 .mission,
 .mission-board,
 .actions button,
-#free-play {
+.menu-nav-button {
   font: inherit;
   color: inherit;
   cursor: pointer;
@@ -610,8 +663,7 @@ body {
 }
 
 .mission:hover:not(:disabled),
-.actions button:hover,
-#free-play:hover:not(:disabled) {
+.actions button:hover {
   border-color: rgba(215, 181, 109, 0.7);
   background: rgba(215, 181, 109, 0.1);
 }
@@ -622,24 +674,25 @@ body {
 }
 
 .mission:disabled,
-.mission-board:disabled,
-#free-play:disabled {
+.mission-board:disabled {
   opacity: 0.55;
   cursor: default;
 }
 
-#free-play,
 .actions button {
   border: 1px solid rgba(215, 181, 109, 0.45);
   border-radius: 6px;
   background: #3d4f28;
 }
 
-#free-play {
-  width: 100%;
-  margin-top: 12px;
-  padding: 10px 12px;
-  font-weight: 600;
+.menu-nav-button.menu-nav-play {
+  border-color: rgba(215, 181, 109, 0.45);
+  background: #3d4f28;
+}
+
+.menu-nav-button.menu-nav-play:hover:not(:disabled) {
+  border-color: rgba(215, 181, 109, 0.7);
+  background: rgba(215, 181, 109, 0.18);
 }
 
 .stats {

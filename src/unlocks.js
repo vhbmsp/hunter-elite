@@ -101,10 +101,10 @@ export function unlockHint(mission, scoreboard) {
   if (!mission || isMissionUnlocked(mission, scoreboard)) return '';
   const { top3, mainMoreNeed, winterNeed } = unlockProgress(scoreboard);
   if (isWinter(mission)) {
-    return `Locked · Top 3 on ${top3}/${winterNeed} main missions to unlock Winter`;
+    return `Locked · Top 3 on ${top3}/${winterNeed} Summer missions to unlock Winter`;
   }
   if (isMainHunting(mission)) {
-    return `Locked · Top 3 on ${top3}/${mainMoreNeed} missions to unlock more`;
+    return `Locked · Top 3 on ${top3}/${mainMoreNeed} Summer missions to unlock more`;
   }
   return 'Locked';
 }

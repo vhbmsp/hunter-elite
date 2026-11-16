@@ -27,15 +27,22 @@ const BULLET_LIVE = asset('bullet-live.svg');
 const BULLET_SPENT = asset('bullet-spent.svg');
 const MAGAZINE = asset('magazine.svg');
 
-const PACK_SECTIONS = [
+const HOME_LEDE =
+  'Choose a tutorial, a pack, or free play. Top 10 boards are saved in this browser.';
+
+const MENU_PACKS = [
   {
-    id: 'main',
-    title: 'Hunting grounds',
-    filter: (mission) => mission.pack === 'main',
+    id: 'summer',
+    title: 'Summer pack',
+    heading: 'Summer pack',
+    lede: 'Main hunting missions. Clear objectives before time runs out.',
+    filter: (mission) => mission.pack === 'main' && !mission.tutorial,
   },
   {
     id: 'winter',
-    title: 'Winter',
+    title: 'Winter pack',
+    heading: 'Winter pack',
+    lede: 'Snow missions unlocked after Top 3 placements on the Summer pack.',
     filter: (mission) => mission.pack === 'winter',
   },
 ];
@@ -45,11 +52,16 @@ function compassCardinal(deg) {
   return ['N', 'E', 'S', 'W'][Math.floor(wedge)];
 }
 
+function findPack(packId) {
+  return MENU_PACKS.find((pack) => pack.id === packId) ?? null;
+}
+
 export class Hud {
   constructor(handlers = {}, root = document) {
     this.handlers = handlers;
     this.ready = false;
     this.mission = null;
+    this.menuView = { kind: 'home' };
     this.scoreboard = handlers.scoreboard ?? null;
     const $ = (id) => root.getElementById(id);
     this.el = {
@@ -73,10 +85,16 @@ export class Hud {
       timer: $('timer'),
       rule: $('rule'),
       menu: $('menu'),
+      menuHeading: $('menu-heading'),
+      menuLede: $('menu-lede'),
       menuStatus: $('menu-status'),
       unlockProgress: $('unlock-progress'),
+      menuHome: $('menu-home'),
+      menuNav: $('menu-nav'),
+      freePlayHint: $('free-play-hint'),
+      menuPack: $('menu-pack'),
       missionList: $('mission-list'),
-      freePlay: $('free-play'),
+      menuBack: $('menu-back'),
       results: $('results'),
       kicker: $('results-kicker'),
       heading: $('results-heading'),
@@ -107,7 +125,7 @@ export class Hud {
     this._pendingResults = null;
     this.minimap = this.el.minimap ? new Minimap(this.el.minimap) : null;
     this.instructionsText = this.el.instructions.textContent;
-    this.renderMissions();
+    this.renderMenu();
     this.bindOverlay();
     this.setOverlay(true);
     this.setAmmo(WEAPON.magazineSize, WEAPON.spareMagazines, false);
@@ -129,16 +147,39 @@ export class Hud {
     const progress = unlockProgress(board);
     const lines = [];
     if (!progress.mainMoreUnlocked) {
-      lines.push(`Top 3 on ${progress.top3}/${progress.mainMoreNeed} missions to unlock more`);
+      lines.push(`Top 3 on ${progress.top3}/${progress.mainMoreNeed} Summer missions to unlock more`);
     } else if (!progress.winterUnlocked) {
-      lines.push('Main pack fully unlocked');
+      lines.push('Summer pack fully unlocked');
       lines.push(`Top 3 on ${progress.top3}/${progress.winterNeed} for Winter`);
     } else {
-      lines.push('Main pack and Winter unlocked');
-      lines.push(`Top 3 on ${progress.top3} main missions`);
+      lines.push('Summer pack and Winter unlocked');
+      lines.push(`Top 3 on ${progress.top3} Summer missions`);
     }
     el.hidden = false;
     el.textContent = lines.join(' · ');
+  }
+
+  packMissions(pack) {
+    return MISSIONS.map((mission, index) => ({ mission, index })).filter(({ mission }) =>
+      pack.filter(mission),
+    );
+  }
+
+  packProgressLabel(pack) {
+    const board = this.scoreboard;
+    const entries = this.packMissions(pack);
+    const total = entries.length;
+    const unlocked = entries.filter(({ mission }) => isMissionUnlocked(mission, board)).length;
+    const completed = entries.filter(({ mission }) => board?.isCompleted(mission.id)).length;
+    if (pack.id === 'winter' && board && !winterUnlocked(board)) {
+      const { top3, winterNeed } = unlockProgress(board);
+      return `Locked · Top 3 on ${top3}/${winterNeed} Summer missions`;
+    }
+    return `${completed}/${total} completed · ${unlocked}/${total} unlocked`;
+  }
+
+  tutorialIndex() {
+    return MISSIONS.findIndex((mission) => mission.tutorial);
   }
 
   renderMissionRow(mission, index) {
@@ -206,36 +247,152 @@ export class Hud {
     return row;
   }
 
-  renderMissions() {
-    const list = this.el.missionList;
-    list.replaceChildren();
+  renderHomeNavButton({ title, meta, locked = false, play = false, onClick }) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = play ? 'menu-nav-button menu-nav-play' : 'menu-nav-button';
+    button.disabled = !this.ready;
+    if (locked) button.classList.add('is-locked');
+
+    const titleEl = document.createElement('span');
+    titleEl.className = 'menu-nav-title';
+    titleEl.textContent = title;
+
+    const metaEl = document.createElement('span');
+    metaEl.className = 'menu-nav-meta';
+    metaEl.textContent = meta;
+
+    button.append(titleEl, metaEl);
+
+    if (!play) {
+      const chevron = document.createElement('span');
+      chevron.className = 'menu-nav-chevron';
+      chevron.setAttribute('aria-hidden', 'true');
+      chevron.textContent = '›';
+      button.append(chevron);
+    }
+
+    button.addEventListener('click', () => {
+      button.blur();
+      onClick?.();
+    });
+    return button;
+  }
+
+  renderHome() {
+    this.menuView = { kind: 'home' };
+    this.el.menuHome.hidden = false;
+    this.el.menuPack.hidden = true;
+    this.el.menuHeading.textContent = 'Missions';
+    this.el.menuLede.textContent = HOME_LEDE;
+    if (this.el.freePlayHint) this.el.freePlayHint.hidden = false;
     this.renderUnlockProgress();
 
-    for (const section of PACK_SECTIONS) {
-      const pack = document.createElement('section');
-      pack.className = 'mission-pack';
-      pack.dataset.pack = section.id;
+    const nav = this.el.menuNav;
+    nav.replaceChildren();
 
-      const heading = document.createElement('h2');
-      heading.className = 'mission-pack-title';
-      heading.textContent = section.title;
-      pack.append(heading);
+    const tutorialIndex = this.tutorialIndex();
+    const tutorial = tutorialIndex >= 0 ? MISSIONS[tutorialIndex] : null;
+    if (tutorial) {
+      const board = this.scoreboard;
+      const completed = board?.isCompleted(tutorial.id);
+      const best = completed ? board.playerBest(tutorial.id) : null;
+      const tutorialMeta = best
+        ? `Completed · Your best ${formatScore(best.score)}`
+        : completed
+          ? 'Completed · Practice fire, reload, and towers'
+          : 'Practice fire, reload, and tower switches';
 
-      if (section.id === 'winter' && this.scoreboard && !winterUnlocked(this.scoreboard)) {
-        const hint = document.createElement('p');
-        hint.className = 'mission-pack-hint';
-        const { top3, winterNeed } = unlockProgress(this.scoreboard);
-        hint.textContent = `Locked until Top 3 on ${top3}/${winterNeed} main hunting missions (tutorial does not count).`;
-        pack.append(hint);
-      }
+      const tutorialRow = document.createElement('div');
+      tutorialRow.className = 'mission-row';
 
-      MISSIONS.forEach((mission, index) => {
-        if (!section.filter(mission)) return;
-        pack.append(this.renderMissionRow(mission, index));
+      const start = this.renderHomeNavButton({
+        title: 'Tutorial mission',
+        meta: tutorialMeta,
+        play: true,
+        onClick: () => this.handlers.onMission?.(tutorialIndex),
+      });
+      start.classList.toggle('is-completed', Boolean(completed));
+
+      const topTen = document.createElement('button');
+      topTen.type = 'button';
+      topTen.className = 'mission-board';
+      topTen.textContent = 'Top 10';
+      topTen.disabled = !this.ready;
+      topTen.title = `View top 10 for ${tutorial.title}`;
+      topTen.addEventListener('click', (event) => {
+        event.stopPropagation();
+        topTen.blur();
+        this.showBoardView(tutorial);
       });
 
-      list.append(pack);
+      tutorialRow.append(start, topTen);
+      nav.append(tutorialRow);
     }
+
+    for (const pack of MENU_PACKS) {
+      const locked = pack.id === 'winter' && this.scoreboard && !winterUnlocked(this.scoreboard);
+      nav.append(
+        this.renderHomeNavButton({
+          title: pack.title,
+          meta: this.packProgressLabel(pack),
+          locked,
+          onClick: () => this.openPack(pack.id),
+        }),
+      );
+    }
+
+    nav.append(
+      this.renderHomeNavButton({
+        title: 'Free play',
+        meta: 'Sandbox · random summer or winter terrain',
+        play: true,
+        onClick: () => this.handlers.onFreePlay?.(),
+      }),
+    );
+  }
+
+  openPack(packId) {
+    const pack = findPack(packId);
+    if (!pack) return;
+    this.menuView = { kind: 'pack', packId: pack.id };
+    this.renderPack(pack);
+  }
+
+  renderPack(pack) {
+    this.el.menuHome.hidden = true;
+    this.el.menuPack.hidden = false;
+    this.el.menuHeading.textContent = pack.heading;
+    this.el.menuLede.textContent = pack.lede;
+    if (this.el.freePlayHint) this.el.freePlayHint.hidden = true;
+    this.renderUnlockProgress();
+
+    const list = this.el.missionList;
+    list.replaceChildren();
+
+    if (pack.id === 'winter' && this.scoreboard && !winterUnlocked(this.scoreboard)) {
+      const hint = document.createElement('p');
+      hint.className = 'mission-pack-hint';
+      const { top3, winterNeed } = unlockProgress(this.scoreboard);
+      hint.textContent = `Locked until Top 3 on ${top3}/${winterNeed} Summer hunting missions (tutorial does not count).`;
+      list.append(hint);
+    }
+
+    for (const { mission, index } of this.packMissions(pack)) {
+      list.append(this.renderMissionRow(mission, index));
+    }
+  }
+
+  renderMenu() {
+    if (this.menuView.kind === 'pack') {
+      const pack = findPack(this.menuView.packId);
+      if (pack) {
+        this.renderPack(pack);
+        return;
+      }
+      this.menuView = { kind: 'home' };
+    }
+    this.renderHome();
   }
 
   bindOverlay() {
@@ -250,9 +407,10 @@ export class Hud {
       overlay.addEventListener('click', stop);
       overlay.addEventListener('mousedown', stop);
     }
-    this.el.freePlay.addEventListener('click', () => {
-      this.el.freePlay.blur();
-      this.handlers.onFreePlay?.();
+    this.el.menuBack.addEventListener('click', () => {
+      this.el.menuBack.blur();
+      this.menuView = { kind: 'home' };
+      this.renderMenu();
     });
     this.el.retry.addEventListener('click', () => {
       this.el.retry.blur();
@@ -393,19 +551,20 @@ export class Hud {
   hideBoardView() {
     this.el.boardView.hidden = true;
     this.el.menu.hidden = false;
-    this.renderMissions();
+    this.renderMenu();
     this.setOverlay(true);
   }
 
   showMenu() {
     this.mission = null;
+    this.menuView = { kind: 'home' };
     this.hideTransientOverlays();
     this.el.menu.hidden = false;
     this.el.results.hidden = true;
     this.el.objective.hidden = true;
     this.el.timer.hidden = true;
     this.el.rule.hidden = true;
-    this.renderMissions();
+    this.renderMenu();
     this.setOverlay(true);
   }
 
@@ -589,8 +748,7 @@ export class Hud {
     this.ready = true;
     this.el.instructions.textContent = this.instructionsText;
     this.el.menuStatus.hidden = true;
-    this.el.freePlay.disabled = false;
-    this.renderMissions();
+    this.renderMenu();
   }
 
   setError(message) {
