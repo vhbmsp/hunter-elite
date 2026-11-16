@@ -37,17 +37,24 @@
         <div id="ammo-status" class="ammo-status" hidden>Reloading…</div>
       </div>
     </div>
-    <div id="compass" aria-label="Aiming compass">
-      <div class="compass-bezel">
-        <div class="compass-notch"></div>
-        <div id="compass-dial" class="compass-dial">
-          <span class="compass-mark n">N</span>
-          <span class="compass-mark e">E</span>
-          <span class="compass-mark s">S</span>
-          <span class="compass-mark w">W</span>
+    <div id="nav-cluster">
+      <div id="compass" aria-label="Aiming compass">
+        <div class="compass-bezel">
+          <div class="compass-notch"></div>
+          <div id="compass-dial" class="compass-dial">
+            <span class="compass-mark n">N</span>
+            <span class="compass-mark e">E</span>
+            <span class="compass-mark s">S</span>
+            <span class="compass-mark w">W</span>
+          </div>
         </div>
+        <div id="compass-label">N</div>
       </div>
-      <div id="compass-label">N</div>
+      <div id="minimap" aria-label="Hunting ground map">
+        <canvas id="minimap-trees" width="132" height="132" aria-hidden="true"></canvas>
+        <div id="minimap-stands"></div>
+        <div id="minimap-player" aria-hidden="true"></div>
+      </div>
     </div>
     <div id="instructions">Click to aim · Hold RMB for scope · Scroll or +/- to change scope zoom · LMB or Space to shoot · R to reload · A / S / D switch stand · Q quit · Shoot a supply crate for a spare mag and points</div>
     <div id="menu" class="overlay">

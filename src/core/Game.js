@@ -120,13 +120,17 @@ export class Game {
   }
 
   syncCompass() {
-    this.hud.setCompass(this.player.getHeading());
+    const pos = this.player.camera.position;
+    this.hud.setCompass(this.player.getHeading(), pos.x, pos.z);
   }
 
   async load() {
     await this.assets.loadAll([...AnimalManager.modelUrls(), ...environmentModelUrls()]);
 
     this.world.populate(this.assets);
+    this.hud.initMinimap(this.world.treePositions ?? []);
+    this.hud.setStand(STANDS[this.world.activeIndex]?.label ?? STANDS[DEFAULT_STAND_INDEX].label);
+    this.syncCompass();
     this.animals.init(this.assets);
     this.animals.spawnInitial();
 

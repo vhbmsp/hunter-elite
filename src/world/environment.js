@@ -115,6 +115,7 @@ function pickSpot(heightfield, kind, placed) {
 /**
  * Scatters one scenery kind on the terrain and returns one InstancedMesh per
  * model part, so e.g. 70 trees of 4 models render in ~10 draw calls.
+ * Also returns the ground x/z spots used for placement (for the HUD minimap).
  */
 function scatterInstanced(heightfield, assets, kindName, kind) {
   const templates = kind.models.map((url) => prepareTemplate(assets.get(url)));
@@ -161,22 +162,25 @@ function scatterInstanced(heightfield, assets, kindName, kind) {
       meshes.push(mesh);
     }
   });
-  return meshes;
+  return { meshes, placed };
 }
 
 /**
  * Builds all scenery. `solids` are the meshes that stop bullets (trees,
- * rocks, logs); bushes are visual cover only.
+ * rocks, logs); bushes are visual cover only. `treePositions` is the static
+ * ground x/z list used by the HUD minimap.
  */
 export function createEnvironment(heightfield, assets) {
   const group = new THREE.Group();
   group.name = 'environment';
   const solids = [];
+  const treePositions = [];
 
   for (const [name, kind] of Object.entries(ENVIRONMENT)) {
-    const meshes = scatterInstanced(heightfield, assets, name, kind);
+    const { meshes, placed } = scatterInstanced(heightfield, assets, name, kind);
     group.add(...meshes);
     if (kind.solid) solids.push(...meshes);
+    if (name === 'trees') treePositions.push(...placed);
   }
-  return { group, solids };
+  return { group, solids, treePositions };
 }
