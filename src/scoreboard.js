@@ -374,4 +374,21 @@ export class Scoreboard {
     this.save();
     return rank;
   }
+
+  /** Restore every Top 10 board to per-mission defaults. */
+  resetHighscores() {
+    this.boards.clear();
+    for (const mission of MISSIONS) this.ensure(mission.id);
+    this.save();
+  }
+
+  /**
+   * Clear completion markers and player bests so unlock progress returns to
+   * the starting locked state. Tutorial / Free Play stay available.
+   */
+  resetMissions() {
+    this.completed.clear();
+    this.playerBests.clear();
+    this.save();
+  }
 }

@@ -489,14 +489,37 @@ body {
 }
 
 #menu-nav,
-#mission-list {
+#mission-list,
+#settings-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-#menu-pack .actions {
+#menu-pack .actions,
+#menu-settings .actions {
   margin-top: 14px;
+}
+
+.lock-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 0.4em;
+  vertical-align: -0.15em;
+  color: #b7aa98;
+}
+
+.lock-icon {
+  display: block;
+  width: 0.95em;
+  height: 0.95em;
+}
+
+.menu-nav-button.is-locked .lock-icon-wrap,
+.mission.is-locked .lock-icon-wrap {
+  color: #c4b49a;
 }
 
 .menu-nav-button {
@@ -536,6 +559,8 @@ body {
 
 .menu-nav-title {
   grid-column: 1;
+  display: inline-flex;
+  align-items: center;
   color: #d7b56d;
   font-size: 15px;
   font-weight: 600;
@@ -635,6 +660,8 @@ body {
 
 .mission-title {
   grid-column: 1;
+  display: inline-flex;
+  align-items: center;
   color: #d7b56d;
   font-size: 12px;
   font-weight: 600;
