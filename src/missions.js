@@ -5,7 +5,8 @@
 //
 // Each hunting mission sets `fauna` so only that habitat's species spawn.
 // Tutorial has no fauna (orchard only). Free play uses FREE_PLAY_FAUNA in config.
-// Ten hunting missions + tutorial = eleven entries total.
+// Main pack: tutorial + 10 hunting missions. Winter pack: 5 snow missions.
+// Unlock gates: see unlocks.js (tutorial never counts toward top-3 thresholds).
 
 export const MISSION_PENALTY = 50;
 
@@ -31,6 +32,7 @@ const SPECIES_LABEL = {
 export const MISSIONS = [
   {
     id: 'tutorial-orchard',
+    pack: 'main',
     title: 'Tutorial',
     objective: 'Shoot all 20 apples',
     species: 'apple',
@@ -44,6 +46,7 @@ export const MISSIONS = [
   },
   {
     id: 'valley-deer',
+    pack: 'main',
     title: 'Valley deer',
     objective: '2 deer over 70 m',
     species: 'deer',
@@ -58,6 +61,7 @@ export const MISSIONS = [
   },
   {
     id: 'brush-foxes',
+    pack: 'main',
     title: 'Brush foxes',
     objective: '3 foxes over 40 m',
     species: 'fox',
@@ -72,6 +76,7 @@ export const MISSIONS = [
   },
   {
     id: 'ridge-goats',
+    pack: 'main',
     title: 'Ridge goats',
     objective: '2 goats over 60 m',
     species: 'goat',
@@ -86,6 +91,7 @@ export const MISSIONS = [
   },
   {
     id: 'timber-wolves',
+    pack: 'main',
     title: 'Timber wolves',
     objective: '1 wolf over 75 m',
     species: 'wolf',
@@ -100,6 +106,7 @@ export const MISSIONS = [
   },
   {
     id: 'timber-bear',
+    pack: 'main',
     title: 'Timber bear',
     objective: '1 bear over 85 m',
     species: 'bear',
@@ -114,6 +121,7 @@ export const MISSIONS = [
   },
   {
     id: 'mountain-cougar',
+    pack: 'main',
     title: 'Mountain cougar',
     objective: '1 cougar over 80 m',
     species: 'cougar',
@@ -128,6 +136,7 @@ export const MISSIONS = [
   },
   {
     id: 'wetland-birds',
+    pack: 'main',
     title: 'Wetland birds',
     objective: '2 geese over 35 m',
     species: 'goose',
@@ -143,6 +152,7 @@ export const MISSIONS = [
   },
   {
     id: 'upland-birds',
+    pack: 'main',
     title: 'Upland birds',
     objective: '2 turkeys over 45 m',
     species: 'turkey',
@@ -157,6 +167,7 @@ export const MISSIONS = [
   },
   {
     id: 'trophy-moose',
+    pack: 'main',
     title: 'Trophy moose',
     objective: '1 moose over 100 m',
     species: 'moose',
@@ -171,6 +182,7 @@ export const MISSIONS = [
   },
   {
     id: 'plains-bison',
+    pack: 'main',
     title: 'Plains bison',
     objective: '1 Premium bison over 90 m',
     species: 'bison',
@@ -182,6 +194,87 @@ export const MISSIONS = [
     fauna: {
       // Rare premium bison with a Premium pig distractor and open-plain ungulates.
       ground: { bison: 2, boar: 2, elk: 2, deer: 3 },
+    },
+  },
+  // Winter pack — cooler palette when theme is winter; unlocks after top 3 on 6 main missions.
+  {
+    id: 'snowdrift-moose',
+    pack: 'winter',
+    theme: 'winter',
+    title: 'Snowdrift moose',
+    objective: '1 moose over 95 m',
+    species: 'moose',
+    singular: 'moose',
+    article: 'a',
+    count: 1,
+    minDistance: 95,
+    seconds: 150,
+    fauna: {
+      ground: { moose: 3, elk: 2, wolf: 2, rabbit: 2 },
+    },
+  },
+  {
+    id: 'frost-wolves',
+    pack: 'winter',
+    theme: 'winter',
+    title: 'Frost wolves',
+    objective: '1 wolf over 70 m',
+    species: 'wolf',
+    singular: 'wolf',
+    article: 'a',
+    count: 1,
+    minDistance: 70,
+    seconds: 135,
+    fauna: {
+      ground: { wolf: 5, fox: 3, deer: 2 },
+    },
+  },
+  {
+    id: 'ice-ridge-goats',
+    pack: 'winter',
+    theme: 'winter',
+    title: 'Ice ridge goats',
+    objective: '2 goats over 55 m',
+    species: 'goat',
+    singular: 'goat',
+    article: 'a',
+    count: 2,
+    minDistance: 55,
+    seconds: 145,
+    fauna: {
+      ground: { goat: 6, rabbit: 3, fox: 2 },
+    },
+  },
+  {
+    id: 'winter-elk',
+    pack: 'winter',
+    theme: 'winter',
+    title: 'Winter elk',
+    objective: '1 elk over 85 m',
+    species: 'elk',
+    singular: 'elk',
+    article: 'an',
+    count: 1,
+    minDistance: 85,
+    seconds: 140,
+    fauna: {
+      ground: { elk: 4, moose: 2, deer: 2, wolf: 1 },
+    },
+  },
+  {
+    id: 'northern-foxes',
+    pack: 'winter',
+    theme: 'winter',
+    title: 'Northern foxes',
+    objective: '3 foxes over 35 m',
+    species: 'fox',
+    singular: 'fox',
+    article: 'a',
+    count: 3,
+    minDistance: 35,
+    seconds: 130,
+    fauna: {
+      ground: { fox: 7, rabbit: 4, wolf: 2 },
     },
   },
 ];

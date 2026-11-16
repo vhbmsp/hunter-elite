@@ -49,25 +49,34 @@ The first level is a **Tutorial**: three apple trees in the valley between the s
 
 On hunting levels, a shot counts only when it hits the objective species strictly farther than the minimum. Shooting any other animal, or the right species that is not over that distance, subtracts 50 from the score and does not count. The animal still drops. The HUD states that rule for the level you are on. Misses and shots stopped by cover are not that penalty; they do count as shots when accuracy is hits / shots. Shooting a supply crate is not that penalty and does not count toward the objective. It does count as a shot fired.
 
-The results screen shows success or failure, accuracy (hits / shots), the longest shot that hit an animal (or apple in the tutorial), time left and time used, the level score, how many penalties landed, and that mission’s top 10 board. Each mission starts with the same default names and scores from 2000 down to 200 (`src/scoreboard.js`). Boards live in memory only and reset when the page reloads. If a finished run beats 10th place, the game asks for a player name before showing results. Cleared missions are marked Completed on the mission list with **your** best cleared score and name (not the default board #1). Each mission row also has a **Top 10** button to open that board from the menu.
+The results screen shows success or failure, accuracy (hits / shots), the longest shot that hit an animal (or apple in the tutorial), time left and time used, the level score, how many penalties landed, and that mission’s top 10 board. Each mission starts with the same default names and scores from 2000 down to 200 (`src/scoreboard.js`). Boards, cleared flags, and your best scores are saved in the browser (`localStorage` keys `hunter-elite.boards`, `hunter-elite.completed`, `hunter-elite.playerBests`) so they survive reload. If a finished run beats 10th place, the game asks for a player name before showing results. Cleared missions are marked Completed on the mission list with **your** best cleared score and name (not the default board #1). Each mission row also has a **Top 10** button to open that board from the menu.
+
+### Unlocks
+
+Tutorial is always open and **does not** count toward unlock thresholds. The main pack starts with the first five hunting missions unlocked. Place **top 3** (ranks 1–3) on at least **3** main hunting missions to unlock the other five. Place top 3 on **6** main hunting missions to unlock the **Winter** pack (all five snow missions). The menu shows unlock progress and a separate Winter section; locked rows are not startable and show the unlock hint. Rules live in `src/unlocks.js`.
 
 Free play skips missions and keeps the sandbox: no timer, no objective, and no wrong-target penalty. Each mission and each free-play start loads a full rifle (5 rounds and 5 spare magazines). The bolt, reload, and muzzle flash are unchanged.
 
-| Level | Objective | Time | Habitat fauna |
-| --- | --- | --- | --- |
-| Tutorial | Shoot all 20 apples | 5:00 | none (orchard only) |
-| Valley deer | 2 deer over 70 m | 2:30 | deer, fox, rabbit |
-| Brush foxes | 3 foxes over 40 m | 2:30 | fox, rabbit, deer |
-| Ridge goats | 2 goats over 60 m | 2:30 | goat, rabbit, fox |
-| Timber wolves | 1 wolf over 75 m | 2:15 | wolf, fox, deer |
-| Timber bear | 1 bear over 85 m | 2:00 | bear, wolf, deer |
-| Mountain cougar | 1 cougar over 80 m | 2:10 | cougar, goat, deer |
-| Wetland birds | 2 geese over 35 m | 1:40 | ducks, geese, rabbit |
-| Upland birds | 2 turkeys over 45 m | 2:15 | turkey, pheasant, rabbit |
-| Trophy moose | 1 moose over 100 m | 2:30 | moose, elk, deer |
-| Plains bison | 1 Premium bison over 90 m | 2:20 | bison, Premium pig, elk, deer |
+| Level | Pack | Objective | Time | Habitat fauna |
+| --- | --- | --- | --- | --- |
+| Tutorial | Main | Shoot all 20 apples | 5:00 | none (orchard only) |
+| Valley deer | Main | 2 deer over 70 m | 2:30 | deer, fox, rabbit |
+| Brush foxes | Main | 3 foxes over 40 m | 2:30 | fox, rabbit, deer |
+| Ridge goats | Main | 2 goats over 60 m | 2:30 | goat, rabbit, fox |
+| Timber wolves | Main | 1 wolf over 75 m | 2:15 | wolf, fox, deer |
+| Timber bear | Main | 1 bear over 85 m | 2:00 | bear, wolf, deer |
+| Mountain cougar | Main | 1 cougar over 80 m | 2:10 | cougar, goat, deer |
+| Wetland birds | Main | 2 geese over 35 m | 1:40 | ducks, geese, rabbit |
+| Upland birds | Main | 2 turkeys over 45 m | 2:15 | turkey, pheasant, rabbit |
+| Trophy moose | Main | 1 moose over 100 m | 2:30 | moose, elk, deer |
+| Plains bison | Main | 1 Premium bison over 90 m | 2:20 | bison, Premium pig, elk, deer |
+| Snowdrift moose | Winter | 1 moose over 95 m | 2:30 | moose, elk, wolf, rabbit |
+| Frost wolves | Winter | 1 wolf over 70 m | 2:15 | wolf, fox, deer |
+| Ice ridge goats | Winter | 2 goats over 55 m | 2:25 | goat, rabbit, fox |
+| Winter elk | Winter | 1 elk over 85 m | 2:20 | elk, moose, deer, wolf |
+| Northern foxes | Winter | 3 foxes over 35 m | 2:10 | fox, rabbit, wolf |
 
-Each hunting mission uses its own `fauna` spawn table in `src/missions.js` — not every species appears on every map. Free play uses `FREE_PLAY_FAUNA` in `src/config.js`. Elk uses the stag model; moose is a Gobkit eland stand-in; Premium pig is the boar species; Premium bison is a Quaternius bull stand-in.
+Each hunting mission uses its own `fauna` spawn table in `src/missions.js` — not every species appears on every map. Winter missions use the shared ground with a cooler snow theme (`src/theme.js`). Free play uses `FREE_PLAY_FAUNA` in `src/config.js`. Elk uses the stag model; moose is a Gobkit eland stand-in; Premium pig is the boar species; Premium bison is a Quaternius bull stand-in.
 
 ## Supply drops
 

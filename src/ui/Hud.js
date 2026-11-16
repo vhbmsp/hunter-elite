@@ -11,12 +11,32 @@ import {
   penaltyRule,
   speciesLabel,
 } from '../missions.js';
+import {
+  isMissionUnlocked,
+  nextUnlockedIndex,
+  unlockHint,
+  unlockProgress,
+  winterUnlocked,
+} from '../unlocks.js';
 
 const asset = (file) => `${import.meta.env.BASE_URL}ui/${file}`;
 
 const BULLET_LIVE = asset('bullet-live.svg');
 const BULLET_SPENT = asset('bullet-spent.svg');
 const MAGAZINE = asset('magazine.svg');
+
+const PACK_SECTIONS = [
+  {
+    id: 'main',
+    title: 'Hunting grounds',
+    filter: (mission) => mission.pack === 'main',
+  },
+  {
+    id: 'winter',
+    title: 'Winter',
+    filter: (mission) => mission.pack === 'winter',
+  },
+];
 
 function compassCardinal(deg) {
   const wedge = ((deg + 45) % 360) / 90;
@@ -51,6 +71,7 @@ export class Hud {
       rule: $('rule'),
       menu: $('menu'),
       menuStatus: $('menu-status'),
+      unlockProgress: $('unlock-progress'),
       missionList: $('mission-list'),
       freePlay: $('free-play'),
       results: $('results'),
@@ -88,65 +109,124 @@ export class Hud {
     this.setAmmo(WEAPON.magazineSize, WEAPON.spareMagazines, false);
   }
 
+  renderUnlockProgress() {
+    const el = this.el.unlockProgress;
+    if (!el) return;
+    const board = this.scoreboard;
+    if (!board) {
+      el.hidden = true;
+      return;
+    }
+    const progress = unlockProgress(board);
+    const lines = [];
+    if (!progress.mainMoreUnlocked) {
+      lines.push(`Top 3 on ${progress.top3}/${progress.mainMoreNeed} missions to unlock more`);
+    } else if (!progress.winterUnlocked) {
+      lines.push('Main pack fully unlocked');
+      lines.push(`Top 3 on ${progress.top3}/${progress.winterNeed} for Winter`);
+    } else {
+      lines.push('Main pack and Winter unlocked');
+      lines.push(`Top 3 on ${progress.top3} main missions`);
+    }
+    el.hidden = false;
+    el.textContent = lines.join(' · ');
+  }
+
+  renderMissionRow(mission, index) {
+    const board = this.scoreboard;
+    const unlocked = isMissionUnlocked(mission, board);
+    const row = document.createElement('div');
+    row.className = 'mission-row';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'mission';
+    button.disabled = !this.ready || !unlocked;
+    if (!unlocked) button.classList.add('is-locked');
+
+    const title = document.createElement('span');
+    title.className = 'mission-title';
+    title.textContent = mission.title;
+
+    const objective = document.createElement('span');
+    objective.className = 'mission-objective';
+    objective.textContent = mission.objective;
+
+    const time = document.createElement('span');
+    time.className = 'mission-time';
+    time.textContent = formatClock(mission.seconds);
+
+    button.append(title, objective, time);
+
+    if (!unlocked) {
+      const lock = document.createElement('span');
+      lock.className = 'mission-lock-hint';
+      lock.textContent = unlockHint(mission, board);
+      button.append(lock);
+    } else if (board?.isCompleted(mission.id)) {
+      button.classList.add('is-completed');
+      // Show the local player's best cleared run, not the default board #1.
+      const best = board.playerBest(mission.id);
+      const meta = document.createElement('span');
+      meta.className = 'mission-meta';
+      meta.textContent = best
+        ? `Completed · Your best ${formatScore(best.score)} · ${best.name}`
+        : 'Completed';
+      button.append(meta);
+    }
+
+    button.addEventListener('click', () => {
+      if (!unlocked) return;
+      button.blur();
+      this.handlers.onMission?.(index);
+    });
+
+    const topTen = document.createElement('button');
+    topTen.type = 'button';
+    topTen.className = 'mission-board';
+    topTen.textContent = 'Top 10';
+    topTen.disabled = !this.ready;
+    topTen.title = `View top 10 for ${mission.title}`;
+    topTen.addEventListener('click', (event) => {
+      event.stopPropagation();
+      topTen.blur();
+      this.showBoardView(mission);
+    });
+
+    row.append(button, topTen);
+    return row;
+  }
+
   renderMissions() {
     const list = this.el.missionList;
     list.replaceChildren();
-    const board = this.scoreboard;
-    MISSIONS.forEach((mission, index) => {
-      const row = document.createElement('div');
-      row.className = 'mission-row';
+    this.renderUnlockProgress();
 
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'mission';
-      button.disabled = !this.ready;
+    for (const section of PACK_SECTIONS) {
+      const pack = document.createElement('section');
+      pack.className = 'mission-pack';
+      pack.dataset.pack = section.id;
 
-      const title = document.createElement('span');
-      title.className = 'mission-title';
-      title.textContent = mission.title;
+      const heading = document.createElement('h2');
+      heading.className = 'mission-pack-title';
+      heading.textContent = section.title;
+      pack.append(heading);
 
-      const objective = document.createElement('span');
-      objective.className = 'mission-objective';
-      objective.textContent = mission.objective;
-
-      const time = document.createElement('span');
-      time.className = 'mission-time';
-      time.textContent = formatClock(mission.seconds);
-
-      button.append(title, objective, time);
-
-      if (board?.isCompleted(mission.id)) {
-        button.classList.add('is-completed');
-        // Show the local player's best cleared run, not the default board #1.
-        const best = board.playerBest(mission.id);
-        const meta = document.createElement('span');
-        meta.className = 'mission-meta';
-        meta.textContent = best
-          ? `Completed · Your best ${formatScore(best.score)} · ${best.name}`
-          : 'Completed';
-        button.append(meta);
+      if (section.id === 'winter' && this.scoreboard && !winterUnlocked(this.scoreboard)) {
+        const hint = document.createElement('p');
+        hint.className = 'mission-pack-hint';
+        const { top3, winterNeed } = unlockProgress(this.scoreboard);
+        hint.textContent = `Locked until Top 3 on ${top3}/${winterNeed} main hunting missions (tutorial does not count).`;
+        pack.append(hint);
       }
 
-      button.addEventListener('click', () => {
-        button.blur();
-        this.handlers.onMission?.(index);
+      MISSIONS.forEach((mission, index) => {
+        if (!section.filter(mission)) return;
+        pack.append(this.renderMissionRow(mission, index));
       });
 
-      const topTen = document.createElement('button');
-      topTen.type = 'button';
-      topTen.className = 'mission-board';
-      topTen.textContent = 'Top 10';
-      topTen.disabled = !this.ready;
-      topTen.title = `View top 10 for ${mission.title}`;
-      topTen.addEventListener('click', (event) => {
-        event.stopPropagation();
-        topTen.blur();
-        this.showBoardView(mission);
-      });
-
-      row.append(button, topTen);
-      list.append(row);
-    });
+      list.append(pack);
+    }
   }
 
   bindOverlay() {
@@ -444,6 +524,10 @@ export class Hud {
     const pending = this._pendingResults;
     if (!pending) return;
     this._pendingResults = null;
+    const index = MISSIONS.findIndex((mission) => mission.id === pending.mission.id);
+    if (pending.success && index >= 0) {
+      pending.hasNext = nextUnlockedIndex(index, this.scoreboard) >= 0;
+    }
     this.showResults(pending);
   }
 
