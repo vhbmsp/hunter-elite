@@ -47,6 +47,18 @@ export function themeForMission(mission) {
   return THEMES[mission?.theme] ?? THEMES.default;
 }
 
+/** Free play rolls summer (default) or winter each start — mission packs keep fixed themes. */
+export const FREE_PLAY_THEMES = ['default', 'winter'];
+
+export function pickFreePlayTheme(random = Math.random) {
+  const index = random() < 0.5 ? 0 : 1;
+  return FREE_PLAY_THEMES[index];
+}
+
+export function themeLabel(themeId) {
+  return themeId === 'winter' ? 'Winter' : 'Summer';
+}
+
 /**
  * Applies sky, fog, and light colors. Expects the lights created by createScene().
  */

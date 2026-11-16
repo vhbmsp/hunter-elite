@@ -11,6 +11,7 @@ import {
   penaltyRule,
   speciesLabel,
 } from '../missions.js';
+import { themeLabel } from '../theme.js';
 import {
   isMissionUnlocked,
   nextUnlockedIndex,
@@ -414,12 +415,13 @@ export class Hud {
     this.setOverlay(false);
   }
 
-  showFreePlay() {
+  showFreePlay(themeId = 'default') {
     this.mission = null;
     this.hideTransientOverlays();
     this.el.menu.hidden = true;
     this.el.results.hidden = true;
-    this.el.objective.hidden = true;
+    this.el.objective.hidden = false;
+    this.el.objective.textContent = `Season: ${themeLabel(themeId)}`;
     this.el.timer.hidden = true;
     this.el.rule.hidden = true;
     this.setOverlay(false);

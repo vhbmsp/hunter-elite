@@ -8,7 +8,7 @@ import { MISSION_PENALTY, MISSIONS, gradeKill } from '../missions.js';
 import { Player } from '../player/Player.js';
 import { Scope } from '../player/Scope.js';
 import { Scoreboard } from '../scoreboard.js';
-import { applySceneTheme, themeForMission } from '../theme.js';
+import { applySceneTheme, pickFreePlayTheme, themeForMission } from '../theme.js';
 import { Hud } from '../ui/Hud.js';
 import { isMissionUnlocked, nextUnlockedIndex } from '../unlocks.js';
 import { ImpactEffects } from '../weapons/impacts.js';
@@ -35,6 +35,7 @@ export class Game {
     this.longest = 0;
     this.penalties = 0;
     this.resumeMode = null;
+    this.freePlayTheme = 'default';
     this.scoreboard = new Scoreboard();
 
     this.renderer = createRenderer(container);
@@ -190,7 +191,7 @@ export class Game {
     if (resume === 'mission' && this.mission) {
       this.hud.showMission(this.mission, this.progress, this.timeLeft);
     } else {
-      this.hud.showFreePlay();
+      this.hud.showFreePlay(this.freePlayTheme);
     }
   }
 
@@ -233,8 +234,9 @@ export class Game {
     this.mission = null;
     this.missionIndex = -1;
     this.timeLeft = 0;
+    this.freePlayTheme = pickFreePlayTheme();
     this.beginRound();
-    this.hud.showFreePlay();
+    this.hud.showFreePlay(this.freePlayTheme);
   }
 
   /** Fresh score, rifle, and animals. Bolt, reload, and muzzle behavior are untouched. */
@@ -249,7 +251,9 @@ export class Game {
     this.hud.setDistance(null);
     this.rifle.reset();
     this.orchard.clear();
-    this.applyTheme(this.mission?.theme ?? 'default');
+    const themeId =
+      this.mission?.theme ?? (this.mode === 'free' ? this.freePlayTheme : 'default');
+    this.applyTheme(themeId);
     this.applyStandFacing(DEFAULT_STAND_INDEX);
     if (this.mission?.tutorial) {
       // Quiet range: orchard only — practice fire, reload, and tower switches.
