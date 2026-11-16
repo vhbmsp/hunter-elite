@@ -74,8 +74,11 @@ export class Game {
       this.sfx,
       this.loot,
       this.orchard,
+      this.scene,
     );
     this.rifle.onChange = () => this.syncAmmo();
+    this.rifle.onImpact = (result) => this.resolveShot(result);
+    this.rifle.shouldResolve = () => this.playing;
     this.syncAmmo();
     this.syncCompass();
 
@@ -174,6 +177,7 @@ export class Game {
     this.mode = 'quit-confirm';
     this.player.unlock();
     this.scope.setActive(false);
+    this.rifle.clearProjectiles();
     this.hud.showQuitConfirm();
   }
 
@@ -200,6 +204,7 @@ export class Game {
     this.resumeMode = null;
     this.player.unlock();
     this.scope.setActive(false);
+    this.rifle.clearProjectiles();
     this.loot.stop();
     this.orchard.clear();
     this.applyTheme('default');
@@ -277,13 +282,18 @@ export class Game {
     if (!this.playing) return;
     const result = this.rifle.fire();
     if (result.type === 'locked' || result.type === 'empty') return;
+    // Round is in flight; kill / cover / loot / miss resolve in resolveShot.
+    if (this.mode === 'mission') this.shots += 1;
+  }
+
+  /** Apply scoring and HUD feedback when a ballistic round hits or expires. */
+  resolveShot(result) {
+    if (!this.playing) return;
     if (result.type === 'loot') {
-      if (this.mode === 'mission') this.shots += 1;
       this.noteLoot(result);
       return;
     }
     if (result.type === 'apple') {
-      if (this.mode === 'mission') this.shots += 1;
       this.noteApple(result);
       return;
     }
@@ -291,7 +301,6 @@ export class Game {
       this.noteFreeShot(result);
       return;
     }
-    this.shots += 1;
     if (result.type === 'kill') {
       this.hits += 1;
       if (result.distance > this.longest) this.longest = result.distance;
@@ -363,6 +372,7 @@ export class Game {
     this.resumeMode = null;
     this.player.unlock();
     this.scope.setActive(false);
+    this.rifle.clearProjectiles();
     this.loot.stop();
     this.orchard.clear();
     this.hud.presentMissionEnd({

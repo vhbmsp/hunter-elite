@@ -173,6 +173,29 @@ export const WEAPON = {
     lightDistance: 9,
     lightDecay: 2,
   },
+  // Projectile flight (no wind). Short/medium shots stay close to the old
+  // hitscan feel; beyond ~100 m gravity drop needs holdover.
+  ballistics: {
+    // Initial speed along the aim ray (m/s).
+    muzzleVelocity: 320,
+    // Downward acceleration (m/s²). World +Y is up.
+    gravity: 9.81,
+    // Despawn after this path length (m) if nothing was hit.
+    maxRange: 400,
+    // Max segment length per collision substep so fast rounds do not tunnel.
+    maxStep: 1.5,
+    trail: {
+      // Ring buffer of world points along the flight path.
+      maxPoints: 56,
+      color: 0xffd089,
+      tipColor: 0xfff6d0,
+      tipSize: 0.11,
+      // Opacity while the round is in flight.
+      opacity: 0.85,
+      // Seconds of fade after impact or max-range miss, then despawn.
+      fadeTime: 0.4,
+    },
+  },
 };
 
 export const IMPACTS = {

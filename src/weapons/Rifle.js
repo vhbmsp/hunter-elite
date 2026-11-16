@@ -1,9 +1,9 @@
 import { WEAPON } from '../config.js';
-import { hitscan } from './ballistics.js';
+import { Projectile, aimFromCamera } from './ballistics.js';
 import { MuzzleFlash } from './muzzle.js';
 
 export class Rifle {
-  constructor(camera, animals, world, impacts, sfx, loot, orchard = null) {
+  constructor(camera, animals, world, impacts, sfx, loot, orchard = null, scene = null) {
     this.camera = camera;
     this.animals = animals;
     this.world = world;
@@ -11,12 +11,18 @@ export class Rifle {
     this.sfx = sfx;
     this.loot = loot;
     this.orchard = orchard;
+    this.scene = scene;
     this.rounds = WEAPON.magazineSize;
     this.spares = WEAPON.spareMagazines;
     this.boltTimer = 0;
     this.reloadTimer = 0;
     this.muzzle = new MuzzleFlash(camera);
+    this.projectiles = [];
     this.onChange = null;
+    /** Called when an in-flight round resolves: kill / apple / loot / cover / miss. */
+    this.onImpact = null;
+    /** When set, late impacts are ignored unless this returns true (e.g. still playing). */
+    this.shouldResolve = null;
   }
 
   get reloading() {
@@ -35,16 +41,20 @@ export class Rifle {
       if (this.reloadTimer <= 0) this.finishReload();
     }
     this.muzzle.update();
+
+    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      const round = this.projectiles[i];
+      if (!round.update(delta)) {
+        round.dispose();
+        this.projectiles.splice(i, 1);
+      }
+    }
   }
 
   /**
    * Fires one shot when the rifle is ready and the magazine has a round.
-   * Returns { type: 'kill', animal, zone, distance, points },
-   * { type: 'apple', distance, points } for a tutorial orchard hit,
-   * { type: 'loot', distance, points, magazines } when a supply crate is hit,
-   * { type: 'cover', surface, distance } when terrain or solid scenery stops it,
-   * { type: 'miss' }, { type: 'locked' } during the bolt cycle or a reload,
-   * or { type: 'empty' } for a dry click.
+   * The round travels with gravity; scoring and cover resolve on impact via
+   * `onImpact`. Returns { type: 'fired' }, { type: 'locked' }, or { type: 'empty' }.
    */
   fire() {
     if (!this.ready) return { type: 'locked' };
@@ -52,6 +62,7 @@ export class Rifle {
       this.sfx.empty();
       return { type: 'empty' };
     }
+    if (!this.scene) return { type: 'locked' };
 
     this.rounds -= 1;
     this.boltTimer = WEAPON.boltCycle;
@@ -60,42 +71,71 @@ export class Rifle {
     this.muzzle.flash();
     this.onChange?.();
 
+    const { origin, direction } = aimFromCamera(this.camera);
+    const round = new Projectile(
+      this.scene,
+      origin.clone(),
+      direction.clone(),
+      () => this.shotQuery(),
+      (hit) => this.resolveHit(hit),
+    );
+    this.projectiles.push(round);
+    return { type: 'fired' };
+  }
+
+  shotQuery() {
     const orchardSolids = this.orchard?.active ? this.orchard.solids : [];
-    const hit = hitscan(this.camera, {
+    return {
       targets: this.animals.liveHitboxes(),
       solids: [...(this.world.solids ?? []), ...orchardSolids],
       heightfield: this.world.heightfield,
       loot: this.loot.hitMeshes(),
       apples: this.orchard?.hitMeshes() ?? [],
-    });
-    if (!hit) return { type: 'miss' };
+    };
+  }
 
-    if (hit.kind === 'loot') {
+  /**
+   * Turn a ballistics hit (or null miss) into the same result shapes the HUD
+   * and scoring already understand.
+   */
+  resolveHit(hit) {
+    if (this.shouldResolve && !this.shouldResolve()) return;
+
+    let result;
+    if (!hit) {
+      result = { type: 'miss' };
+    } else if (hit.kind === 'loot') {
       const grant = hit.object.userData.crate?.collect() ?? null;
-      if (!grant) return { type: 'miss' };
-      this.grantSpares(grant.magazines);
-      this.sfx.pickup();
-      return { type: 'loot', distance: hit.distance, points: grant.points, magazines: grant.magazines };
-    }
-
-    if (hit.kind === 'apple') {
+      if (!grant) {
+        result = { type: 'miss' };
+      } else {
+        this.grantSpares(grant.magazines);
+        this.sfx.pickup();
+        result = { type: 'loot', distance: hit.distance, points: grant.points, magazines: grant.magazines };
+      }
+    } else if (hit.kind === 'apple') {
       const apple = hit.object.userData.apple;
-      if (!apple?.collect()) return { type: 'miss' };
-      this.sfx.pickup();
-      const points = scoreFor(hit.distance, 'body', 1);
-      return { type: 'apple', distance: hit.distance, points };
-    }
-
-    if (hit.kind === 'cover') {
+      if (!apple?.collect()) {
+        result = { type: 'miss' };
+      } else {
+        this.sfx.pickup();
+        const points = scoreFor(hit.distance, 'body', 1);
+        result = { type: 'apple', distance: hit.distance, points };
+      }
+    } else if (hit.kind === 'cover') {
       this.impacts.spawn(hit.point, hit.normal, hit.surface);
-      return { type: 'cover', surface: hit.surface, distance: hit.distance };
+      result = { type: 'cover', surface: hit.surface, distance: hit.distance };
+    } else {
+      const { animal, zone } = hit.object.userData;
+      if (!animal.kill()) {
+        result = { type: 'miss' };
+      } else {
+        this.sfx.death();
+        const points = scoreFor(hit.distance, zone, animal.scoreMultiplier ?? 1);
+        result = { type: 'kill', animal, zone, distance: hit.distance, points, premium: Boolean(animal.premium) };
+      }
     }
-
-    const { animal, zone } = hit.object.userData;
-    if (!animal.kill()) return { type: 'miss' };
-    this.sfx.death();
-    const points = scoreFor(hit.distance, zone, animal.scoreMultiplier ?? 1);
-    return { type: 'kill', animal, zone, distance: hit.distance, points, premium: Boolean(animal.premium) };
+    this.onImpact?.(result);
   }
 
   /**
@@ -128,13 +168,19 @@ export class Rifle {
     this.onChange?.();
   }
 
-  /** Seats a full magazine and restores spare magazines. Bolt, reload, and muzzle behavior stay the same. */
+  /** Seats a full magazine and restores spare magazines. Clears in-flight rounds. */
   reset() {
+    this.clearProjectiles();
     this.rounds = WEAPON.magazineSize;
     this.spares = WEAPON.spareMagazines;
     this.boltTimer = 0;
     this.reloadTimer = 0;
     this.onChange?.();
+  }
+
+  clearProjectiles() {
+    for (const round of this.projectiles) round.dispose();
+    this.projectiles.length = 0;
   }
 }
 
