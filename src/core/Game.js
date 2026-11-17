@@ -1,4 +1,4 @@
-import { DEFAULT_STAND_INDEX, FACING_YAW, STANDS } from '../config.js';
+import { DEFAULT_STAND_INDEX, FACING_YAW, STANDS, WEAPON } from '../config.js';
 import { Sfx } from '../audio/Sfx.js';
 import { AnimalManager } from '../entities/AnimalManager.js';
 import { AppleOrchard } from '../entities/AppleOrchard.js';
@@ -11,6 +11,7 @@ import { Scoreboard } from '../scoreboard.js';
 import { applySceneTheme, pickFreePlayTheme, themeForMission } from '../theme.js';
 import { Hud } from '../ui/Hud.js';
 import { isMissionUnlocked, nextUnlockedIndex } from '../unlocks.js';
+import { aimFromCamera, castRay } from '../weapons/ballistics.js';
 import { ImpactEffects } from '../weapons/impacts.js';
 import { Rifle } from '../weapons/Rifle.js';
 import { environmentModelUrls } from '../world/environment.js';
@@ -98,6 +99,8 @@ export class Game {
 
   update(delta) {
     this.syncCompass();
+    this.syncScopedAimDistance();
+    this.syncMinimapGoals();
     if (this.mode !== 'mission') return;
     this.timeLeft -= delta;
     if (this.timeLeft <= 0) {
@@ -107,6 +110,32 @@ export class Game {
       return;
     }
     this.hud.setTimer(this.timeLeft);
+  }
+
+  /**
+   * While ADS, range the screen-centre aim ray (same query as ballistics) and
+   * show metres on the left board. Hip-fire leaves the line for shot feedback.
+   */
+  syncScopedAimDistance() {
+    if (!this.playing || !this.scope.active) return;
+    const { origin, direction } = aimFromCamera(this.player.camera);
+    const hit = castRay(origin, direction, WEAPON.ballistics.maxRange, this.rifle.shotQuery());
+    this.hud.setAimDistance(hit ? hit.distance : null);
+  }
+
+  /**
+   * Plot alive objective targets on the minimap. Free Play has no goal list.
+   */
+  syncMinimapGoals() {
+    if (this.mode !== 'mission' || !this.mission) {
+      this.hud.setMinimapGoals([]);
+      return;
+    }
+    if (this.mission.tutorial) {
+      this.hud.setMinimapGoals(this.orchard.goalPositions());
+      return;
+    }
+    this.hud.setMinimapGoals(this.animals.goalPositions(this.mission.species));
   }
 
   /** Place the camera on a stand and yaw it to that stand's facing (north = -Z). */
@@ -212,6 +241,7 @@ export class Game {
     this.loot.stop();
     this.orchard.clear();
     this.applyTheme('default');
+    this.hud.setMinimapGoals([]);
     this.hud.showMenu();
   }
 
