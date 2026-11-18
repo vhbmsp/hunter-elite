@@ -14,6 +14,8 @@ export function createScene() {
 
   const sunLight = new THREE.DirectionalLight(sun.color, sun.intensity);
   sunLight.position.set(...sun.position);
+  // Target must live in the scene so Game.syncSunShadow can recentre the frustum.
+  scene.add(sunLight.target);
   if (RENDERER.shadows) {
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.set(sun.shadowMapSize, sun.shadowMapSize);
@@ -22,6 +24,7 @@ export function createScene() {
     cam.far = sun.shadowFar;
     cam.left = cam.bottom = -sun.shadowExtent;
     cam.right = cam.top = sun.shadowExtent;
+    // Bias knobs live in LIGHTS.sun (retuned with grass receiveShadow in Phase 3).
     sunLight.shadow.bias = sun.shadowBias;
     sunLight.shadow.normalBias = sun.shadowNormalBias;
   }

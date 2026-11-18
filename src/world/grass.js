@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GRASS, STANDS } from '../config.js';
+import { GRASS, RENDERER, STANDS } from '../config.js';
 import { CANOPY_VERTEX_FROM_IP, injectCanopyShadeFragment } from './canopyShade.js';
 
 /**
@@ -39,19 +39,50 @@ function densityBands() {
   return GRASS.enhanced ? (GRASS.densityBandsEnhanced ?? GRASS.densityBands) : GRASS.densityBands;
 }
 
+/**
+ * Phase 3: thin double-sided blades miss PCF when shadow coords use tip depth.
+ * Sample the sun map at the tuft root (instance origin) so trunks/hills ground
+ * the whole blade the same way the terrain is grounded.
+ */
+const GRASS_ROOT_SHADOW_VERTEX = `#ifdef USE_SHADOWMAP
+	// Slightly above the sunk root so depth compares with the ground shadow map.
+	vec4 grassShadowWorld = modelMatrix * instanceMatrix * vec4( 0.0, 0.2, 0.0, 1.0 );
+	#if NUM_DIR_LIGHT_SHADOWS > 0
+	#pragma unroll_loop_start
+	for ( int i = 0; i < NUM_DIR_LIGHT_SHADOWS; i ++ ) {
+		vDirectionalShadowCoord[ i ] = directionalShadowMatrix[ i ] * grassShadowWorld;
+	}
+	#pragma unroll_loop_end
+	#endif
+#endif`;
+
+/**
+ * Lambert already multiplies directDiffuse by PCF; ambient/hemi stay lit and wash
+ * out contact shadows on thin blades. Re-scale the whole shade by the root PCF
+ * factor so trunks/hills visibly ground the meadow (Phase 3).
+ */
+const GRASS_SHADOW_INDIRECT_FRAGMENT = `
+#if NUM_DIR_LIGHT_SHADOWS > 0
+{
+	DirectionalLightShadow dls = directionalLightShadows[ 0 ];
+	float grassShadow = getShadow( directionalShadowMap[ 0 ], dls.shadowMapSize, dls.shadowIntensity, dls.shadowBias, dls.shadowRadius, vDirectionalShadowCoord[ 0 ] );
+	outgoingLight *= mix( uShadowIndirect, 1.0, grassShadow );
+}
+#endif`;
+
 /** Lambert grass: wind sway, optional tip/noise tint, view-weighted scale, canopy shade. */
 function createGrassMaterial(uniforms, canopyUniforms) {
   const enhanced = GRASS.enhanced;
   const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
-  material.customProgramCacheKey = () => `grass-p1-${enhanced ? 'on' : 'off'}-canopy`;
+  material.customProgramCacheKey = () => `grass-p1-${enhanced ? 'on' : 'off'}-canopy-shadow-indirect`;
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     if (canopyUniforms) injectCanopyShadeFragment(shader, canopyUniforms);
     const canopyAssign = canopyUniforms ? `\n        ${CANOPY_VERTEX_FROM_IP}` : '';
 
     const windUniforms = enhanced
-      ? 'uniform float uTime;\nuniform float uWind;\nuniform float uWind2;\nuniform vec3 uEye;\nuniform float uViewNear;\nuniform float uViewFar;\nuniform float uViewMinScale;\nuniform float uTipBoost;\nuniform float uTipBaseMul;\nuniform vec3 uNoiseTint;\nuniform float uNoiseTintStrength;'
-      : 'uniform float uTime;\nuniform float uWind;';
+      ? 'uniform float uTime;\nuniform float uWind;\nuniform float uWind2;\nuniform vec3 uEye;\nuniform float uViewNear;\nuniform float uViewFar;\nuniform float uViewMinScale;\nuniform float uTipBoost;\nuniform float uTipBaseMul;\nuniform vec3 uNoiseTint;\nuniform float uNoiseTintStrength;\nuniform float uShadowIndirect;'
+      : 'uniform float uTime;\nuniform float uWind;\nuniform float uShadowIndirect;';
 
     // Tip/noise run in begin_vertex (after color_vertex) so instance XZ (`ip`) is in scope.
     // Canopy shade samples the same ground XZ (`ip`) — multiply happens in the fragment after tint.
@@ -83,7 +114,19 @@ function createGrassMaterial(uniforms, canopyUniforms) {
 
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>\n${windUniforms}`)
-      .replace('#include <begin_vertex>', windBody);
+      .replace('#include <begin_vertex>', windBody)
+      .replace('#include <shadowmap_vertex>', GRASS_ROOT_SHADOW_VERTEX);
+
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+uniform float uShadowIndirect;`,
+      )
+      .replace(
+        'vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;',
+        `vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;${GRASS_SHADOW_INDIRECT_FRAGMENT}`,
+      );
   };
   return material;
 }
@@ -140,6 +183,8 @@ export class Grass {
       uTipBaseMul: { value: GRASS.tipBaseMul ?? 0.92 },
       uNoiseTint: { value: new THREE.Color(GRASS.noiseTint ?? 0x3b6b1f) },
       uNoiseTintStrength: { value: GRASS.noiseTintStrength ?? 0.22 },
+      // Phase 3: ambient/hemi scale under PCF (1 = wash out, 0 = black in shadow).
+      uShadowIndirect: { value: GRASS.shadowIndirect ?? 0.38 },
     };
     this.group = new THREE.Group();
     this.group.name = 'grass';
@@ -194,7 +239,9 @@ export class Grass {
         const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
         matrices.forEach((m, i) => mesh.setMatrixAt(i, m));
         mesh.computeBoundingSphere();
-        mesh.receiveShadow = false;
+        // Phase 3: receive sun PCF shadows; do not cast (thousands of tufts).
+        mesh.receiveShadow = RENDERER.shadows;
+        mesh.castShadow = false;
         mesh.matrixAutoUpdate = false;
         this.group.add(mesh);
         this.instanceCount += matrices.length;

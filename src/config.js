@@ -112,12 +112,14 @@ export const LIGHTS = {
     intensity: 1.6,
     position: [50, 80, 30],
     shadowMapSize: 2048,
-    // Half-size of the shadow frustum (m), centred on the player.
+    // Half-size of the shadow frustum (m), centred on the player (see Game.syncSunShadow).
     shadowExtent: 110,
     shadowNear: 0.5,
     shadowFar: 300,
-    shadowBias: -0.0005,
-    shadowNormalBias: 0.03,
+    // Phase 3: mild bias for terrain + grass root-shadow sampling (avoids acne without
+    // lifting contact shadows off the meadow). Grass samples PCF at the tuft root.
+    shadowBias: -0.0004,
+    shadowNormalBias: 0.02,
   },
 };
 
@@ -515,6 +517,9 @@ export const GRASS = {
   wind: { strength: 0.12, speed: 1.6, octave2: 0.45 },
   // Phase 1 blade richness. Set false to A/B legacy density + single-band wind.
   enhanced: true,
+  // Phase 3: whole-shade multiplier in full PCF shadow (on top of Lambert direct).
+  // Lower = clearer trunk contact on blades; keep modest so canopy bake does not mud.
+  shadowIndirect: 0.32,
 };
 
 // Phase 2 (Homing transfer): static soft canopy shade bake from treePositions.
@@ -528,8 +533,9 @@ export const CANOPY_SHADE = {
   radiusFromHeight: 0.42,
   // Occupancy falloff: full shade inside softStart*radius, smooth to rim.
   softStart: 0.28,
-  // Max darken under full occupancy (0–1). Keep modest before Phase 3 sun shadows.
-  strength: 0.42,
+  // Max darken under full occupancy (0–1). Lowered for Phase 3 so bake + PCF
+  // sun shadows under crowns do not mud the meadow.
+  strength: 0.32,
 };
 
 // Supply crates. One drop per session on a timer, drifts down under a

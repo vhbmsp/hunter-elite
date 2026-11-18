@@ -1,4 +1,4 @@
-import { DEFAULT_STAND_INDEX, FACING_YAW, STANDS, WEAPON } from '../config.js';
+import { DEFAULT_STAND_INDEX, FACING_YAW, LIGHTS, RENDERER, STANDS, WEAPON } from '../config.js';
 import { Sfx } from '../audio/Sfx.js';
 import { AnimalManager } from '../entities/AnimalManager.js';
 import { AppleOrchard } from '../entities/AppleOrchard.js';
@@ -97,7 +97,25 @@ export class Game {
     return this.mode === 'mission' || this.mode === 'free';
   }
 
+  /**
+   * Keep the sun shadow frustum centred on the player (LIGHTS.sun.shadowExtent).
+   * LIGHTS.sun.position is treated as an offset from the look target so the sun
+   * angle stays stable while Tower S (~120 m from origin) stays inside the map.
+   */
+  syncSunShadow() {
+    if (!RENDERER.shadows) return;
+    const sun = this.lights?.sun;
+    if (!sun) return;
+    const [ox, oy, oz] = LIGHTS.sun.position;
+    const { x, z } = this.player.camera.position;
+    sun.target.position.set(x, 0, z);
+    sun.position.set(x + ox, oy, z + oz);
+    sun.target.updateMatrixWorld();
+    sun.updateMatrixWorld();
+  }
+
   update(delta) {
+    this.syncSunShadow();
     this.syncCompass();
     this.syncScopedAimDistance();
     this.syncMinimapGoals();
