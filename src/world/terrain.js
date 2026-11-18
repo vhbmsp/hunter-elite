@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
 import { PLAYER, RENDERER, TERRAIN } from '../config.js';
 import { createCanopyShadeUniforms, injectCanopyShade } from './canopyShade.js';
+import {
+  applyOutdoorLitMaterialFlags,
+  createOutdoorLitUniforms,
+  injectOutdoorLit,
+} from './outdoorLit.js';
 
 // Deterministic PRNG so the same seed always yields the same terrain.
 export function mulberry32(seed) {
@@ -179,12 +184,16 @@ export class Heightfield {
     geometry.computeBoundingSphere();
 
     this.canopyUniforms ??= createCanopyShadeUniforms();
+    this.outdoorUniforms ??= createOutdoorLitUniforms();
     const material = new THREE.MeshLambertMaterial({ vertexColors: true });
-    material.customProgramCacheKey = () => 'terrain-canopy-shade';
+    applyOutdoorLitMaterialFlags(material);
+    material.customProgramCacheKey = () => 'terrain-canopy-outdoor-lit';
     material.onBeforeCompile = (shader) => {
       injectCanopyShade(shader, this.canopyUniforms, {
         worldXZExpr: '(modelMatrix * vec4(transformed, 1.0)).xz',
       });
+      // Bounce + sky fill + haze + light turf micro-variation (Phase 4).
+      injectOutdoorLit(shader, this.outdoorUniforms, { turf: true });
     };
     const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow = RENDERER.shadows;
@@ -198,6 +207,12 @@ export class Heightfield {
   /** Shared canopy shade uniforms (empty map until World bakes after trees). */
   setCanopyShade(uniforms) {
     this.canopyUniforms = uniforms;
+    if (this.mesh?.material) this.mesh.material.needsUpdate = true;
+  }
+
+  /** Shared outdoor lit uniforms (synced from live lights / fog / theme). */
+  setOutdoorLit(uniforms) {
+    this.outdoorUniforms = uniforms;
     if (this.mesh?.material) this.mesh.material.needsUpdate = true;
   }
 

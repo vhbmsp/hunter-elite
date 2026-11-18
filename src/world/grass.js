@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import { GRASS, RENDERER, STANDS } from '../config.js';
 import { CANOPY_VERTEX_FROM_IP, injectCanopyShadeFragment } from './canopyShade.js';
+import {
+  OUTDOOR_VERTEX_COMMON_DECL,
+  OUTDOOR_VERTEX_FROM_TRANSFORMED,
+  applyOutdoorLitMaterialFlags,
+  injectOutdoorHazeTail,
+  injectOutdoorLitFragment,
+} from './outdoorLit.js';
 
 /**
  * One tuft of crossed tapered blades (one triangle each), 1 m tall in model
@@ -70,22 +77,28 @@ const GRASS_SHADOW_INDIRECT_FRAGMENT = `
 }
 #endif`;
 
-/** Lambert grass: wind sway, optional tip/noise tint, view-weighted scale, canopy shade. */
-function createGrassMaterial(uniforms, canopyUniforms) {
+/** Lambert grass: wind sway, tip/noise tint, canopy shade, outdoor bounce/haze. */
+function createGrassMaterial(uniforms, canopyUniforms, outdoorUniforms) {
   const enhanced = GRASS.enhanced;
   const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
-  material.customProgramCacheKey = () => `grass-p1-${enhanced ? 'on' : 'off'}-canopy-shadow-indirect`;
+  applyOutdoorLitMaterialFlags(material);
+  material.customProgramCacheKey = () =>
+    `grass-p1-${enhanced ? 'on' : 'off'}-canopy-shadow-outdoor-lit`;
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     if (canopyUniforms) injectCanopyShadeFragment(shader, canopyUniforms);
-    const canopyAssign = canopyUniforms ? `\n        ${CANOPY_VERTEX_FROM_IP}` : '';
 
-    const windUniforms = enhanced
+    const canopyAssign = canopyUniforms ? `\n        ${CANOPY_VERTEX_FROM_IP}` : '';
+    const outdoorAssign = outdoorUniforms ? `\n        ${OUTDOOR_VERTEX_FROM_TRANSFORMED}` : '';
+
+    const outdoorVertexDecls = outdoorUniforms ? `\n${OUTDOOR_VERTEX_COMMON_DECL}` : '';
+    const windUniforms = (enhanced
       ? 'uniform float uTime;\nuniform float uWind;\nuniform float uWind2;\nuniform vec3 uEye;\nuniform float uViewNear;\nuniform float uViewFar;\nuniform float uViewMinScale;\nuniform float uTipBoost;\nuniform float uTipBaseMul;\nuniform vec3 uNoiseTint;\nuniform float uNoiseTintStrength;\nuniform float uShadowIndirect;'
-      : 'uniform float uTime;\nuniform float uWind;\nuniform float uShadowIndirect;';
+      : 'uniform float uTime;\nuniform float uWind;\nuniform float uShadowIndirect;') + outdoorVertexDecls;
 
     // Tip/noise run in begin_vertex (after color_vertex) so instance XZ (`ip`) is in scope.
     // Canopy shade samples the same ground XZ (`ip`) — multiply happens in the fragment after tint.
+    // Outdoor world pos/normal assigned after sway so haze tracks the blade tip softly.
     const windBody = enhanced
       ? `#include <begin_vertex>
         // Sway grows with height^2 so roots stay planted; phase varies per instance.
@@ -103,33 +116,50 @@ function createGrassMaterial(uniforms, canopyUniforms) {
         float tipH = clamp(position.y, 0.0, 1.0);
         vColor.rgb *= mix(uTipBaseMul, uTipBoost, tipH);
         float turfN = 0.5 + 0.5 * sin(ip.x * 0.09) * cos(ip.y * 0.11);
-        vColor.rgb = mix(vColor.rgb, uNoiseTint, turfN * uNoiseTintStrength * (1.0 - tipH * 0.55));${canopyAssign}`
+        vColor.rgb = mix(vColor.rgb, uNoiseTint, turfN * uNoiseTintStrength * (1.0 - tipH * 0.55));${canopyAssign}${outdoorAssign}`
       : `#include <begin_vertex>
         // Sway grows with height^2 so roots stay planted; phase varies per instance position.
         float sway = position.y * position.y;
         vec2 ip = vec2(instanceMatrix[3][0], instanceMatrix[3][2]);
         float w = sin(uTime * 1.7 + ip.x * 0.21 + ip.y * 0.13) + 0.45 * sin(uTime * 3.3 + ip.x * 0.7);
         transformed.x += w * uWind * sway;
-        transformed.z += w * 0.6 * uWind * sway;${canopyAssign}`;
+        transformed.z += w * 0.6 * uWind * sway;${canopyAssign}${outdoorAssign}`;
 
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>\n${windUniforms}`)
       .replace('#include <begin_vertex>', windBody)
       .replace('#include <shadowmap_vertex>', GRASS_ROOT_SHADOW_VERTEX);
 
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-uniform float uShadowIndirect;`,
-      )
-      .replace(
+    // Outdoor fragment only — vertex decls/assign already in windUniforms / windBody.
+    if (outdoorUniforms) injectOutdoorLitFragment(shader, outdoorUniforms, { vertex: false });
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      'void main() {',
+      `uniform float uShadowIndirect;
+void main() {`,
+    );
+
+    if (outdoorUniforms && shader.fragmentShader.includes(OUTDOOR_COMPOSE_ANCHOR)) {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        OUTDOOR_COMPOSE_ANCHOR,
+        `${OUTDOOR_COMPOSE_ANCHOR}${GRASS_SHADOW_INDIRECT_FRAGMENT}`,
+      );
+    } else {
+      shader.fragmentShader = shader.fragmentShader.replace(
         'vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;',
         `vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;${GRASS_SHADOW_INDIRECT_FRAGMENT}`,
       );
+    }
+
+    if (outdoorUniforms) injectOutdoorHazeTail(shader);
   };
   return material;
 }
+
+/** End of outdoor bounce `#if` block — splice grass root-PCF remap immediately after. */
+const OUTDOOR_COMPOSE_ANCHOR = `outgoingLight += diffuseColor.rgb * uBounceColor * uBounceStrength * down * sunH;
+}
+#endif`;
 
 const randomRange = ([min, max]) => min + Math.random() * (max - min);
 
@@ -168,7 +198,7 @@ function onStandPad(x, z) {
  * view-weighted scale, tip colour, second wind octave, and noise tint.
  */
 export class Grass {
-  constructor(heightfield, noise, canopyUniforms = null) {
+  constructor(heightfield, noise, canopyUniforms = null, outdoorUniforms = null) {
     const bands = densityBands();
     const sampleCeil = bands[0][1];
     this.uniforms = {
@@ -191,7 +221,7 @@ export class Grass {
     this.instanceCount = 0;
 
     const geometry = createTuftGeometry();
-    const material = createGrassMaterial(this.uniforms, canopyUniforms);
+    const material = createGrassMaterial(this.uniforms, canopyUniforms, outdoorUniforms);
     this.material = material;
     const outer = bands.at(-1)[0];
     const { chunkSize } = GRASS;
