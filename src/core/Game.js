@@ -433,6 +433,12 @@ export class Game {
     const mission = this.mission;
     const timeLeft = Math.max(0, this.timeLeft);
     const timeUsed = Math.max(0, mission.seconds - timeLeft);
+    // Success only: +1 per whole remaining second. Fail / timeout / free play: none.
+    let timeBonus = 0;
+    if (success && mission.seconds > 0) {
+      timeBonus = Math.floor(timeLeft + 1e-9);
+      this.score += timeBonus;
+    }
     this.mode = 'results';
     this.resumeMode = null;
     this.player.unlock();
@@ -449,6 +455,7 @@ export class Game {
       longest: this.longest,
       timeLeft,
       timeUsed,
+      timeBonus,
       score: this.score,
       penalties: this.penalties,
       hasNext: success && nextUnlockedIndex(this.missionIndex, this.scoreboard) >= 0,
