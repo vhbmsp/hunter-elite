@@ -682,14 +682,20 @@ export const LOOT = {
 export const TUTORIAL_ORCHARD = {
   // Same Quaternius deciduous crown used in the forest scatter (not pine).
   model: model('nature/tree-1.glb'),
-  // Target world height (m). Matches mid-range forest trees.
-  height: 8.5,
+  // Tall orchard silhouette so the crown fills the apple clusters (forest mid is 6–12 m).
+  height: 16,
   // Push the trunk into the ground a little (same idea as ENVIRONMENT.trees.sink).
-  sink: 0.3,
+  sink: 0.35,
   // Keep random scenery out of the firing lanes around the apple tree (m).
-  clearRadius: 18,
+  clearRadius: 24,
   appleRadius: 0.22,
   appleColor: 0xd12d1f,
+  // Nest fruit inside the foliage AABB (Leaves do not raycast, so hits still land).
+  // faceNest: depth along the stand-facing axis as a fraction of that AABB half-extent.
+  // sideSpread: lateral span as a fraction of the side half-extent (1 = full width).
+  appleFaceNest: 0.62,
+  appleSideSpread: 0.55,
+  appleLiftSpread: 0.4,
   // One tree; each face is a stand-visible apple cluster on that side of the crown.
   faces: [
     { stand: 'Tower S', apples: 8 },
