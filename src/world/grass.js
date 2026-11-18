@@ -259,6 +259,10 @@ uniform float uShadowIndirect;${outdoorVertexDecls}`;
         float eyeDist = length(ip - uEye.xz);
         float presence = 1.0 - smoothstep(uFadeStart, uFadeEnd, eyeDist);
         presence = pow(max(presence, 0.0), 0.55);
+        // Elevated stands: lawn blades vanish as pixels past ~15 m unless height grows a little.
+        // Keep near field short; lift mid-band silhouette without returning to jagged shards.
+        float midLift = mix(1.0, 2.15, smoothstep(8.0, 28.0, eyeDist));
+        transformed.y *= midLift;
         transformed.xyz *= presence;
         vColor.rgb *= mix(uTipBaseMul, uTipBoost, tipT);
         float turfN = 0.5 + 0.5 * sin(ip.x * 0.09) * cos(ip.y * 0.11);

@@ -571,17 +571,17 @@ export const GRASS = {
     count: 56000,
     // Disc radius (m) around patch centre (eye + mild look-ahead).
     radius: 56,
-    // Gradual presence taper (avoid a hard circular carpet edge).
-    fadeStart: 16,
+    // Gradual presence taper from close in (avoid a hard circular carpet edge).
+    fadeStart: 8,
     fadeEnd: 56,
     // Mild nudge along view — keep most samples eye-centred so tower bases stay covered.
     lookAhead: 6,
     // Fraction of samples around eye.xz (rest use look-ahead centre). Stops bald under stands.
     eyeSampleFraction: 0.55,
     // Put most blades in the mid annulus so hills 15–40 m out stay covered.
-    midBandFraction: 0.62,
-    midBandInner: 14,
-    midBandOuter: 42,
+    midBandFraction: 0.78,
+    midBandInner: 12,
+    midBandOuter: 46,
     // Refill when the eye moves this far (m) — avoids per-frame CPU churn.
     refillMove: 2.0,
     // Lawn-scale shape (metres) — shorter/less lean than the tall shard spike.
