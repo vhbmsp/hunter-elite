@@ -562,22 +562,26 @@ export const GRASS = {
   // Phase 3: whole-shade multiplier in full PCF shadow (on top of Lambert direct).
   // Lower = clearer trunk contact on blades; keep modest so canopy bake does not mud.
   shadowIndirect: 0.32,
-  // HE-54: camera-centred single-triangle blades (WebGL). Soft-GL budget ~40k.
+  // HE-54: camera-centred single-triangle blades (WebGL). Soft-GL budget ~56k.
   // Far meadow stays on chunked tufts; near field is blade-dominated (hybrid).
-  // Lawn-height blades, soft stand clearance (no hard bald disc), wide fade radius.
+  // Lawn-height blades, soft stand clearance, mid-band weighted spawn, gradual fade.
   nearBlades: {
     enabled: true,
     // Hard cap on InstancedMesh count (document in PR / HE-54 notes).
-    count: 48000,
+    count: 56000,
     // Disc radius (m) around patch centre (eye + mild look-ahead).
-    radius: 48,
-    // Shader presence falloff; blades shrink to 0 past fadeEnd.
-    fadeStart: 28,
-    fadeEnd: 48,
+    radius: 56,
+    // Gradual presence taper (avoid a hard circular carpet edge).
+    fadeStart: 16,
+    fadeEnd: 56,
     // Mild nudge along view — keep most samples eye-centred so tower bases stay covered.
-    lookAhead: 5,
+    lookAhead: 6,
     // Fraction of samples around eye.xz (rest use look-ahead centre). Stops bald under stands.
-    eyeSampleFraction: 0.62,
+    eyeSampleFraction: 0.55,
+    // Put most blades in the mid annulus so hills 15–40 m out stay covered.
+    midBandFraction: 0.62,
+    midBandInner: 14,
+    midBandOuter: 42,
     // Refill when the eye moves this far (m) — avoids per-frame CPU churn.
     refillMove: 2.0,
     // Lawn-scale shape (metres) — shorter/less lean than the tall shard spike.
@@ -598,8 +602,8 @@ export const GRASS = {
     padClearHard: 1.15,
     padClearSoft: 2.8,
     // Thin tuft spawn inside this stand-distance so hybrid does not double-cover.
-    tuftThinRadius: 36,
-    tuftThinFactor: 0.4,
+    tuftThinRadius: 40,
+    tuftThinFactor: 0.45,
   },
 };
 

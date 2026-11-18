@@ -255,10 +255,11 @@ uniform float uShadowIndirect;${outdoorVertexDecls}`;
           + uWind2 * sin(uTime * 6.1 + ip.x * 1.9 + ip.y * 1.4);
         transformed.x += w * uWind * sway;
         transformed.z += w * 0.55 * uWind * sway;
-        // Camera-centred presence: shrink away past fadeEnd (LOD without discard thrash).
+        // Gradual camera presence — soft power so mid hills don't drop as a hard carpet rim.
         float eyeDist = length(ip - uEye.xz);
         float presence = 1.0 - smoothstep(uFadeStart, uFadeEnd, eyeDist);
-        transformed.xyz *= max(presence, 0.0);
+        presence = pow(max(presence, 0.0), 0.55);
+        transformed.xyz *= presence;
         vColor.rgb *= mix(uTipBaseMul, uTipBoost, tipT);
         float turfN = 0.5 + 0.5 * sin(ip.x * 0.09) * cos(ip.y * 0.11);
         vColor.rgb = mix(vColor.rgb, uNoiseTint, turfN * uNoiseTintStrength * (1.0 - tipT * 0.5));${canopyAssign}${outdoorAssign}`;
@@ -467,8 +468,8 @@ export class Grass {
   }
 
   /**
-   * Refill the camera-centred blade disc. Mild centre bias; soft stand clearance
-   * (hard footing under the deck only — no sharp bald circle); skip steep slopes.
+   * Refill the camera-centred blade disc. Mid-band weighted spawn + gradual fade;
+   * soft stand clearance (tiny footing only — no sharp bald circle).
    */
   _refillNearBlades(eye, lookDir) {
     const blades = nearBladeCfg();
@@ -477,9 +478,12 @@ export class Grass {
 
     const radius = blades.radius;
     const lookAhead = blades.lookAhead ?? 0;
-    const eyeFrac = blades.eyeSampleFraction ?? 0.62;
-    const padHard = blades.padClearHard ?? 1.8;
-    const padSoft = blades.padClearSoft ?? Math.max(padHard + 1, 4.5);
+    const eyeFrac = blades.eyeSampleFraction ?? 0.55;
+    const midFrac = blades.midBandFraction ?? 0.62;
+    const midInner = blades.midBandInner ?? 14;
+    const midOuter = Math.min(radius, blades.midBandOuter ?? 42);
+    const padHard = blades.padClearHard ?? 1.15;
+    const padSoft = blades.padClearSoft ?? Math.max(padHard + 1, 2.8);
     // Eye-centred disc covers the tower base; ahead disc leads the view.
     const eyeCx = eye.x;
     const eyeCz = eye.z;
@@ -509,15 +513,23 @@ export class Grass {
     const budget = blades.count;
     // Oversample so pad/slope rejects still fill the budget.
     const attempts = budget * 4;
+    const midInnerSq = midInner * midInner;
+    const midOuterSq = midOuter * midOuter;
 
     for (let a = 0; a < attempts && written < budget; a++) {
       // Prefer eye-centred samples so stands don't go bald; rest lead the view.
       const useEye = Math.random() < eyeFrac;
       const cx = useEye ? eyeCx : aheadCx;
       const cz = useEye ? eyeCz : aheadCz;
-      // Mild centre bias (0.85) — keep mid-field filled out to fadeEnd.
-      const u = Math.random();
-      const r = radius * u ** 0.85;
+      // Mid annulus gets most of the budget (area-uniform in ring); else full disc.
+      let r;
+      if (Math.random() < midFrac) {
+        const t = Math.random();
+        r = Math.sqrt(midInnerSq + t * (midOuterSq - midInnerSq));
+      } else {
+        // Area-uniform disc (sqrt) — avoids centre carpet + empty mid hills.
+        r = radius * Math.sqrt(Math.random());
+      }
       const theta = Math.random() * Math.PI * 2;
       const x = cx + Math.cos(theta) * r;
       const z = cz + Math.sin(theta) * r;
