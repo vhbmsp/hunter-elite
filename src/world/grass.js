@@ -209,7 +209,7 @@ function createGrassMaterial(uniforms, canopyUniforms, outdoorUniforms) {
 function createBladeMaterial(uniforms, canopyUniforms, outdoorUniforms) {
   const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   applyOutdoorLitMaterialFlags(material);
-  material.customProgramCacheKey = () => 'grass-near-blade-v1-canopy-shadow-outdoor-lit';
+  material.customProgramCacheKey = () => 'grass-near-blade-v2-midlift-canopy-shadow-outdoor-lit';
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     if (canopyUniforms) injectCanopyShadeFragment(shader, canopyUniforms);
