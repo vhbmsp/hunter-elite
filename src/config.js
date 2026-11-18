@@ -574,16 +574,13 @@ export const GRASS = {
     // Gradual presence taper from close in (avoid a hard circular carpet edge).
     fadeStart: 8,
     fadeEnd: 56,
-    // Mild nudge along view — keep most samples eye-centred so tower bases stay covered.
-    lookAhead: 6,
-    // Fraction of samples around eye.xz (rest use look-ahead centre). Stops bald under stands.
-    eyeSampleFraction: 0.55,
+    // Patch is eye-centred only (no live look-ahead) so looking around never rebuilds.
     // Put most blades in the mid annulus so hills 15–40 m out stay covered.
     midBandFraction: 0.78,
     midBandInner: 12,
     midBandOuter: 46,
-    // Refill when the eye moves this far (m) — avoids per-frame CPU churn.
-    refillMove: 2.0,
+    // Rebuild only when the stand eye relocates this far (m). Looking / scoping must not refill.
+    refillMove: 8,
     // Lawn-scale shape (metres) — shorter/less lean than the tall shard spike.
     width: [0.055, 0.12],
     height: [0.12, 0.3],

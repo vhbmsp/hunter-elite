@@ -282,6 +282,23 @@ uniform float uShadowIndirect;${outdoorVertexDecls}`;
 
 const randomRange = ([min, max]) => min + Math.random() * (max - min);
 
+/** Deterministic PRNG so a rebuild at the same eye reseeds the same meadow (no flicker). */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function eyeSeed(x, z) {
+  // Stable across tiny float noise; coarse enough that one stand maps to one seed.
+  return (Math.round(x * 4) * 73856093) ^ (Math.round(z * 4) * 19349663);
+}
+
 /** Distance LOD relative to the nearest hunting stand (not only Tower S). */
 function nearestStandDist(x, z) {
   let best = Infinity;
@@ -372,9 +389,9 @@ export class Grass {
     this._bladeMesh = null;
     this._bladeParams = null;
     this._bladeDummy = new THREE.Object3D();
-    this._lastPatch = new THREE.Vector2(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
-    this._lookScratch = new THREE.Vector3();
-    this._patchCentre = new THREE.Vector2();
+    // Eye XZ of the last blade rebuild — looking around must not change this.
+    this._lastEye = new THREE.Vector2(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+    this._refillCount = 0;
 
     const geometry = createTuftGeometry();
     const material = createGrassMaterial(this.uniforms, canopyUniforms, outdoorUniforms);
@@ -472,41 +489,24 @@ export class Grass {
   }
 
   /**
-   * Refill the camera-centred blade disc. Mid-band weighted spawn + gradual fade;
-   * soft stand clearance (tiny footing only — no sharp bald circle).
+   * Rebuild the eye-centred blade disc. Call only on stand switch / substantial eye
+   * move / first fill — never while looking or scoping (that caused flicker).
+   * Positions are seeded from eye XZ so a rebuild at the same stand is identical.
    */
-  _refillNearBlades(eye, lookDir) {
+  _refillNearBlades(eye) {
     const blades = nearBladeCfg();
     const mesh = this._bladeMesh;
     if (!blades || !mesh) return;
 
     const radius = blades.radius;
-    const lookAhead = blades.lookAhead ?? 0;
-    const eyeFrac = blades.eyeSampleFraction ?? 0.55;
     const midFrac = blades.midBandFraction ?? 0.62;
     const midInner = blades.midBandInner ?? 14;
     const midOuter = Math.min(radius, blades.midBandOuter ?? 42);
     const padHard = blades.padClearHard ?? 1.15;
     const padSoft = blades.padClearSoft ?? Math.max(padHard + 1, 2.8);
-    // Eye-centred disc covers the tower base; ahead disc leads the view.
-    const eyeCx = eye.x;
-    const eyeCz = eye.z;
-    let aheadCx = eyeCx;
-    let aheadCz = eyeCz;
-    if (lookDir && lookAhead > 0) {
-      this._lookScratch.copy(lookDir);
-      this._lookScratch.y = 0;
-      if (this._lookScratch.lengthSq() > 1e-6) {
-        this._lookScratch.normalize();
-        aheadCx += this._lookScratch.x * lookAhead;
-        aheadCz += this._lookScratch.z * lookAhead;
-      }
-    }
-    // Track blended centre for refill-distance checks.
-    this._patchCentre.set(
-      eyeCx * eyeFrac + aheadCx * (1 - eyeFrac),
-      eyeCz * eyeFrac + aheadCz * (1 - eyeFrac),
-    );
+    const cx = eye.x;
+    const cz = eye.z;
+    const rnd = mulberry32(eyeSeed(cx, cz));
 
     const params = this._bladeParams;
     const dummy = this._bladeDummy;
@@ -515,53 +515,44 @@ export class Grass {
     const [l0, l1] = blades.lean;
     let written = 0;
     const budget = blades.count;
-    // Oversample so pad/slope rejects still fill the budget.
     const attempts = budget * 4;
     const midInnerSq = midInner * midInner;
     const midOuterSq = midOuter * midOuter;
+    const jitter = blades.faceCameraJitter ?? 0.55;
 
     for (let a = 0; a < attempts && written < budget; a++) {
-      // Prefer eye-centred samples so stands don't go bald; rest lead the view.
-      const useEye = Math.random() < eyeFrac;
-      const cx = useEye ? eyeCx : aheadCx;
-      const cz = useEye ? eyeCz : aheadCz;
       // Mid annulus gets most of the budget (area-uniform in ring); else full disc.
       let r;
-      if (Math.random() < midFrac) {
-        const t = Math.random();
+      if (rnd() < midFrac) {
+        const t = rnd();
         r = Math.sqrt(midInnerSq + t * (midOuterSq - midInnerSq));
       } else {
-        // Area-uniform disc (sqrt) — avoids centre carpet + empty mid hills.
-        r = radius * Math.sqrt(Math.random());
+        r = radius * Math.sqrt(rnd());
       }
-      const theta = Math.random() * Math.PI * 2;
+      const theta = rnd() * Math.PI * 2;
       const x = cx + Math.cos(theta) * r;
       const z = cz + Math.sin(theta) * r;
 
       const standDist = nearestStandXZ(x, z);
       if (standDist < padHard) continue;
-      // Soft ramp: thin density only in a tight rim (no multi-metre bald disc).
       let padScale = 1;
       if (standDist < padSoft) {
         padScale = (standDist - padHard) / Math.max(1e-6, padSoft - padHard);
         padScale = padScale * padScale * (3 - 2 * padScale);
-        if (Math.random() > 0.55 + 0.45 * padScale) continue;
+        if (rnd() > 0.55 + 0.45 * padScale) continue;
       }
 
       if (this.heightfield.getSlopeAt(x, z) > GRASS.maxSlope) continue;
 
       const tall =
         this.noise.noise(x / GRASS.patchScale + 11, z / GRASS.patchScale - 7) > GRASS.patchThreshold;
-      // Keep lawn height into the soft rim so nadir views from the stand still read blades.
       const hMul = tall ? 1 : 0.75;
       const widthMul = 1.2 - 0.2 * padScale;
-      const width = (w0 + Math.random() * (w1 - w0)) * widthMul;
-      const height = (h0 + Math.random() * (h1 - h0)) * hMul;
-      const lean = l0 + Math.random() * (l1 - l0);
-      // Face the eye: blade lies in local XY (normal +Z); yaw so +Z points at the eye.
-      // (Do NOT add π/2 — that presents the thin edge and reads as hairlines from stands.)
-      const jitter = blades.faceCameraJitter ?? 0.55;
-      const facing = Math.atan2(eye.x - x, eye.z - z) + (Math.random() - 0.5) * 2 * jitter;
+      const width = (w0 + rnd() * (w1 - w0)) * widthMul;
+      const height = (h0 + rnd() * (h1 - h0)) * hMul;
+      const lean = l0 + rnd() * (l1 - l0);
+      // Face toward the stand eye at rebuild time (stable until next stand switch).
+      const facing = Math.atan2(cx - x, cz - z) + (rnd() - 0.5) * 2 * jitter;
 
       dummy.position.set(x, this.heightfield.getHeightAt(x, z) - 0.02, z);
       dummy.rotation.set(0, 0, 0);
@@ -581,12 +572,12 @@ export class Grass {
     mesh.instanceMatrix.needsUpdate = true;
     mesh.geometry.getAttribute('aParams').needsUpdate = true;
     mesh.computeBoundingSphere();
-    // Inflate slightly so fade rim stays inside the cull sphere while swaying.
     if (mesh.boundingSphere) mesh.boundingSphere.radius += 2;
 
     this.bladeInstanceCount = written;
     this.instanceCount = this.tuftInstanceCount + this.bladeInstanceCount;
-    this._lastPatch.copy(this._patchCentre);
+    this._lastEye.set(cx, cz);
+    this._refillCount += 1;
   }
 
   /** Multiply vertex colours (winter frost tint). */
@@ -597,10 +588,10 @@ export class Grass {
 
   /**
    * @param {number} delta
-   * @param {THREE.Vector3} [eye] Active stand eye — drives view LOD + blade patch.
-   * @param {THREE.Vector3} [lookDir] Camera forward for Homing-style look-ahead.
+   * @param {THREE.Vector3} [eye] Active stand eye — view LOD + rebuild anchor.
+   * @param {THREE.Vector3} [_lookDir] Ignored for rebuilds (kept for call-site compat).
    */
-  update(delta, eye, lookDir) {
+  update(delta, eye, _lookDir) {
     this.uniforms.uTime.value += delta * GRASS.wind.speed;
     if (eye && this.uniforms.uEye) {
       this.uniforms.uEye.value.copy(eye);
@@ -608,23 +599,12 @@ export class Grass {
     const blades = nearBladeCfg();
     if (!blades || !this._bladeMesh || !eye) return;
 
-    // Desired patch centre (eye + optional look-ahead on XZ).
-    let cx = eye.x;
-    let cz = eye.z;
-    if (lookDir && blades.lookAhead) {
-      this._lookScratch.copy(lookDir);
-      this._lookScratch.y = 0;
-      if (this._lookScratch.lengthSq() > 1e-6) {
-        this._lookScratch.normalize();
-        cx += this._lookScratch.x * blades.lookAhead;
-        cz += this._lookScratch.z * blades.lookAhead;
-      }
-    }
-    const shift = Math.hypot(cx - this._lastPatch.x, cz - this._lastPatch.y);
+    // Rebuild only when the stand eye moves (tower switch / load) — never on look/scope.
+    const eyeShift = Math.hypot(eye.x - this._lastEye.x, eye.z - this._lastEye.y);
     const need =
       this.bladeInstanceCount === 0 ||
-      !Number.isFinite(this._lastPatch.x) ||
-      shift > (blades.refillMove ?? 2.2);
-    if (need) this._refillNearBlades(eye, lookDir);
+      !Number.isFinite(this._lastEye.x) ||
+      eyeShift > (blades.refillMove ?? 8);
+    if (need) this._refillNearBlades(eye);
   }
 }
