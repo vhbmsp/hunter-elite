@@ -1,206 +1,87 @@
 import * as THREE from 'three';
 import { STANDS, TUTORIAL_ORCHARD, tutorialOrchardSpots } from '../config.js';
+import { enableShadows } from '../core/assets.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
-/** Leaf greens: shade variation across the canopy instead of one flat color. */
-const LEAF_PALETTE = [0x2f6a1f, 0x3f7a28, 0x4a8f32, 0x568f3a, 0x3a6e24, 0x457828];
-
-let canopyLibrary = null;
-
-/** Soft teardrop leaf outline used as double-sided cards on the canopy shell. */
-function createLeafShapeGeometry() {
-  const shape = new THREE.Shape();
-  shape.moveTo(0, -0.55);
-  shape.quadraticCurveTo(0.38, -0.15, 0.32, 0.28);
-  shape.quadraticCurveTo(0.12, 0.52, 0, 0.62);
-  shape.quadraticCurveTo(-0.12, 0.52, -0.32, 0.28);
-  shape.quadraticCurveTo(-0.38, -0.15, 0, -0.55);
-  const geo = new THREE.ShapeGeometry(shape, 10);
-  geo.center();
-  // Sit the leaf tip along +Y so instance orientation is predictable.
-  geo.rotateX(-Math.PI / 2);
-  return geo;
+function isTrunkMaterial(material) {
+  return /^(Tree|Wood)$/i.test(material?.name || '');
 }
 
-/** Nudge icosa vertices so canopy volumes look grown, not perfectly round. */
-function organicize(geometry, amount = 0.12) {
-  const pos = geometry.attributes.position;
-  const v = new THREE.Vector3();
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i);
-    const len = v.length() || 1;
-    const bump =
-      1
-      + amount * Math.sin(v.x * 5.1 + v.y * 3.4)
-      * Math.cos(v.z * 4.2 + v.y * 2.1)
-      + amount * 0.35 * Math.sin(v.y * 7.5);
-    v.multiplyScalar(bump);
-    // Keep roughly the same average radius.
-    v.setLength(len * (0.92 + 0.08 * bump));
-    pos.setXYZ(i, v.x, v.y, v.z);
+function isFoliageMaterial(material) {
+  return /^(Leaves|Green)$/i.test(material?.name || '');
+}
+
+function materialsOf(mesh) {
+  return Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+}
+
+/**
+ * Clone a nature-pack deciduous tree (same glTF as the forest). Trunk meshes
+ * stay solid cover; Leaves are visual-only so they never eat apple shots.
+ */
+function createNatureTree(assets) {
+  const { model, height } = TUTORIAL_ORCHARD;
+  const template = assets.get(model).scene;
+  const root = template.clone(true);
+  root.updateMatrixWorld(true);
+
+  const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+  const scale = height / Math.max(size.y, 0.01);
+  root.scale.setScalar(scale);
+  root.updateMatrixWorld(true);
+
+  const solids = [];
+  root.traverse((child) => {
+    if (!child.isMesh) return;
+    // Clone materials so forest InstancedMesh templates stay untouched.
+    child.material = Array.isArray(child.material)
+      ? child.material.map((mat) => {
+          const next = mat.clone();
+          next.side = THREE.DoubleSide;
+          return next;
+        })
+      : (() => {
+          const next = child.material.clone();
+          next.side = THREE.DoubleSide;
+          return next;
+        })();
+
+    const mats = materialsOf(child);
+    if (mats.some(isTrunkMaterial)) {
+      child.userData.surface = 'tree';
+      solids.push(child);
+    }
+    if (mats.some(isFoliageMaterial)) {
+      // Visual canopy only — apples hang on the stand-facing shell and must stay shootable.
+      child.raycast = () => {};
+    }
+  });
+  enableShadows(root);
+
+  // Canopy bounds in root-local space (after scale + sink).
+  const foliageBox = new THREE.Box3();
+  let hasFoliage = false;
+  root.updateMatrixWorld(true);
+  const rootInv = root.matrixWorld.clone().invert();
+  root.traverse((child) => {
+    if (!child.isMesh) return;
+    if (!materialsOf(child).some(isFoliageMaterial)) return;
+    child.geometry.computeBoundingBox();
+    const box = child.geometry.boundingBox.clone().applyMatrix4(child.matrixWorld);
+    foliageBox.union(box);
+    hasFoliage = true;
+  });
+  if (!hasFoliage) {
+    foliageBox.setFromObject(root);
   }
-  pos.needsUpdate = true;
-  geometry.computeVertexNormals();
-  return geometry;
-}
+  foliageBox.applyMatrix4(rootInv);
 
-function fibonacciDirection(index, total) {
-  const t = index / Math.max(1, total - 1);
-  const y = 1 - 2 * t;
-  const radius = Math.sqrt(Math.max(0, 1 - y * y));
-  const theta = index * 2.399963229728653; // golden angle
-  return new THREE.Vector3(Math.cos(theta) * radius, y, Math.sin(theta) * radius);
-}
+  const canopyCenter = foliageBox.getCenter(new THREE.Vector3());
+  const canopySize = foliageBox.getSize(new THREE.Vector3());
+  const canopyRadius = Math.max(canopySize.x, canopySize.z) * 0.5;
 
-function ensureCanopyLibrary() {
-  if (canopyLibrary) return canopyLibrary;
-
-  const leafMats = LEAF_PALETTE.map(
-    (color) =>
-      new THREE.MeshStandardMaterial({
-        color,
-        roughness: 0.78,
-        metalness: 0.02,
-        side: THREE.DoubleSide,
-      }),
-  );
-
-  const volumeMats = LEAF_PALETTE.slice(0, 3).map(
-    (color) =>
-      new THREE.MeshStandardMaterial({
-        color,
-        roughness: 0.86,
-        metalness: 0,
-      }),
-  );
-
-  const coreGeo = organicize(new THREE.IcosahedronGeometry(1, 2), 0.14);
-  const puffGeo = organicize(new THREE.IcosahedronGeometry(1, 1), 0.18);
-  const leafGeo = createLeafShapeGeometry();
-  const branchGeo = new THREE.CylinderGeometry(0.04, 0.07, 1, 6);
-  const branchMat = new THREE.MeshStandardMaterial({
-    color: TUTORIAL_ORCHARD.trunkColor,
-    roughness: 0.94,
-  });
-
-  canopyLibrary = { leafMats, volumeMats, coreGeo, puffGeo, leafGeo, branchGeo, branchMat };
-  return canopyLibrary;
-}
-
-function createTreeMeshes() {
-  const { trunkColor, trunkHeight, trunkRadius, canopyRadius, canopyLift } = TUTORIAL_ORCHARD;
-  const lib = ensureCanopyLibrary();
-  const root = new THREE.Group();
-
-  const trunkMat = new THREE.MeshStandardMaterial({ color: trunkColor, roughness: 0.94 });
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(trunkRadius * 0.62, trunkRadius, trunkHeight, 12),
-    trunkMat,
-  );
-  trunk.position.y = trunkHeight / 2;
-  trunk.castShadow = true;
-  trunk.receiveShadow = true;
-  trunk.userData.surface = 'tree';
-  root.add(trunk);
-
-  // A few bark-colored limbs so the canopy reads as a tree, not a floating bush.
-  const limbSpecs = [
-    { y: trunkHeight * 0.62, yaw: 0.4, pitch: 0.85, len: 1.35 },
-    { y: trunkHeight * 0.72, yaw: 2.2, pitch: 0.75, len: 1.15 },
-    { y: trunkHeight * 0.78, yaw: 4.0, pitch: 0.7, len: 1.25 },
-    { y: trunkHeight * 0.68, yaw: 5.1, pitch: 0.95, len: 0.95 },
-  ];
-  for (const limb of limbSpecs) {
-    const branch = new THREE.Mesh(lib.branchGeo, lib.branchMat);
-    branch.position.set(0, limb.y, 0);
-    branch.rotation.order = 'YXZ';
-    branch.rotation.y = limb.yaw;
-    branch.rotation.x = limb.pitch;
-    branch.scale.set(1, limb.len, 1);
-    branch.translateY(limb.len * 0.5);
-    branch.castShadow = true;
-    branch.raycast = () => {};
-    root.add(branch);
-  }
-
-  const canopy = new THREE.Group();
-  canopy.position.y = canopyLift;
-  canopy.raycast = () => {};
-
-  // Soft inner volumes — higher-detail organic shells in mixed greens.
-  const core = new THREE.Mesh(lib.coreGeo, lib.volumeMats[1]);
-  core.scale.setScalar(canopyRadius * 0.92);
-  core.castShadow = true;
-  core.receiveShadow = true;
-  core.raycast = () => {};
-  canopy.add(core);
-
-  const puffOffsets = [
-    [0.85, 0.25, 0.35, 0.55],
-    [-0.75, 0.4, -0.45, 0.5],
-    [0.15, 0.65, -0.9, 0.48],
-    [-0.25, -0.2, 0.95, 0.52],
-    [0.55, -0.35, -0.55, 0.42],
-    [-0.95, 0.1, 0.2, 0.46],
-    [0.05, 0.9, 0.15, 0.4],
-  ];
-  puffOffsets.forEach(([x, y, z, scale], i) => {
-    const puff = new THREE.Mesh(lib.puffGeo, lib.volumeMats[i % lib.volumeMats.length]);
-    puff.position.set(x * canopyRadius, y * canopyRadius, z * canopyRadius);
-    puff.scale.setScalar(canopyRadius * scale);
-    puff.castShadow = true;
-    puff.raycast = () => {};
-    canopy.add(puff);
-  });
-
-  // Dense outer leaf cards on a fibonacci shell — the main detail upgrade.
-  const leafCount = 220;
-  const dummy = new THREE.Object3D();
-  const look = new THREE.Vector3();
-  const mats = lib.leafMats;
-  const perMat = Math.ceil(leafCount / mats.length);
-  const instances = mats.map(
-    (mat) => new THREE.InstancedMesh(lib.leafGeo, mat, perMat),
-  );
-  const counters = mats.map(() => 0);
-  instances.forEach((mesh) => {
-    mesh.castShadow = true;
-    mesh.raycast = () => {};
-    canopy.add(mesh);
-  });
-
-  for (let i = 0; i < leafCount; i++) {
-    const dir = fibonacciDirection(i, leafCount);
-    // Bias slightly toward the upper hemisphere so the crown feels fuller.
-    dir.y = dir.y * 0.78 + 0.22;
-    dir.normalize();
-    const radius = canopyRadius * (0.88 + (i % 7) * 0.025);
-    dummy.position.copy(dir).multiplyScalar(radius);
-    look.copy(dummy.position).add(dir);
-    dummy.lookAt(look);
-    dummy.rotateZ(((i * 47) % 360) * (Math.PI / 180));
-    const leafScale = 0.42 + (i % 5) * 0.05;
-    dummy.scale.set(leafScale * 0.85, leafScale, leafScale * 0.85);
-    dummy.updateMatrix();
-
-    const matIndex = i % mats.length;
-    const mesh = instances[matIndex];
-    mesh.setMatrixAt(counters[matIndex], dummy.matrix);
-    counters[matIndex] += 1;
-  }
-  instances.forEach((mesh, index) => {
-    mesh.count = counters[index];
-    mesh.instanceMatrix.needsUpdate = true;
-  });
-
-  root.add(canopy);
-  return {
-    root,
-    solids: [trunk],
-    canopyCenter: new THREE.Vector3(0, canopyLift, 0),
-    canopyRadius,
-  };
+  return { root, solids, canopyCenter, canopyRadius };
 }
 
 function createAppleMesh(shared) {
@@ -240,14 +121,14 @@ class Apple {
 }
 
 /**
- * Tutorial orchard: three apple trees between the stands. Each tree faces one
- * tower with its apples on that side so the player must switch stands to clear
- * the whole objective.
+ * Tutorial orchard: one nature-pack tree at the valley centre. Apples hang in
+ * clusters facing each tower so clearing the objective means switching stands.
  */
 export class AppleOrchard {
   constructor(scene, world) {
     this.scene = scene;
     this.world = world;
+    this.assets = null;
     this.group = new THREE.Group();
     this.group.name = 'apple-orchard';
     this.group.visible = false;
@@ -256,6 +137,11 @@ export class AppleOrchard {
     this.solids = [];
     this.active = false;
     this.shared = null;
+  }
+
+  /** Keep a handle on the shared AssetLibrary (nature tree glTF is already loaded). */
+  bindAssets(assets) {
+    this.assets = assets;
   }
 
   ensureShared() {
@@ -276,52 +162,75 @@ export class AppleOrchard {
     return this.shared;
   }
 
-  /** Builds the three trees and their apples. Safe to call again after clear(). */
+  /** Builds the single tree and its apples. Safe to call again after clear(). */
   spawn() {
     this.clear();
+    if (!this.assets) {
+      throw new Error('AppleOrchard.bindAssets() must run before spawn()');
+    }
     this.ensureShared();
-    ensureCanopyLibrary();
-    const spots = tutorialOrchardSpots();
 
-    TUTORIAL_ORCHARD.trees.forEach((entry, index) => {
+    const [spot] = tutorialOrchardSpots();
+    if (!spot) return;
+
+    const groundY = this.world.getHeightAt(spot.x, spot.z);
+    const tree = createNatureTree(this.assets);
+    // Match forest sink so the trunk base sits in the ground.
+    tree.root.position.set(spot.x, groundY - TUTORIAL_ORCHARD.sink, spot.z);
+    // Mild yaw so the crown silhouette is not axis-aligned with the towers.
+    tree.root.rotation.y = 0.55;
+    tree.root.updateMatrixWorld(true);
+
+    for (const entry of TUTORIAL_ORCHARD.faces) {
       const stand = STANDS.find((s) => s.label === entry.stand);
-      const spot = spots[index];
-      if (!stand || !spot) return;
-      const groundY = this.world.getHeightAt(spot.x, spot.z);
-      const tree = createTreeMeshes();
-      tree.root.position.set(spot.x, groundY, spot.z);
-      // Local +Z faces the stand so apples hang on the near side.
-      const face = new THREE.Vector3(stand.position[0] - spot.x, 0, stand.position[1] - spot.z).normalize();
-      tree.root.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), face);
-
-      const apples = this.placeApples(tree, entry.apples);
+      if (!stand) continue;
+      const apples = this.placeApplesFacing(tree, stand, entry.apples);
       this.apples.push(...apples);
-      this.solids.push(...tree.solids);
-      this.group.add(tree.root);
-    });
+    }
 
+    this.solids.push(...tree.solids);
+    this.group.add(tree.root);
     this.group.visible = true;
     this.active = true;
   }
 
-  placeApples(tree, count) {
+  /**
+   * Hang apples just outside the foliage shell on the stand-facing side so each
+   * tower sees its own cluster without procedural canopy spheres in the way.
+   */
+  placeApplesFacing(tree, stand, count) {
     const shared = this.ensureShared();
-    const localFace = new THREE.Vector3(0, 0, 1);
-    const localSide = new THREE.Vector3(1, 0, 0);
     const apples = [];
     const { canopyCenter, canopyRadius, root } = tree;
-    // Sit just outside the canopy shell so dense leaf cards never eat the shot.
-    const ring = canopyRadius * 1.05;
+
+    const treeWorld = new THREE.Vector3();
+    root.getWorldPosition(treeWorld);
+    const faceWorld = new THREE.Vector3(
+      stand.position[0] - treeWorld.x,
+      0,
+      stand.position[1] - treeWorld.z,
+    ).normalize();
+
+    // Root-local facing (accounts for the mild crown yaw).
+    const inv = root.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const faceLocal = faceWorld.clone().applyQuaternion(inv);
+    faceLocal.y = 0;
+    if (faceLocal.lengthSq() < 1e-6) faceLocal.set(0, 0, 1);
+    else faceLocal.normalize();
+    const sideLocal = new THREE.Vector3().crossVectors(UP, faceLocal).normalize();
+
+    // Sit just outside the foliage AABB so leaf meshes never cover the fruit.
+    const ring = canopyRadius * 1.08;
 
     for (let i = 0; i < count; i++) {
       const t = count === 1 ? 0.5 : i / (count - 1);
-      const lateral = (t - 0.5) * canopyRadius * 1.25;
-      const lift = Math.sin(i * 1.9) * 0.4 + (i % 2 === 0 ? 0.2 : -0.12);
-      const depth = (i % 3) * 0.08;
+      const lateral = (t - 0.5) * canopyRadius * 1.15;
+      const lift = Math.sin(i * 1.9) * 0.35 + (i % 2 === 0 ? 0.18 : -0.1);
+      const depth = (i % 3) * 0.06;
       const local = canopyCenter
         .clone()
-        .addScaledVector(localFace, ring - depth)
-        .addScaledVector(localSide, lateral)
+        .addScaledVector(faceLocal, ring - depth)
+        .addScaledVector(sideLocal, lateral)
         .addScaledVector(UP, lift);
 
       const mesh = createAppleMesh(shared);

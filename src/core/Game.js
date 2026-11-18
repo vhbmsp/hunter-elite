@@ -186,6 +186,7 @@ export class Game {
     await this.assets.loadAll([...AnimalManager.modelUrls(), ...environmentModelUrls()]);
 
     this.world.populate(this.assets);
+    this.orchard.bindAssets(this.assets);
     this.hud.initMinimap(this.world.treePositions ?? []);
     this.hud.setStand(STANDS[this.world.activeIndex]?.label ?? STANDS[DEFAULT_STAND_INDEX].label);
     this.syncCompass();

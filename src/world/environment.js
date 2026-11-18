@@ -95,7 +95,7 @@ function spotClear(x, z, kind) {
     const [sx, sz] = stand.position;
     if (Math.hypot(x - sx, z - sz) < kind.minDistance) return false;
   }
-  // Keep random trees/rocks out of the tutorial orchard firing lanes.
+  // Keep random trees/rocks out of the tutorial apple-tree firing lanes.
   const orchardClear = TUTORIAL_ORCHARD.clearRadius;
   for (const spot of tutorialOrchardSpots()) {
     if (Math.hypot(x - spot.x, z - spot.z) < orchardClear) return false;

@@ -677,30 +677,28 @@ export const LOOT = {
   ropeColor: 0x241c16,
 };
 
-// Tutorial orchard between the three stands. Each tree sits toward its stand
-// from the valley centre; apples hang on that stand's near side so clearing
-// every fruit means switching towers (A / S / D).
+// Tutorial orchard: one nature-pack tree at the stand centroid. Apples hang in
+// clusters facing each tower so clearing every fruit means switching A / S / D.
 export const TUTORIAL_ORCHARD = {
-  // Distance from stand centroid toward each tower (m).
-  towardStand: 18,
-  // Keep random scenery out of the firing lanes around each apple tree (m).
-  clearRadius: 14,
-  trunkHeight: 4.6,
-  trunkRadius: 0.38,
-  canopyRadius: 2.35,
-  canopyLift: 5.1,
+  // Same Quaternius deciduous crown used in the forest scatter (not pine).
+  model: model('nature/tree-1.glb'),
+  // Target world height (m). Matches mid-range forest trees.
+  height: 8.5,
+  // Push the trunk into the ground a little (same idea as ENVIRONMENT.trees.sink).
+  sink: 0.3,
+  // Keep random scenery out of the firing lanes around the apple tree (m).
+  clearRadius: 18,
   appleRadius: 0.22,
-  trunkColor: 0x5c3a1e,
-  leafColor: 0x3f7a28,
   appleColor: 0xd12d1f,
-  trees: [
+  // One tree; each face is a stand-visible apple cluster on that side of the crown.
+  faces: [
     { stand: 'Tower S', apples: 8 },
     { stand: 'Tower A', apples: 6 },
     { stand: 'Tower D', apples: 6 },
   ],
 };
 
-/** Ground x/z for each tutorial apple tree (same spots the orchard uses). */
+/** Ground x/z for the tutorial apple tree (valley centre between the stands). */
 export function tutorialOrchardSpots() {
   let cx = 0;
   let cz = 0;
@@ -710,21 +708,7 @@ export function tutorialOrchardSpots() {
   }
   cx /= STANDS.length;
   cz /= STANDS.length;
-
-  const spots = [];
-  for (const entry of TUTORIAL_ORCHARD.trees) {
-    const stand = STANDS.find((s) => s.label === entry.stand);
-    if (!stand) continue;
-    const [sx, sz] = stand.position;
-    const dx = sx - cx;
-    const dz = sz - cz;
-    const len = Math.hypot(dx, dz) || 1;
-    spots.push({
-      x: cx + (dx / len) * TUTORIAL_ORCHARD.towardStand,
-      z: cz + (dz / len) * TUTORIAL_ORCHARD.towardStand,
-    });
-  }
-  return spots;
+  return [{ x: cx, z: cz }];
 }
 
 export const MAX_FRAME_DELTA = 0.1;
