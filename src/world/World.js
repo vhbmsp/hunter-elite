@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { DEFAULT_STAND_INDEX, PLAYER, STAND, STANDS } from '../config.js';
 import { THEMES, tintGroup } from '../theme.js';
+import { bakeCanopyShade, createCanopyShadeUniforms } from './canopyShade.js';
 import { createEnvironment } from './environment.js';
 import { Grass } from './grass.js';
 import { createStand } from './stand.js';
@@ -15,6 +16,9 @@ export class World {
     this.scene = scene;
     this.heightfield = new Heightfield();
     this.terrain = this.heightfield.createMesh();
+    // Shared empty canopy map; bake fills it after trees populate (Phase 2).
+    this.canopyUniforms = createCanopyShadeUniforms();
+    this.heightfield.setCanopyShade(this.canopyUniforms);
     scene.add(this.terrain);
     this.themeId = 'default';
     this._foliageTintCache = new Map();
@@ -65,7 +69,9 @@ export class World {
     this.solids = solids;
     // Static instance spots for the HUD minimap (drawn once, not per frame).
     this.treePositions = treePositions;
-    this.grass = new Grass(this.heightfield, this.heightfield.noise);
+    // Soft crown pools for terrain + grass (static — trees do not move).
+    bakeCanopyShade(treePositions, this.canopyUniforms);
+    this.grass = new Grass(this.heightfield, this.heightfield.noise, this.canopyUniforms);
     this.scene.add(group, this.grass.group);
     this.applyTheme(this.themeId);
   }

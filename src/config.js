@@ -517,6 +517,21 @@ export const GRASS = {
   enhanced: true,
 };
 
+// Phase 2 (Homing transfer): static soft canopy shade bake from treePositions.
+// Sampled in terrain + grass after colour/tint so winter snow still reads white.
+export const CANOPY_SHADE = {
+  // Occupancy map resolution over TERRAIN.size (metres). 256² stays soft at stand view.
+  resolution: 256,
+  // Fallback crown footprint (m) when a tree spot has no per-instance radius.
+  discRadius: 5.5,
+  // Per-tree radius = worldHeight * radiusFromHeight (set in environment scatter).
+  radiusFromHeight: 0.42,
+  // Occupancy falloff: full shade inside softStart*radius, smooth to rim.
+  softStart: 0.28,
+  // Max darken under full occupancy (0–1). Keep modest before Phase 3 sun shadows.
+  strength: 0.42,
+};
+
 // Supply crates. One drop per session on a timer, drifts down under a
 // parachute, then sits on the ground until it is shot or expires.
 export const LOOT = {

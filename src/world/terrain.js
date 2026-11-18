@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
 import { PLAYER, RENDERER, TERRAIN } from '../config.js';
+import { createCanopyShadeUniforms, injectCanopyShade } from './canopyShade.js';
 
 // Deterministic PRNG so the same seed always yields the same terrain.
 export function mulberry32(seed) {
@@ -177,13 +178,27 @@ export class Heightfield {
     geometry.setAttribute('color', new THREE.BufferAttribute(this.vertexColors(geometry), 3));
     geometry.computeBoundingSphere();
 
-    const mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ vertexColors: true }));
+    this.canopyUniforms ??= createCanopyShadeUniforms();
+    const material = new THREE.MeshLambertMaterial({ vertexColors: true });
+    material.customProgramCacheKey = () => 'terrain-canopy-shade';
+    material.onBeforeCompile = (shader) => {
+      injectCanopyShade(shader, this.canopyUniforms, {
+        worldXZExpr: '(modelMatrix * vec4(transformed, 1.0)).xz',
+      });
+    };
+    const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow = RENDERER.shadows;
     mesh.name = 'terrain';
     mesh.userData.surface = 'terrain';
     mesh.matrixAutoUpdate = false;
     this.mesh = mesh;
     return mesh;
+  }
+
+  /** Shared canopy shade uniforms (empty map until World bakes after trees). */
+  setCanopyShade(uniforms) {
+    this.canopyUniforms = uniforms;
+    if (this.mesh?.material) this.mesh.material.needsUpdate = true;
   }
 
   /** Rebuild vertex colours from a colour table (used for winter snow ground). */
