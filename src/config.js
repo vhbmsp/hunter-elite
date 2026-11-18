@@ -521,9 +521,10 @@ export const ENVIRONMENT = {
   },
 };
 
-// Instanced, wind-swayed grass tufts. Shots pass through.
+// Instanced, wind-swayed grass tufts + optional near-camera single-blade patch.
 // Phase 1 (Homing transfer): view-weighted density + tip colour + multi-freq wind.
 // Flip `enhanced` to false for an A/B against the pre-Phase-1 look.
+// HE-54: `nearBlades.enabled` adds Homing-style one-triangle blades around the eye.
 export const GRASS = {
   // Grass is generated in square chunks so each chunk can be frustum-culled.
   chunkSize: 40,
@@ -531,6 +532,7 @@ export const GRASS = {
   clearRadius: 7,
   // Distance LOD from the nearest stand: tufts per m² inside each radius band (m).
   // Near band is denser when `enhanced` (Homing-style meadow at the eye).
+  // When nearBlades are on, near tuft density is thinned (hybrid: blades own the close field).
   densityBands: [[40, 0.55], [75, 0.22], [115, 0.08]],
   densityBandsEnhanced: [[40, 0.9], [75, 0.28], [115, 0.08]],
   // Soft scale falloff vs active eye (shader LOD); far tufts shrink, near stay full.
@@ -560,6 +562,39 @@ export const GRASS = {
   // Phase 3: whole-shade multiplier in full PCF shadow (on top of Lambert direct).
   // Lower = clearer trunk contact on blades; keep modest so canopy bake does not mud.
   shadowIndirect: 0.32,
+  // HE-54: camera-centred single-triangle blades (WebGL). Soft-GL budget ~28k.
+  // Far meadow stays on chunked tufts; near field is blade-dominated (hybrid).
+  // Density is intentionally high in a tight disc — elevated stands need face-on
+  // width or single tris read as hairlines.
+  nearBlades: {
+    enabled: true,
+    // Hard cap on InstancedMesh count (document in PR / HE-54 notes).
+    count: 28000,
+    // Disc radius (m) around patch centre (eye + look-ahead).
+    radius: 22,
+    // Shader presence falloff; blades shrink to 0 past fadeEnd.
+    fadeStart: 11,
+    fadeEnd: 22,
+    // Nudge patch centre along view so density leads the camera (Homing-style).
+    lookAhead: 8,
+    // Refill when the eye moves this far (m) — avoids per-frame CPU churn.
+    refillMove: 2.0,
+    // Blade shape ranges (metres). Wider than tuft blades so tower views read them.
+    width: [0.1, 0.22],
+    height: [0.55, 1.3],
+    lean: [0.06, 0.32],
+    // Strong tip lift vs dark base (visible A/B goal from the stand).
+    tipBoost: 1.85,
+    tipBaseMul: 0.62,
+    // Wind metres at tip + second octave weight (blade shader only).
+    windStrength: 0.18,
+    windOctave2: 0.6,
+    // Bias blade plane toward the eye (± radians) so elevated views see faces, not edges.
+    faceCameraJitter: 0.55,
+    // Thin tuft spawn inside this stand-distance so hybrid does not double-cover.
+    tuftThinRadius: 22,
+    tuftThinFactor: 0.35,
+  },
 };
 
 // Phase 4 (Homing transfer): shared outdoor lit helper for terrain + grass.
