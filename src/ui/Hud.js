@@ -30,6 +30,17 @@ const MAGAZINE = asset('magazine.svg');
 const HOME_LEDE =
   'Choose a tutorial, a pack, or free play. Top 10 boards are saved in this browser.';
 
+const SETTINGS_LEDE =
+  'Clear saved progress in this browser. Tutorial and Free Play stay available after a mission reset.';
+
+const LOCK_ICON_SVG =
+  '<svg class="lock-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+  '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
+  'd="M8 11V8a4 4 0 0 1 8 0v3"/>' +
+  '<rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>' +
+  '<circle cx="12" cy="16" r="1.25" fill="currentColor"/>' +
+  '</svg>';
+
 const MENU_PACKS = [
   {
     id: 'summer',
@@ -54,6 +65,14 @@ function compassCardinal(deg) {
 
 function findPack(packId) {
   return MENU_PACKS.find((pack) => pack.id === packId) ?? null;
+}
+
+function createLockIcon() {
+  const wrap = document.createElement('span');
+  wrap.className = 'lock-icon-wrap';
+  wrap.setAttribute('aria-hidden', 'true');
+  wrap.innerHTML = LOCK_ICON_SVG;
+  return wrap;
 }
 
 export class Hud {
@@ -95,6 +114,9 @@ export class Hud {
       menuPack: $('menu-pack'),
       missionList: $('mission-list'),
       menuBack: $('menu-back'),
+      menuSettings: $('menu-settings'),
+      settingsList: $('settings-list'),
+      menuSettingsBack: $('menu-settings-back'),
       results: $('results'),
       kicker: $('results-kicker'),
       heading: $('results-heading'),
@@ -196,7 +218,12 @@ export class Hud {
 
     const title = document.createElement('span');
     title.className = 'mission-title';
-    title.textContent = mission.title;
+    if (!unlocked) {
+      title.append(createLockIcon());
+      title.append(document.createTextNode(mission.title));
+    } else {
+      title.textContent = mission.title;
+    }
 
     const objective = document.createElement('span');
     objective.className = 'mission-objective';
@@ -256,7 +283,12 @@ export class Hud {
 
     const titleEl = document.createElement('span');
     titleEl.className = 'menu-nav-title';
-    titleEl.textContent = title;
+    if (locked) {
+      titleEl.append(createLockIcon());
+      titleEl.append(document.createTextNode(title));
+    } else {
+      titleEl.textContent = title;
+    }
 
     const metaEl = document.createElement('span');
     metaEl.className = 'menu-nav-meta';
@@ -279,10 +311,15 @@ export class Hud {
     return button;
   }
 
+  setMenuPanels({ home = false, pack = false, settings = false } = {}) {
+    if (this.el.menuHome) this.el.menuHome.hidden = !home;
+    if (this.el.menuPack) this.el.menuPack.hidden = !pack;
+    if (this.el.menuSettings) this.el.menuSettings.hidden = !settings;
+  }
+
   renderHome() {
     this.menuView = { kind: 'home' };
-    this.el.menuHome.hidden = false;
-    this.el.menuPack.hidden = true;
+    this.setMenuPanels({ home: true });
     this.el.menuHeading.textContent = 'Missions';
     this.el.menuLede.textContent = HOME_LEDE;
     if (this.el.freePlayHint) this.el.freePlayHint.hidden = false;
@@ -350,6 +387,14 @@ export class Hud {
         onClick: () => this.handlers.onFreePlay?.(),
       }),
     );
+
+    nav.append(
+      this.renderHomeNavButton({
+        title: 'Settings',
+        meta: 'Reset highscores or mission progress',
+        onClick: () => this.openSettings(),
+      }),
+    );
   }
 
   openPack(packId) {
@@ -359,9 +404,13 @@ export class Hud {
     this.renderPack(pack);
   }
 
+  openSettings() {
+    this.menuView = { kind: 'settings' };
+    this.renderSettings();
+  }
+
   renderPack(pack) {
-    this.el.menuHome.hidden = true;
-    this.el.menuPack.hidden = false;
+    this.setMenuPanels({ pack: true });
     this.el.menuHeading.textContent = pack.heading;
     this.el.menuLede.textContent = pack.lede;
     if (this.el.freePlayHint) this.el.freePlayHint.hidden = true;
@@ -383,6 +432,53 @@ export class Hud {
     }
   }
 
+  renderSettings() {
+    this.setMenuPanels({ settings: true });
+    this.el.menuHeading.textContent = 'Settings';
+    this.el.menuLede.textContent = SETTINGS_LEDE;
+    if (this.el.freePlayHint) this.el.freePlayHint.hidden = true;
+    if (this.el.unlockProgress) this.el.unlockProgress.hidden = true;
+
+    const list = this.el.settingsList;
+    if (!list) return;
+    list.replaceChildren();
+
+    list.append(
+      this.renderHomeNavButton({
+        title: 'Reset highscores',
+        meta: 'Restore every Top 10 board to the default ladder',
+        play: true,
+        onClick: () => this.confirmResetHighscores(),
+      }),
+      this.renderHomeNavButton({
+        title: 'Reset missions',
+        meta: 'Clear completions and unlocks; packs return to the starting locked state',
+        play: true,
+        onClick: () => this.confirmResetMissions(),
+      }),
+    );
+  }
+
+  confirmResetHighscores() {
+    const ok = globalThis.confirm?.(
+      'Reset all Top 10 highscores to defaults? This cannot be undone.',
+    );
+    if (!ok) return;
+    this.scoreboard?.resetHighscores();
+    this.menuView = { kind: 'home' };
+    this.renderMenu();
+  }
+
+  confirmResetMissions() {
+    const ok = globalThis.confirm?.(
+      'Reset mission progress and unlocks? Packs and missions return to their starting locked state. Tutorial and Free Play stay available.',
+    );
+    if (!ok) return;
+    this.scoreboard?.resetMissions();
+    this.menuView = { kind: 'home' };
+    this.renderMenu();
+  }
+
   renderMenu() {
     if (this.menuView.kind === 'pack') {
       const pack = findPack(this.menuView.packId);
@@ -391,6 +487,10 @@ export class Hud {
         return;
       }
       this.menuView = { kind: 'home' };
+    }
+    if (this.menuView.kind === 'settings') {
+      this.renderSettings();
+      return;
     }
     this.renderHome();
   }
@@ -409,6 +509,11 @@ export class Hud {
     }
     this.el.menuBack.addEventListener('click', () => {
       this.el.menuBack.blur();
+      this.menuView = { kind: 'home' };
+      this.renderMenu();
+    });
+    this.el.menuSettingsBack?.addEventListener('click', () => {
+      this.el.menuSettingsBack.blur();
       this.menuView = { kind: 'home' };
       this.renderMenu();
     });
