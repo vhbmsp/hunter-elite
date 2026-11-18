@@ -34,23 +34,52 @@ function createTuftGeometry() {
   return geometry;
 }
 
-/** Lambert grass whose blade tips sway in the vertex shader (no per-frame CPU work). */
+function densityBands() {
+  return GRASS.enhanced ? (GRASS.densityBandsEnhanced ?? GRASS.densityBands) : GRASS.densityBands;
+}
+
+/** Lambert grass: wind sway, optional tip/noise tint, view-weighted scale. */
 function createGrassMaterial(uniforms) {
+  const enhanced = GRASS.enhanced;
   const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  material.customProgramCacheKey = () => `grass-p1-${enhanced ? 'on' : 'off'}`;
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uTime;\nuniform float uWind;')
-      .replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
+
+    const windUniforms = enhanced
+      ? 'uniform float uTime;\nuniform float uWind;\nuniform float uWind2;\nuniform vec3 uEye;\nuniform float uViewNear;\nuniform float uViewFar;\nuniform float uViewMinScale;\nuniform float uTipBoost;\nuniform float uTipBaseMul;\nuniform vec3 uNoiseTint;\nuniform float uNoiseTintStrength;'
+      : 'uniform float uTime;\nuniform float uWind;';
+
+    // Tip/noise run in begin_vertex (after color_vertex) so instance XZ (`ip`) is in scope.
+    const windBody = enhanced
+      ? `#include <begin_vertex>
+        // Sway grows with height^2 so roots stay planted; phase varies per instance.
+        float sway = position.y * position.y;
+        vec2 ip = vec2(instanceMatrix[3][0], instanceMatrix[3][2]);
+        float w = sin(uTime * 1.7 + ip.x * 0.21 + ip.y * 0.13)
+          + 0.45 * sin(uTime * 3.3 + ip.x * 0.7)
+          + uWind2 * sin(uTime * 6.1 + ip.x * 1.9 + ip.y * 1.4);
+        transformed.x += w * uWind * sway;
+        transformed.z += w * 0.6 * uWind * sway;
+        // Soft camera falloff: near eye stays full, far tufts shrink (Homing-style LOD).
+        float eyeDist = length(ip - uEye.xz);
+        float viewScale = mix(uViewMinScale, 1.0, smoothstep(uViewFar, uViewNear, eyeDist));
+        transformed.xyz *= viewScale;
+        float tipH = clamp(position.y, 0.0, 1.0);
+        vColor.rgb *= mix(uTipBaseMul, uTipBoost, tipH);
+        float turfN = 0.5 + 0.5 * sin(ip.x * 0.09) * cos(ip.y * 0.11);
+        vColor.rgb = mix(vColor.rgb, uNoiseTint, turfN * uNoiseTintStrength * (1.0 - tipH * 0.55));`
+      : `#include <begin_vertex>
         // Sway grows with height^2 so roots stay planted; phase varies per instance position.
         float sway = position.y * position.y;
         vec2 ip = vec2(instanceMatrix[3][0], instanceMatrix[3][2]);
         float w = sin(uTime * 1.7 + ip.x * 0.21 + ip.y * 0.13) + 0.45 * sin(uTime * 3.3 + ip.x * 0.7);
         transformed.x += w * uWind * sway;
-        transformed.z += w * 0.6 * uWind * sway;`,
-      );
+        transformed.z += w * 0.6 * uWind * sway;`;
+
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>\n${windUniforms}`)
+      .replace('#include <begin_vertex>', windBody);
   };
   return material;
 }
@@ -70,7 +99,8 @@ function nearestStandDist(x, z) {
 
 function densityAt(distance) {
   if (distance < GRASS.clearRadius) return 0;
-  for (const [radius, density] of GRASS.densityBands) {
+  const bands = densityBands();
+  for (const [radius, density] of bands) {
     if (distance < radius) return density;
   }
   return 0;
@@ -87,10 +117,26 @@ function onStandPad(x, z) {
  * Chunked instanced grass. Each chunk is its own InstancedMesh with a tight
  * bounding sphere, so chunks outside the (scoped) view are frustum-culled.
  * Density drops with distance from the nearest stand (distance LOD).
+ * When `GRASS.enhanced`, near bands are denser and the shader applies
+ * view-weighted scale, tip colour, second wind octave, and noise tint.
  */
 export class Grass {
   constructor(heightfield, noise) {
-    this.uniforms = { uTime: { value: 0 }, uWind: { value: GRASS.wind.strength } };
+    const bands = densityBands();
+    const sampleCeil = bands[0][1];
+    this.uniforms = {
+      uTime: { value: 0 },
+      uWind: { value: GRASS.wind.strength },
+      uWind2: { value: GRASS.wind.octave2 ?? 0 },
+      uEye: { value: new THREE.Vector3() },
+      uViewNear: { value: GRASS.viewNear ?? 28 },
+      uViewFar: { value: GRASS.viewFar ?? 95 },
+      uViewMinScale: { value: GRASS.viewMinScale ?? 0.35 },
+      uTipBoost: { value: GRASS.tipBoost ?? 1.35 },
+      uTipBaseMul: { value: GRASS.tipBaseMul ?? 0.92 },
+      uNoiseTint: { value: new THREE.Color(GRASS.noiseTint ?? 0x3b6b1f) },
+      uNoiseTintStrength: { value: GRASS.noiseTintStrength ?? 0.22 },
+    };
     this.group = new THREE.Group();
     this.group.name = 'grass';
     this.instanceCount = 0;
@@ -98,7 +144,7 @@ export class Grass {
     const geometry = createTuftGeometry();
     const material = createGrassMaterial(this.uniforms);
     this.material = material;
-    const outer = GRASS.densityBands.at(-1)[0];
+    const outer = bands.at(-1)[0];
     const { chunkSize } = GRASS;
     const dummy = new THREE.Object3D();
 
@@ -122,13 +168,13 @@ export class Grass {
         if (density === 0 && centerDist > GRASS.clearRadius + chunkSize) continue;
 
         const matrices = [];
-        const attempts = Math.ceil(chunkSize * chunkSize * GRASS.densityBands[0][1]);
+        const attempts = Math.ceil(chunkSize * chunkSize * sampleCeil);
         for (let a = 0; a < attempts; a++) {
           const x = cx + Math.random() * chunkSize;
           const z = cz + Math.random() * chunkSize;
           const d = nearestStandDist(x, z);
           if (onStandPad(x, z)) continue;
-          if (Math.random() * GRASS.densityBands[0][1] > densityAt(d)) continue;
+          if (Math.random() * sampleCeil > densityAt(d)) continue;
           if (heightfield.getSlopeAt(x, z) > GRASS.maxSlope) continue;
 
           const tall = noise.noise(x / GRASS.patchScale + 11, z / GRASS.patchScale - 7) > GRASS.patchThreshold;
@@ -158,7 +204,14 @@ export class Grass {
     this.material.color.setHex(hex);
   }
 
-  update(delta) {
+  /**
+   * @param {number} delta
+   * @param {THREE.Vector3} [eye] Active stand eye — drives view-weighted scale when enhanced.
+   */
+  update(delta, eye) {
     this.uniforms.uTime.value += delta * GRASS.wind.speed;
+    if (eye && this.uniforms.uEye) {
+      this.uniforms.uEye.value.copy(eye);
+    }
   }
 }
