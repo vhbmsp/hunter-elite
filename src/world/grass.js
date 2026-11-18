@@ -49,8 +49,8 @@ function createTuftGeometry() {
  */
 function createBladeGeometry() {
   const base = new THREE.Color(GRASS.colorBase);
-  // Brighter tip than tuft geo so tipBoost has a vivid starting colour from stands.
-  const tip = new THREE.Color(GRASS.colorTip).lerp(new THREE.Color(0xd4e070), 0.35);
+  // Tip stays near turf green (avoid lime shards from elevated stands).
+  const tip = new THREE.Color(GRASS.colorTip).lerp(new THREE.Color(0x6a8a32), 0.2);
   const geometry = new THREE.BufferGeometry();
   // Placeholder positions — replaced in begin_vertex from aCorner + aParams.
   geometry.setAttribute(
@@ -240,8 +240,8 @@ uniform float uShadowIndirect;${outdoorVertexDecls}`;
         float facing = aParams.w;
         float tipT = step(1.5, aCorner);
         float side = aCorner < 0.5 ? -1.0 : (aCorner < 1.5 ? 1.0 : 0.0);
-        // Taper to a point at the tip (Homing single-triangle silhouette).
-        float taper = mix(1.0, 0.08, tipT);
+        // Soft lawn taper (not a needle tip) — reads less like jagged shards from stands.
+        float taper = mix(1.0, 0.22, tipT);
         vec3 local = vec3(side * width * 0.5 * mix(1.0, taper, tipT), tipT * height, tipT * leanAmt);
         float cs = cos(facing);
         float sn = sin(facing);
@@ -297,11 +297,22 @@ function densityAt(distance) {
   return 0;
 }
 
-function onStandPad(x, z) {
+function onStandPad(x, z, radius = GRASS.clearRadius) {
   return STANDS.some((stand) => {
     const [sx, sz] = stand.position;
-    return Math.hypot(x - sx, z - sz) < GRASS.clearRadius;
+    return Math.hypot(x - sx, z - sz) < radius;
   });
+}
+
+/** Nearest stand distance — used for soft blade pad clearance. */
+function nearestStandXZ(x, z) {
+  let best = Infinity;
+  for (const stand of STANDS) {
+    const [sx, sz] = stand.position;
+    const d = Math.hypot(x - sx, z - sz);
+    if (d < best) best = d;
+  }
+  return best;
 }
 
 /**
@@ -456,8 +467,8 @@ export class Grass {
   }
 
   /**
-   * Refill the camera-centred blade disc. Biases samples toward the centre
-   * (sqrt radial) and skips stand pads / steep slopes.
+   * Refill the camera-centred blade disc. Mild centre bias; soft stand clearance
+   * (hard footing under the deck only — no sharp bald circle); skip steep slopes.
    */
   _refillNearBlades(eye, lookDir) {
     const blades = nearBladeCfg();
@@ -466,18 +477,28 @@ export class Grass {
 
     const radius = blades.radius;
     const lookAhead = blades.lookAhead ?? 0;
-    let cx = eye.x;
-    let cz = eye.z;
-    if (lookDir) {
+    const eyeFrac = blades.eyeSampleFraction ?? 0.62;
+    const padHard = blades.padClearHard ?? 1.8;
+    const padSoft = blades.padClearSoft ?? Math.max(padHard + 1, 4.5);
+    // Eye-centred disc covers the tower base; ahead disc leads the view.
+    const eyeCx = eye.x;
+    const eyeCz = eye.z;
+    let aheadCx = eyeCx;
+    let aheadCz = eyeCz;
+    if (lookDir && lookAhead > 0) {
       this._lookScratch.copy(lookDir);
       this._lookScratch.y = 0;
       if (this._lookScratch.lengthSq() > 1e-6) {
         this._lookScratch.normalize();
-        cx += this._lookScratch.x * lookAhead;
-        cz += this._lookScratch.z * lookAhead;
+        aheadCx += this._lookScratch.x * lookAhead;
+        aheadCz += this._lookScratch.z * lookAhead;
       }
     }
-    this._patchCentre.set(cx, cz);
+    // Track blended centre for refill-distance checks.
+    this._patchCentre.set(
+      eyeCx * eyeFrac + aheadCx * (1 - eyeFrac),
+      eyeCz * eyeFrac + aheadCz * (1 - eyeFrac),
+    );
 
     const params = this._bladeParams;
     const dummy = this._bladeDummy;
@@ -486,23 +507,39 @@ export class Grass {
     const [l0, l1] = blades.lean;
     let written = 0;
     const budget = blades.count;
-    // Oversample a bit so pad/slope rejects still fill the budget.
-    const attempts = budget * 3;
+    // Oversample so pad/slope rejects still fill the budget.
+    const attempts = budget * 4;
 
     for (let a = 0; a < attempts && written < budget; a++) {
-      // Centre-weighted disc: u^0.55 packs more blades near the eye.
+      // Prefer eye-centred samples so stands don't go bald; rest lead the view.
+      const useEye = Math.random() < eyeFrac;
+      const cx = useEye ? eyeCx : aheadCx;
+      const cz = useEye ? eyeCz : aheadCz;
+      // Mild centre bias (0.85) — keep mid-field filled out to fadeEnd.
       const u = Math.random();
-      const r = radius * u ** 0.55;
+      const r = radius * u ** 0.85;
       const theta = Math.random() * Math.PI * 2;
       const x = cx + Math.cos(theta) * r;
       const z = cz + Math.sin(theta) * r;
-      if (onStandPad(x, z)) continue;
+
+      const standDist = nearestStandXZ(x, z);
+      if (standDist < padHard) continue;
+      // Soft ramp: thin density only in a tight rim (no multi-metre bald disc).
+      let padScale = 1;
+      if (standDist < padSoft) {
+        padScale = (standDist - padHard) / Math.max(1e-6, padSoft - padHard);
+        padScale = padScale * padScale * (3 - 2 * padScale);
+        if (Math.random() > 0.55 + 0.45 * padScale) continue;
+      }
+
       if (this.heightfield.getSlopeAt(x, z) > GRASS.maxSlope) continue;
 
       const tall =
         this.noise.noise(x / GRASS.patchScale + 11, z / GRASS.patchScale - 7) > GRASS.patchThreshold;
-      const hMul = tall ? 1 : 0.62;
-      const width = w0 + Math.random() * (w1 - w0);
+      // Keep lawn height into the soft rim so nadir views from the stand still read blades.
+      const hMul = tall ? 1 : 0.75;
+      const widthMul = 1.2 - 0.2 * padScale;
+      const width = (w0 + Math.random() * (w1 - w0)) * widthMul;
       const height = (h0 + Math.random() * (h1 - h0)) * hMul;
       const lean = l0 + Math.random() * (l1 - l0);
       // Face the eye: blade lies in local XY (normal +Z); yaw so +Z points at the eye.
@@ -533,7 +570,7 @@ export class Grass {
 
     this.bladeInstanceCount = written;
     this.instanceCount = this.tuftInstanceCount + this.bladeInstanceCount;
-    this._lastPatch.set(cx, cz);
+    this._lastPatch.copy(this._patchCentre);
   }
 
   /** Multiply vertex colours (winter frost tint). */

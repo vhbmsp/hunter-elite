@@ -562,38 +562,44 @@ export const GRASS = {
   // Phase 3: whole-shade multiplier in full PCF shadow (on top of Lambert direct).
   // Lower = clearer trunk contact on blades; keep modest so canopy bake does not mud.
   shadowIndirect: 0.32,
-  // HE-54: camera-centred single-triangle blades (WebGL). Soft-GL budget ~28k.
+  // HE-54: camera-centred single-triangle blades (WebGL). Soft-GL budget ~40k.
   // Far meadow stays on chunked tufts; near field is blade-dominated (hybrid).
-  // Density is intentionally high in a tight disc — elevated stands need face-on
-  // width or single tris read as hairlines.
+  // Lawn-height blades, soft stand clearance (no hard bald disc), wide fade radius.
   nearBlades: {
     enabled: true,
     // Hard cap on InstancedMesh count (document in PR / HE-54 notes).
-    count: 28000,
-    // Disc radius (m) around patch centre (eye + look-ahead).
-    radius: 22,
+    count: 48000,
+    // Disc radius (m) around patch centre (eye + mild look-ahead).
+    radius: 48,
     // Shader presence falloff; blades shrink to 0 past fadeEnd.
-    fadeStart: 11,
-    fadeEnd: 22,
-    // Nudge patch centre along view so density leads the camera (Homing-style).
-    lookAhead: 8,
+    fadeStart: 28,
+    fadeEnd: 48,
+    // Mild nudge along view — keep most samples eye-centred so tower bases stay covered.
+    lookAhead: 5,
+    // Fraction of samples around eye.xz (rest use look-ahead centre). Stops bald under stands.
+    eyeSampleFraction: 0.62,
     // Refill when the eye moves this far (m) — avoids per-frame CPU churn.
     refillMove: 2.0,
-    // Blade shape ranges (metres). Wider than tuft blades so tower views read them.
-    width: [0.1, 0.22],
-    height: [0.55, 1.3],
-    lean: [0.06, 0.32],
-    // Strong tip lift vs dark base (visible A/B goal from the stand).
-    tipBoost: 1.85,
-    tipBaseMul: 0.62,
+    // Lawn-scale shape (metres) — shorter/less lean than the tall shard spike.
+    width: [0.055, 0.12],
+    height: [0.12, 0.3],
+    lean: [0.01, 0.06],
+    // Tip lift vs base (keep close to turf so blades don't read as bright shards).
+    tipBoost: 1.25,
+    tipBaseMul: 0.88,
     // Wind metres at tip + second octave weight (blade shader only).
-    windStrength: 0.18,
-    windOctave2: 0.6,
+    windStrength: 0.08,
+    windOctave2: 0.4,
     // Bias blade plane toward the eye (± radians) so elevated views see faces, not edges.
     faceCameraJitter: 0.55,
+    // Soft stand clearance for blades only (tufts still use GRASS.clearRadius).
+    // Keep tiny footing under the deck posts; soft rim must stay small or it reads
+    // as a bald disc from elevated stands (~4–7 m soft was the review complaint).
+    padClearHard: 1.15,
+    padClearSoft: 2.8,
     // Thin tuft spawn inside this stand-distance so hybrid does not double-cover.
-    tuftThinRadius: 22,
-    tuftThinFactor: 0.35,
+    tuftThinRadius: 36,
+    tuftThinFactor: 0.4,
   },
 };
 
