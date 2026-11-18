@@ -79,9 +79,16 @@ function createNatureTree(assets) {
 
   const canopyCenter = foliageBox.getCenter(new THREE.Vector3());
   const canopySize = foliageBox.getSize(new THREE.Vector3());
-  const canopyRadius = Math.max(canopySize.x, canopySize.z) * 0.5;
 
-  return { root, solids, canopyCenter, canopyRadius };
+  return { root, solids, canopyCenter, canopySize, canopyBox: foliageBox.clone() };
+}
+
+/** Half-extent of an AABB along a unit axis (local space). */
+function aabbHalfAlong(size, axis) {
+  return (
+    0.5
+    * (Math.abs(axis.x) * size.x + Math.abs(axis.y) * size.y + Math.abs(axis.z) * size.z)
+  );
 }
 
 function createAppleMesh(shared) {
@@ -195,13 +202,14 @@ export class AppleOrchard {
   }
 
   /**
-   * Hang apples just outside the foliage shell on the stand-facing side so each
-   * tower sees its own cluster without procedural canopy spheres in the way.
+   * Nest apples inside the foliage AABB on the stand-facing side. Leaves do not
+   * raycast, so fruit stays shootable while reading as part of the crown.
    */
   placeApplesFacing(tree, stand, count) {
     const shared = this.ensureShared();
     const apples = [];
-    const { canopyCenter, canopyRadius, root } = tree;
+    const { canopyCenter, canopySize, canopyBox, root } = tree;
+    const { appleFaceNest, appleSideSpread, appleLiftSpread, appleRadius } = TUTORIAL_ORCHARD;
 
     const treeWorld = new THREE.Vector3();
     root.getWorldPosition(treeWorld);
@@ -219,19 +227,25 @@ export class AppleOrchard {
     else faceLocal.normalize();
     const sideLocal = new THREE.Vector3().crossVectors(UP, faceLocal).normalize();
 
-    // Sit just outside the foliage AABB so leaf meshes never cover the fruit.
-    const ring = canopyRadius * 1.08;
+    const faceExtent = aabbHalfAlong(canopySize, faceLocal);
+    const sideExtent = aabbHalfAlong(canopySize, sideLocal);
+    const upExtent = aabbHalfAlong(canopySize, UP);
+    // Inset clamp so fruit stays inside the leaf volume even when face/side axes are skewed.
+    const clampMin = canopyBox.min.clone().addScalar(appleRadius * 0.5);
+    const clampMax = canopyBox.max.clone().addScalar(-appleRadius * 0.5);
 
     for (let i = 0; i < count; i++) {
       const t = count === 1 ? 0.5 : i / (count - 1);
-      const lateral = (t - 0.5) * canopyRadius * 1.15;
-      const lift = Math.sin(i * 1.9) * 0.35 + (i % 2 === 0 ? 0.18 : -0.1);
-      const depth = (i % 3) * 0.06;
+      // Keep the arc inside the crown silhouette (not a floating ring outside it).
+      const lateral = (t - 0.5) * 2 * sideExtent * appleSideSpread;
+      const lift = (Math.sin(i * 1.9) * 0.55 + (i % 2 === 0 ? 0.2 : -0.15)) * upExtent * appleLiftSpread;
+      const depthJitter = (i % 3) * 0.04 * faceExtent;
       const local = canopyCenter
         .clone()
-        .addScaledVector(faceLocal, ring - depth)
+        .addScaledVector(faceLocal, faceExtent * appleFaceNest - depthJitter)
         .addScaledVector(sideLocal, lateral)
         .addScaledVector(UP, lift);
+      local.clamp(clampMin, clampMax);
 
       const mesh = createAppleMesh(shared);
       mesh.position.copy(local);
