@@ -7,9 +7,31 @@ const UP = new THREE.Vector3(0, 1, 0);
 const _normal = new THREE.Vector3();
 const _tilt = new THREE.Quaternion();
 const _yaw = new THREE.Quaternion();
+const _lean = new THREE.Quaternion();
+const _leanAxis = new THREE.Vector3();
 
 // Singular names shown in the HUD ("blocked by tree") and used for impact colours.
 const SURFACE_NAMES = { trees: 'tree', rocks: 'rock', logs: 'log', bushes: 'bush' };
+
+/** Quaternius foliage materials that get per-instance tint (trunks stay stable). */
+function isFoliageMaterial(material) {
+  const name = material?.name || '';
+  return /^(Leaves|Green)$/i.test(name);
+}
+
+/**
+ * Near-white RGB multiplier for InstancedMesh.setColorAt.
+ * Three multiplies instanceColor with material.color, so theme foliageTint still works.
+ */
+function jitterLeafMultiplier(tint) {
+  const color = new THREE.Color(1, 1, 1);
+  color.offsetHSL(
+    (Math.random() * 2 - 1) * tint.hue,
+    (Math.random() * 2 - 1) * tint.sat,
+    (Math.random() * 2 - 1) * tint.light,
+  );
+  return color;
+}
 
 export function environmentModelUrls() {
   return Object.values(ENVIRONMENT).flatMap((kind) => kind.models);
@@ -114,7 +136,7 @@ function pickSpot(heightfield, kind, placed) {
 
 /**
  * Scatters one scenery kind on the terrain and returns one InstancedMesh per
- * model part, so e.g. 70 trees of 4 models render in ~10 draw calls.
+ * model part, so e.g. ~72 trees across 5 crown models render in few draw calls.
  * Also returns the ground x/z spots used for placement (for the HUD minimap).
  */
 function scatterInstanced(heightfield, assets, kindName, kind) {
@@ -122,6 +144,7 @@ function scatterInstanced(heightfield, assets, kindName, kind) {
   const perTemplate = templates.map(() => []);
   const placed = [];
   const dummy = new THREE.Object3D();
+  const variety = kindName === 'trees';
 
   for (let i = 0; i < kind.count; i++) {
     const spot = pickSpot(heightfield, kind, placed);
@@ -131,9 +154,11 @@ function scatterInstanced(heightfield, assets, kindName, kind) {
     const t = Math.floor(Math.random() * templates.length);
     const { size } = templates[t];
     const scale = kind.length ? randomRange(kind.length) / Math.max(size.x, size.z) : randomRange(kind.height) / size.y;
+    // Phase 5a: non-uniform XZ scale for wider / narrower silhouettes.
+    const xzMul = variety && kind.scaleXZ ? randomRange(kind.scaleXZ) : 1;
     // Trees carry a crown radius for the static canopy shade bake (Phase 2).
     if (kindName === 'trees') {
-      spot.radius = scale * size.y * CANOPY_SHADE.radiusFromHeight;
+      spot.radius = scale * xzMul * size.y * CANOPY_SHADE.radiusFromHeight;
     }
 
     dummy.position.set(spot.x, heightfield.getHeightAt(spot.x, spot.z) - kind.sink, spot.z);
@@ -144,19 +169,35 @@ function scatterInstanced(heightfield, assets, kindName, kind) {
     } else {
       dummy.quaternion.copy(_yaw);
     }
-    dummy.scale.setScalar(scale);
+    // Slight lean away from vertical — keeps trunks readable as cover.
+    if (variety && kind.leanMax) {
+      const leanAngle = (Math.random() * 2 - 1) * kind.leanMax;
+      _leanAxis.set(Math.cos(Math.random() * Math.PI * 2), 0, Math.sin(Math.random() * Math.PI * 2)).normalize();
+      _lean.setFromAxisAngle(_leanAxis, leanAngle);
+      dummy.quaternion.multiply(_lean);
+    }
+    dummy.scale.set(scale * xzMul, scale, scale * xzMul);
     dummy.updateMatrix();
-    perTemplate[t].push(dummy.matrix.clone());
+
+    const leafColor = variety && kind.leafTint ? jitterLeafMultiplier(kind.leafTint) : null;
+    perTemplate[t].push({ matrix: dummy.matrix.clone(), leafColor });
   }
 
   const meshes = [];
   const instanceMatrix = new THREE.Matrix4();
   templates.forEach(({ parts }, t) => {
-    const matrices = perTemplate[t];
-    if (!matrices.length) return;
+    const instances = perTemplate[t];
+    if (!instances.length) return;
     for (const part of parts) {
-      const mesh = new THREE.InstancedMesh(part.geometry, part.material, matrices.length);
-      matrices.forEach((m, i) => mesh.setMatrixAt(i, instanceMatrix.multiplyMatrices(m, part.matrix)));
+      const mesh = new THREE.InstancedMesh(part.geometry, part.material, instances.length);
+      const tintFoliage = variety && kind.leafTint && isFoliageMaterial(
+        Array.isArray(part.material) ? part.material[0] : part.material,
+      );
+      instances.forEach((inst, i) => {
+        mesh.setMatrixAt(i, instanceMatrix.multiplyMatrices(inst.matrix, part.matrix));
+        if (tintFoliage && inst.leafColor) mesh.setColorAt(i, inst.leafColor);
+      });
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       mesh.computeBoundingSphere();
       mesh.castShadow = kind.castShadow;
       mesh.receiveShadow = true;

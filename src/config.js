@@ -476,14 +476,27 @@ export const FREE_PLAY_FAUNA = {
 // alignToGround: tilt to the terrain normal (rocks, logs) instead of standing upright (trees).
 export const ENVIRONMENT = {
   // Counts are sized for three stands (~120 m apart); spawns pick a random stand.
+  // Phase 5a: Tree4 + pine crowns, plus lean / XZ scale / leaf tint noise for silhouettes.
   trees: {
-    models: ['nature/tree-1.glb', 'nature/tree-2.glb', 'nature/tree-3.glb'].map(model),
+    models: [
+      'nature/tree-1.glb',
+      'nature/tree-2.glb',
+      'nature/tree-3.glb',
+      'nature/tree-4.glb',
+      'nature/tree-pine.glb',
+    ].map(model),
     count: 72, minDistance: 16, distanceRange: 130,
     // Target height range (m).
     height: [6, 12],
     solid: true, castShadow: true, maxSlope: 0.5, sink: 0.3,
     // Keep trunks off the stand-to-stand sight lines so each tower stays visible.
     sightClear: 14,
+    // Max lean from vertical (rad). Trunks stay upright enough for readable cover.
+    leanMax: 0.11,
+    // Horizontal scale vs height scale — wider / narrower crowns without changing height.
+    scaleXZ: [0.78, 1.28],
+    // Per-instance HSV jitter on Leaves/Green materials (trunk colours stay stable).
+    leafTint: { hue: 0.045, sat: 0.14, light: 0.1 },
   },
   rocks: {
     models: ['nature/rock-1.glb', 'nature/rock-3.glb', 'nature/rock-5.glb', 'nature/rock-moss-2.glb', 'nature/rock-moss-4.glb'].map(model),

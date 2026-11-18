@@ -120,6 +120,8 @@ Both are CC0-1.0.
 | `nature/tree-1.glb` | `Tree1` | Simple Nature |
 | `nature/tree-2.glb` | `Tree2` | Simple Nature |
 | `nature/tree-3.glb` | `Tree3` | Simple Nature |
+| `nature/tree-4.glb` | `Tree4` | Simple Nature |
+| `nature/tree-pine.glb` | `PineTree_1` | Ultimate Nature |
 | `nature/bush-1.glb` | `Bush1` | Simple Nature |
 | `nature/bush-2.glb` | `Bush2` | Simple Nature |
 | `nature/rock-1.glb` | `Rock_1` | Ultimate Nature |
