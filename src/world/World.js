@@ -110,6 +110,6 @@ export class World {
   }
 
   update(delta) {
-    this.grass?.update(delta);
+    this.grass?.update(delta, this.stands[this.activeIndex]?.eye);
   }
 }

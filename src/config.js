@@ -480,13 +480,26 @@ export const ENVIRONMENT = {
 };
 
 // Instanced, wind-swayed grass tufts. Shots pass through.
+// Phase 1 (Homing transfer): view-weighted density + tip colour + multi-freq wind.
+// Flip `enhanced` to false for an A/B against the pre-Phase-1 look.
 export const GRASS = {
   // Grass is generated in square chunks so each chunk can be frustum-culled.
   chunkSize: 40,
   // Keep the area right around each stand clear.
   clearRadius: 7,
   // Distance LOD from the nearest stand: tufts per m² inside each radius band (m).
+  // Near band is denser when `enhanced` (Homing-style meadow at the eye).
   densityBands: [[40, 0.55], [75, 0.22], [115, 0.08]],
+  densityBandsEnhanced: [[40, 0.9], [75, 0.28], [115, 0.08]],
+  // Soft scale falloff vs active eye (shader LOD); far tufts shrink, near stay full.
+  viewNear: 28,
+  viewFar: 95,
+  viewMinScale: 0.35,
+  // Tip lift (multiply vertex colour by height); noiseTint pulls toward terrain green.
+  tipBoost: 1.35,
+  tipBaseMul: 0.92,
+  noiseTint: 0x3b6b1f,
+  noiseTintStrength: 0.22,
   // Low-frequency patch mask: tall meadows where noise > threshold, short turf elsewhere.
   patchScale: 45,
   patchThreshold: 0.1,
@@ -498,7 +511,10 @@ export const GRASS = {
   maxSlope: 0.75,
   colorBase: 0x2f4f16,
   colorTip: 0x9aa84a,
-  wind: { strength: 0.12, speed: 1.6 },
+  // Primary sway + second octave (tip flutter). Strength is metres of tip travel.
+  wind: { strength: 0.12, speed: 1.6, octave2: 0.45 },
+  // Phase 1 blade richness. Set false to A/B legacy density + single-band wind.
+  enhanced: true,
 };
 
 // Supply crates. One drop per session on a timer, drifts down under a
