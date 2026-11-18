@@ -521,9 +521,10 @@ export const ENVIRONMENT = {
   },
 };
 
-// Instanced, wind-swayed grass tufts. Shots pass through.
+// Instanced, wind-swayed grass tufts + optional near-camera single-blade patch.
 // Phase 1 (Homing transfer): view-weighted density + tip colour + multi-freq wind.
 // Flip `enhanced` to false for an A/B against the pre-Phase-1 look.
+// HE-54: `nearBlades.enabled` adds Homing-style one-triangle blades around the eye.
 export const GRASS = {
   // Grass is generated in square chunks so each chunk can be frustum-culled.
   chunkSize: 40,
@@ -531,6 +532,7 @@ export const GRASS = {
   clearRadius: 7,
   // Distance LOD from the nearest stand: tufts per m² inside each radius band (m).
   // Near band is denser when `enhanced` (Homing-style meadow at the eye).
+  // When nearBlades are on, near tuft density is thinned (hybrid: blades own the close field).
   densityBands: [[40, 0.55], [75, 0.22], [115, 0.08]],
   densityBandsEnhanced: [[40, 0.9], [75, 0.28], [115, 0.08]],
   // Soft scale falloff vs active eye (shader LOD); far tufts shrink, near stay full.
@@ -560,6 +562,46 @@ export const GRASS = {
   // Phase 3: whole-shade multiplier in full PCF shadow (on top of Lambert direct).
   // Lower = clearer trunk contact on blades; keep modest so canopy bake does not mud.
   shadowIndirect: 0.32,
+  // HE-54: camera-centred single-triangle blades (WebGL). Soft-GL budget ~56k.
+  // Far meadow stays on chunked tufts; near field is blade-dominated (hybrid).
+  // Lawn-height blades, soft stand clearance, mid-band weighted spawn, gradual fade.
+  nearBlades: {
+    enabled: true,
+    // Hard cap on InstancedMesh count (document in PR / HE-54 notes).
+    count: 56000,
+    // Disc radius (m) around patch centre (eye + mild look-ahead).
+    radius: 56,
+    // Gradual presence taper from close in (avoid a hard circular carpet edge).
+    fadeStart: 8,
+    fadeEnd: 56,
+    // Patch is eye-centred only (no live look-ahead) so looking around never rebuilds.
+    // Put most blades in the mid annulus so hills 15–40 m out stay covered.
+    midBandFraction: 0.78,
+    midBandInner: 12,
+    midBandOuter: 46,
+    // Rebuild only when the stand eye relocates this far (m). Looking / scoping must not refill.
+    refillMove: 8,
+    // Lawn-scale shape (metres) — shorter/less lean than the tall shard spike.
+    width: [0.055, 0.12],
+    height: [0.12, 0.3],
+    lean: [0.01, 0.06],
+    // Tip lift vs base (keep close to turf so blades don't read as bright shards).
+    tipBoost: 1.25,
+    tipBaseMul: 0.88,
+    // Wind metres at tip + second octave weight (blade shader only).
+    windStrength: 0.08,
+    windOctave2: 0.4,
+    // Bias blade plane toward the eye (± radians) so elevated views see faces, not edges.
+    faceCameraJitter: 0.55,
+    // Soft stand clearance for blades only (tufts still use GRASS.clearRadius).
+    // Keep tiny footing under the deck posts; soft rim must stay small or it reads
+    // as a bald disc from elevated stands (~4–7 m soft was the review complaint).
+    padClearHard: 1.15,
+    padClearSoft: 2.8,
+    // Thin tuft spawn inside this stand-distance so hybrid does not double-cover.
+    tuftThinRadius: 40,
+    tuftThinFactor: 0.45,
+  },
 };
 
 // Phase 4 (Homing transfer): shared outdoor lit helper for terrain + grass.

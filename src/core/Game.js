@@ -63,6 +63,8 @@ export class Game {
     this.applyStandFacing(DEFAULT_STAND_INDEX);
     // The muzzle flash is parented to the camera, so the camera has to live in the scene.
     this.scene.add(this.player.camera);
+    // HE-54: near-blade patch look-ahead follows the view.
+    this.world.bindCamera(this.player.camera);
     this.scope = new Scope(this.player.camera, this.hud, this.player.controls);
     // Phase 5b: mild scoped bloom (DOF opt-in). Hip-fire stays a direct render.
     this.scopePost = createScopePost(this.renderer, this.scene, this.player.camera);

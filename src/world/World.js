@@ -27,6 +27,9 @@ export class World {
     this.themeId = 'default';
     this._foliageTintCache = new Map();
     this.treePositions = [];
+    /** @type {import('three').Camera | null} Optional — drives near-blade look-ahead. */
+    this.camera = null;
+    this._lookDir = new THREE.Vector3();
 
     this.standHeight = STAND.enabled ? STAND.height : 0;
     this.stands = STANDS.map((stand, index) => {
@@ -143,7 +146,18 @@ export class World {
     return this.heightfield.getSlopeAt(x, z);
   }
 
+  /** Bind the player camera so near-blade grass can lead the view (HE-54). */
+  bindCamera(camera) {
+    this.camera = camera;
+  }
+
   update(delta) {
-    this.grass?.update(delta, this.stands[this.activeIndex]?.eye);
+    const eye = this.stands[this.activeIndex]?.eye;
+    let lookDir = null;
+    if (this.camera) {
+      this.camera.getWorldDirection(this._lookDir);
+      lookDir = this._lookDir;
+    }
+    this.grass?.update(delta, eye, lookDir);
   }
 }
