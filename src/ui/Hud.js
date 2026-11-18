@@ -7,6 +7,7 @@ import {
   formatLongest,
   formatPenalties,
   formatScore,
+  formatTimeBonus,
   formatTimeReport,
   penaltyRule,
   speciesLabel,
@@ -125,6 +126,7 @@ export class Hud {
       accuracy: $('results-accuracy'),
       longest: $('results-longest'),
       time: $('results-time'),
+      timeBonus: $('results-time-bonus'),
       resultsScore: $('results-score'),
       penalties: $('results-penalties'),
       resultsBoard: $('results-board'),
@@ -845,6 +847,7 @@ export class Hud {
     longest,
     timeLeft,
     timeUsed,
+    timeBonus = 0,
     score,
     penalties,
     hasNext,
@@ -866,6 +869,7 @@ export class Hud {
     this.el.accuracy.textContent = formatAccuracy(hits, shots);
     this.el.longest.textContent = formatLongest(longest);
     this.el.time.textContent = formatTimeReport(timeLeft, timeUsed);
+    this.el.timeBonus.textContent = formatTimeBonus(timeBonus);
     this.el.resultsScore.textContent = formatScore(score);
     this.el.penalties.textContent = formatPenalties(penalties);
     this.el.next.hidden = !hasNext;

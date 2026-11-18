@@ -339,3 +339,10 @@ export function formatPenalties(count) {
   const cost = count * MISSION_PENALTY;
   return `${count} (−${cost}, not counted)`;
 }
+
+/** Leftover mission-timer seconds awarded on a successful clear (+1 each). */
+export function formatTimeBonus(bonus) {
+  const n = Math.max(0, Math.floor(Number(bonus) || 0));
+  if (n <= 0) return '0';
+  return `+${n}`;
+}
