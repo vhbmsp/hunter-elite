@@ -103,15 +103,17 @@ export class Game {
    * angle stays stable while Tower S (~120 m from origin) stays inside the map.
    */
   syncSunShadow() {
-    if (!RENDERER.shadows) return;
     const sun = this.lights?.sun;
-    if (!sun) return;
-    const [ox, oy, oz] = LIGHTS.sun.position;
-    const { x, z } = this.player.camera.position;
-    sun.target.position.set(x, 0, z);
-    sun.position.set(x + ox, oy, z + oz);
-    sun.target.updateMatrixWorld();
-    sun.updateMatrixWorld();
+    if (RENDERER.shadows && sun) {
+      const [ox, oy, oz] = LIGHTS.sun.position;
+      const { x, z } = this.player.camera.position;
+      sun.target.position.set(x, 0, z);
+      sun.position.set(x + ox, oy, z + oz);
+      sun.target.updateMatrixWorld();
+      sun.updateMatrixWorld();
+    }
+    // Outdoor lit bounce/sky fill track the live sun direction (Phase 4).
+    this.world?.syncOutdoorLit(this.scene, this.lights);
   }
 
   update(delta) {
@@ -267,6 +269,8 @@ export class Game {
     const theme = themeForMission({ theme: themeId });
     applySceneTheme(this.scene, this.lights, theme);
     this.world.applyTheme(theme.id);
+    // Haze / bounce / turf tint follow fog + hemi + theme (Phase 4).
+    this.world.syncOutdoorLit(this.scene, this.lights);
   }
 
   startMission(index) {

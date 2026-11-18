@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import { DEFAULT_STAND_INDEX, PLAYER, STAND, STANDS } from '../config.js';
+import { DEFAULT_STAND_INDEX, OUTDOOR_LIT, PLAYER, STAND, STANDS } from '../config.js';
 import { THEMES, tintGroup } from '../theme.js';
 import { bakeCanopyShade, createCanopyShadeUniforms } from './canopyShade.js';
 import { createEnvironment } from './environment.js';
 import { Grass } from './grass.js';
+import { createOutdoorLitUniforms, syncOutdoorLitUniforms } from './outdoorLit.js';
 import { createStand } from './stand.js';
 import { Heightfield } from './terrain.js';
 
@@ -19,6 +20,9 @@ export class World {
     // Shared empty canopy map; bake fills it after trees populate (Phase 2).
     this.canopyUniforms = createCanopyShadeUniforms();
     this.heightfield.setCanopyShade(this.canopyUniforms);
+    // Phase 4: shared outdoor lit (bounce / sky fill / haze) for terrain + grass.
+    this.outdoorUniforms = createOutdoorLitUniforms();
+    this.heightfield.setOutdoorLit(this.outdoorUniforms);
     scene.add(this.terrain);
     this.themeId = 'default';
     this._foliageTintCache = new Map();
@@ -71,14 +75,20 @@ export class World {
     this.treePositions = treePositions;
     // Soft crown pools for terrain + grass (static — trees do not move).
     bakeCanopyShade(treePositions, this.canopyUniforms);
-    this.grass = new Grass(this.heightfield, this.heightfield.noise, this.canopyUniforms);
+    this.grass = new Grass(
+      this.heightfield,
+      this.heightfield.noise,
+      this.canopyUniforms,
+      this.outdoorUniforms,
+    );
     this.scene.add(group, this.grass.group);
     this.applyTheme(this.themeId);
   }
 
   /**
    * Snow / default ground look. Recolours terrain, tints grass + foliage.
-   * Sky and lights are applied separately via applySceneTheme in Game.
+   * Sky and lights are applied separately via applySceneTheme in Game;
+   * call syncOutdoorLit after that so haze/bounce track the live fog/lights.
    */
   applyTheme(themeId = 'default') {
     const theme = THEMES[themeId] ?? THEMES.default;
@@ -86,6 +96,24 @@ export class World {
     this.heightfield.recolor(theme.terrainColors);
     this.grass?.setTint(theme.grassTint);
     tintGroup(this.environment, theme.foliageTint, this._foliageTintCache);
+  }
+
+  /**
+   * Keep outdoor lit uniforms in sync with scene fog + lights (+ theme turf tint).
+   * @param {import('three').Scene} scene
+   * @param {{ sun?: import('three').DirectionalLight, hemisphere?: import('three').HemisphereLight }} lights
+   */
+  syncOutdoorLit(scene, lights) {
+    const theme = THEMES[this.themeId] ?? THEMES.default;
+    // Winter: softer turf break-up so snow ground stays pale, not green-flecked.
+    const turfStrength =
+      this.themeId === 'winter' ? OUTDOOR_LIT.turfStrength * 0.35 : OUTDOOR_LIT.turfStrength;
+    syncOutdoorLitUniforms(this.outdoorUniforms, {
+      scene,
+      lights,
+      turfTint: theme.terrainColors?.lushGrass,
+      turfStrength,
+    });
   }
 
   get eyePosition() {

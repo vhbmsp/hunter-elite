@@ -522,6 +522,21 @@ export const GRASS = {
   shadowIndirect: 0.32,
 };
 
+// Phase 4 (Homing transfer): shared outdoor lit helper for terrain + grass.
+// MeshLambert still owns sun PCF / ambient / hemi; this adds bounce, sky fill,
+// distance haze (material.fog off), and optional turf micro-variation.
+export const OUTDOOR_LIT = {
+  enabled: true,
+  // Extra sky wrap on upward faces (on top of HemisphereLight).
+  skyFill: 0.12,
+  // Homing-style ground bounce on downward / under-facing normals.
+  bounceStrength: 0.22,
+  // 1 = full replace of fog colour at fogFar (scene.fog still used for other meshes).
+  hazeStrength: 1,
+  // Terrain-only lush/pale break-up; keep modest so winter snow stays readable.
+  turfStrength: 0.14,
+};
+
 // Phase 2 (Homing transfer): static soft canopy shade bake from treePositions.
 // Sampled in terrain + grass after colour/tint so winter snow still reads white.
 export const CANOPY_SHADE = {
