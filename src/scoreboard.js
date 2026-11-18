@@ -87,10 +87,10 @@ export function missionScoreBand(mission) {
   }
 
   if (mission.tutorial) {
-    // Orchard geometry: ~35 m from Tower S, ~78 m from A/D (horizontal).
-    // Apples always score as body shots.
-    const near = pointsFor(35, 'body', 1);
-    const far = pointsFor(78, 'body', 1);
+    // One centre tree: ~53 m from Tower S, ~96 m from A/D (horizontal).
+    // Apples always score as body shots (8 near / 12 far).
+    const near = pointsFor(53, 'body', 1);
+    const far = pointsFor(96, 'body', 1);
     const excellent = near * 8 + far * 12;
     return {
       excellent,
