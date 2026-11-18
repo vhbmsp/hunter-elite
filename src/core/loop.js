@@ -6,10 +6,16 @@ import { MAX_FRAME_DELTA } from '../config.js';
  * Delta is clamped so a backgrounded tab doesn't teleport animals on return.
  */
 export class GameLoop {
-  constructor(renderer, scene, camera) {
+  /**
+   * @param {object} [options]
+   * @param {() => void} [options.render] Optional frame presenter (e.g. scoped
+   *   EffectComposer). Defaults to `renderer.render(scene, camera)`.
+   */
+  constructor(renderer, scene, camera, options = {}) {
     this.renderer = renderer;
     this.scene = scene;
     this.camera = camera;
+    this.renderFrame = options.render ?? null;
     this.clock = new THREE.Clock(false);
     this.systems = [];
   }
@@ -32,6 +38,7 @@ export class GameLoop {
   tick() {
     const delta = Math.min(this.clock.getDelta(), MAX_FRAME_DELTA);
     for (const system of this.systems) system.update(delta);
-    this.renderer.render(this.scene, this.camera);
+    if (this.renderFrame) this.renderFrame();
+    else this.renderer.render(this.scene, this.camera);
   }
 }

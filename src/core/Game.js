@@ -21,6 +21,7 @@ import { bindInput } from './input.js';
 import { GameLoop } from './loop.js';
 import { bindResize, createRenderer } from './renderer.js';
 import { createScene } from './scene.js';
+import { createScopePost } from './scopePost.js';
 
 export class Game {
   constructor(container = document.body) {
@@ -63,6 +64,8 @@ export class Game {
     // The muzzle flash is parented to the camera, so the camera has to live in the scene.
     this.scene.add(this.player.camera);
     this.scope = new Scope(this.player.camera, this.hud, this.player.controls);
+    // Phase 5b: mild scoped bloom (DOF opt-in). Hip-fire stays a direct render.
+    this.scopePost = createScopePost(this.renderer, this.scene, this.player.camera);
     this.impacts = new ImpactEffects(this.scene);
     this.animals = new AnimalManager(this.scene, this.player.camera, this.world);
     this.loot = new LootManager(this.scene, this.world);
@@ -83,7 +86,9 @@ export class Game {
     this.syncAmmo();
     this.syncCompass();
 
-    this.loop = new GameLoop(this.renderer, this.scene, this.player.camera)
+    this.loop = new GameLoop(this.renderer, this.scene, this.player.camera, {
+      render: () => this.scopePost.render(this.scope.active),
+    })
       .add(this.world)
       .add(this.impacts)
       .add(this.loot)
@@ -141,6 +146,8 @@ export class Game {
     const { origin, direction } = aimFromCamera(this.player.camera);
     const hit = castRay(origin, direction, WEAPON.ballistics.maxRange, this.rifle.shotQuery());
     this.hud.setAimDistance(hit ? hit.distance : null);
+    // Keep bokeh focus on the ranged aim point when DOF is enabled.
+    this.scopePost.setFocus(hit ? hit.distance : null);
   }
 
   /**
@@ -196,7 +203,9 @@ export class Game {
       this.scope.setActive(false);
     });
 
-    this.unbindResize = bindResize(this.renderer, this.player.camera);
+    this.unbindResize = bindResize(this.renderer, this.player.camera, (w, h) => {
+      this.scopePost.setSize(w, h);
+    });
     this.unbindInput = bindInput({
       isLocked: () => this.player.isLocked,
       lock: () => {
@@ -464,6 +473,7 @@ export class Game {
     this.unbindInput?.();
     this.unbindResize?.();
     this.player.dispose();
+    this.scopePost?.dispose();
     this.renderer.dispose();
   }
 }
