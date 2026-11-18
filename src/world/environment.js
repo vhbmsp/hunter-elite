@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ENVIRONMENT, STANDS, TUTORIAL_ORCHARD, tutorialOrchardSpots } from '../config.js';
+import { CANOPY_SHADE, ENVIRONMENT, STANDS, TUTORIAL_ORCHARD, tutorialOrchardSpots } from '../config.js';
 import { prepareSceneryGeometry } from './scenerySeal.js';
 
 const randomRange = ([min, max]) => min + Math.random() * (max - min);
@@ -131,6 +131,10 @@ function scatterInstanced(heightfield, assets, kindName, kind) {
     const t = Math.floor(Math.random() * templates.length);
     const { size } = templates[t];
     const scale = kind.length ? randomRange(kind.length) / Math.max(size.x, size.z) : randomRange(kind.height) / size.y;
+    // Trees carry a crown radius for the static canopy shade bake (Phase 2).
+    if (kindName === 'trees') {
+      spot.radius = scale * size.y * CANOPY_SHADE.radiusFromHeight;
+    }
 
     dummy.position.set(spot.x, heightfield.getHeightAt(spot.x, spot.z) - kind.sink, spot.z);
     _yaw.setFromAxisAngle(UP, Math.random() * Math.PI * 2);
