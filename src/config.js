@@ -147,6 +147,33 @@ export const SCOPE = {
   lookSensitivity: 1,
 };
 
+// Phase 5b (Homing / Kitten-style): scoped DOF + bloom for screenshots / ADS feel.
+// Hip-fire stays a direct render (zero post cost). Soft-GL: keep resolutionScale
+// modest; DOF stays off by default (extra depth scene pass) — mild when enabled.
+export const SCOPE_POST = {
+  // Master switch. false → always direct renderer.render.
+  enabled: true,
+  // Composer / bloom buffer scale vs canvas (1 = full). Lower = cheaper soft GL.
+  resolutionScale: 0.75,
+  dof: {
+    // Off by default: BokehPass re-renders the scene for depth (costly on soft GL).
+    // Flip on for screenshots; knobs below stay mild for ADS readability.
+    enabled: false,
+    // Fallback focus distance (m) when the aim ray misses.
+    focus: 80,
+    // Three.js bokeh units; keep tiny so the crosshair target stays sharp.
+    aperture: 0.00008,
+    maxblur: 0.006,
+  },
+  bloom: {
+    // Mild glow while scoped (sun / sky highlights). Strength 0 = visually off.
+    enabled: true,
+    strength: 0.2,
+    radius: 0.35,
+    threshold: 0.84,
+  },
+};
+
 export const WEAPON = {
   // Score = (baseScore + min(distance, distanceBonusCap))
   //          * zone multiplier * species scoreMultiplier (1, or 5 for Premium).

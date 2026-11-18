@@ -11,11 +11,16 @@ export function createRenderer(container = document.body) {
   return renderer;
 }
 
-export function bindResize(renderer, camera) {
+/**
+ * @param {() => void} [onResizeExtra] Optional hook after canvas/camera resize
+ *   (e.g. EffectComposer.setSize).
+ */
+export function bindResize(renderer, camera, onResizeExtra = null) {
   const onResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    onResizeExtra?.(window.innerWidth, window.innerHeight);
   };
   window.addEventListener('resize', onResize);
   return () => window.removeEventListener('resize', onResize);
