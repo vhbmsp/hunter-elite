@@ -338,6 +338,19 @@ export class AppleOrchard {
     return this.apples.filter((apple) => apple.alive).map((apple) => apple.mesh);
   }
 
+  /** World x/z of remaining tutorial apples for the minimap. */
+  goalPositions() {
+    if (!this.active) return [];
+    const out = [];
+    const world = new THREE.Vector3();
+    for (const apple of this.apples) {
+      if (!apple.alive) continue;
+      apple.mesh.getWorldPosition(world);
+      out.push({ x: world.x, z: world.z });
+    }
+    return out;
+  }
+
   remaining() {
     return this.apples.reduce((n, apple) => n + (apple.alive ? 1 : 0), 0);
   }

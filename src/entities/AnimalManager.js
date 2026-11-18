@@ -110,6 +110,21 @@ export class AnimalManager {
     return [...this.animals, ...this.ducks].filter((a) => a.alive).flatMap((a) => a.hitboxes);
   }
 
+  /** World x/z of alive animals matching a mission objective species. */
+  goalPositions(species) {
+    if (!species) return [];
+    const out = [];
+    for (const animal of this.animals) {
+      if (!animal.alive || animal.type !== species) continue;
+      out.push({ x: animal.root.position.x, z: animal.root.position.z });
+    }
+    for (const bird of this.ducks) {
+      if (!bird.alive || bird.type !== species) continue;
+      out.push({ x: bird.root.position.x, z: bird.root.position.z });
+    }
+    return out;
+  }
+
   update(delta) {
     const playerPosition = this.camera.position;
     for (let i = this.animals.length - 1; i >= 0; i--) {

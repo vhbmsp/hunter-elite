@@ -158,6 +158,11 @@ export class Hud {
     this.minimap?.init(treePositions);
   }
 
+  /** Mission objective markers on the minimap; empty clears (Free Play / menu). */
+  setMinimapGoals(points = []) {
+    this.minimap?.setGoals(points);
+  }
+
   renderUnlockProgress() {
     const el = this.el.unlockProgress;
     if (!el) return;
@@ -599,21 +604,25 @@ export class Hud {
 
   setPickup(points, magazines) {
     this.el.distance.classList.remove('penalty');
+    this.el.distance.hidden = false;
     const mags = magazines === 1 ? '+1 spare mag' : `+${magazines} spare mags`;
     this.el.distance.textContent = `Loot: ${mags} · +${points}`;
   }
 
   setBlocked(surface, distance) {
     this.el.distance.classList.remove('penalty');
+    this.el.distance.hidden = false;
     this.el.distance.textContent = `Blocked by ${surface}: ${distance.toFixed(1)}m`;
   }
 
   setDistance(distance, zone, { premium = false, points = null } = {}) {
     this.el.distance.classList.remove('penalty');
     if (distance == null) {
+      this.el.distance.hidden = true;
       this.el.distance.textContent = 'Distance: —';
       return;
     }
+    this.el.distance.hidden = false;
     if (premium) {
       const bits = ['Premium', `${distance.toFixed(1)}m`];
       if (zone === 'head') bits.push('head shot');
@@ -625,8 +634,30 @@ export class Hud {
     this.el.distance.textContent = `Distance: ${distance.toFixed(1)}m${suffix}`;
   }
 
+  /**
+   * Live ranging while scoped. Hidden when not scoped so hip-fire / overlays
+   * can own the line for shot feedback.
+   */
+  setAimDistance(distance) {
+    this.el.distance.classList.remove('penalty');
+    this.el.distance.hidden = false;
+    if (distance == null) {
+      this.el.distance.textContent = 'Distance: —';
+      return;
+    }
+    this.el.distance.textContent = `Distance: ${distance.toFixed(1)}m`;
+  }
+
+  /** Hide the ranging line when leaving the scope (unless shot feedback keeps it). */
+  clearAimDistance() {
+    this.el.distance.classList.remove('penalty');
+    this.el.distance.hidden = true;
+    this.el.distance.textContent = 'Distance: —';
+  }
+
   setPenalty(grade, animalType, distance, mission) {
     this.el.distance.classList.add('penalty');
+    this.el.distance.hidden = false;
     if (grade === 'wrong-species') {
       const name = speciesLabel(animalType);
       this.el.distance.textContent = `Penalty −${MISSION_PENALTY} · ${name} is not the objective · does not count`;
@@ -902,6 +933,8 @@ export class Hud {
         this.el.scopeZoom.textContent = `${magnification}x`;
       }
     }
+    // Ranging is scoped-only; hip-fire keeps the slot free for shot feedback.
+    if (!scoped) this.clearAimDistance();
   }
 
   setLocked(locked) {

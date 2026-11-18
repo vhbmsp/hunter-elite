@@ -15,12 +15,14 @@ export class Minimap {
     this.root = root;
     this.canvas = root.querySelector('#minimap-trees');
     this.standsEl = root.querySelector('#minimap-stands');
+    this.goalsEl = root.querySelector('#minimap-goals');
     this.playerEl = root.querySelector('#minimap-player');
     this._bounds = null;
     this._headingDeg = null;
     this._standKey = '';
     this._playerX = null;
     this._playerZ = null;
+    this._goalKey = '';
   }
 
   /**
@@ -113,6 +115,33 @@ export class Minimap {
     const short = label.replace(/^Tower\s+/i, '');
     for (const el of this.standsEl.children) {
       el.classList.toggle('is-active', el.textContent === short || el.title === label);
+    }
+  }
+
+  /**
+   * Alive mission-goal markers (objective animals / tutorial apples).
+   * Pass [] or omit in Free Play / menu so the layer stays empty.
+   * points: [{ x, z }, ...]
+   */
+  setGoals(points = []) {
+    if (!this.goalsEl || !this._bounds) return;
+    const list = Array.isArray(points) ? points : [];
+    // Quantize so tiny wander does not thrash the DOM every frame.
+    const key = list
+      .map((p) => `${Math.round(p.x)}:${Math.round(p.z)}`)
+      .sort()
+      .join('|');
+    if (key === this._goalKey) return;
+    this._goalKey = key;
+    this.goalsEl.replaceChildren();
+    for (const spot of list) {
+      const mark = document.createElement('span');
+      mark.className = 'minimap-goal';
+      mark.title = 'Objective';
+      const { mx, my } = this.project(spot.x, spot.z);
+      mark.style.left = `${mx}px`;
+      mark.style.top = `${my}px`;
+      this.goalsEl.appendChild(mark);
     }
   }
 
